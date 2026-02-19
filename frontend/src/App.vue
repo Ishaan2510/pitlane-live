@@ -7,6 +7,7 @@
       </div>
       <div class="nav-links">
         <router-link to="/" class="nav-link">Races</router-link>
+        <router-link to="/replay" class="nav-link">🎯 Race Replay</router-link>
         <router-link to="/leaderboard" class="nav-link">Leaderboard</router-link>
       </div>
     </nav>

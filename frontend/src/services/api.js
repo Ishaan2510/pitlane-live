@@ -3,6 +3,7 @@ import axios from 'axios'
 const API_BASE = 'http://localhost:5000/api'
 
 class APIService {
+  // ── Existing endpoints ──
   async getRaces() {
     const response = await axios.get(`${API_BASE}/races`)
     return response.data
@@ -10,7 +11,6 @@ class APIService {
 
   async getLiveRace(id) {
     const response = await axios.get(`${API_BASE}/races/${id}`)
-    // Transform to match frontend expectations
     return {
       id: response.data.id,
       name: response.data.name,
@@ -35,6 +35,27 @@ class APIService {
 
   async getRacePredictions(raceId) {
     const response = await axios.get(`${API_BASE}/predictions/race/${raceId}`)
+    return response.data
+  }
+
+  // ── NEW: Race Replay endpoints ──
+  async getAvailableReplays(year = 2024) {
+    const response = await axios.get(`${API_BASE}/replay/available?year=${year}`)
+    return response.data
+  }
+
+  async getReplayRaceData(year, round) {
+    const response = await axios.get(`${API_BASE}/replay/race/${year}/${round}`)
+    return response.data
+  }
+
+  async getReplayLapData(year, round, lap) {
+    const response = await axios.get(`${API_BASE}/replay/lap/${year}/${round}/${lap}`)
+    return response.data
+  }
+
+  async getReplaySummary(year, round) {
+    const response = await axios.get(`${API_BASE}/replay/summary/${year}/${round}`)
     return response.data
   }
 }
