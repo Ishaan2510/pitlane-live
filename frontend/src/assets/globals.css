@@ -1,0 +1,36 @@
+:root {
+  --color-bg: #0a0a0a;
+  --color-fg: #f5f5f5;
+  --color-muted: #666;
+  --color-accent: #e10600;
+  --color-border: #222;
+  
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Work Sans', sans-serif;
+  
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: white;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}

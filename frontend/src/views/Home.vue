@@ -1,96 +1,282 @@
 <template>
   <div class="home">
-    <div class="header">
-      <h2>2025 F1 Season</h2>
-      <p class="subtitle">Predict pit strategies and compete in real-time</p>
-    </div>
-
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div><p>Loading races...</p>
-    </div>
-
-    <div v-else class="races-grid">
-      <div v-for="race in races" :key="race.id"
-           class="race-card" :class="race.status" @click="goToRace(race.id)">
-        <div class="race-status-badge" :class="race.status">{{ race.status.toUpperCase() }}</div>
-        <div class="race-header">
-          <h3>{{ race.country }} {{ race.name }}</h3>
-          <p class="circuit">{{ race.circuit }}</p>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container">
+        <h1 class="hero-title">
+          Predict race<br/>strategy in<br/>real-time
+        </h1>
+        <p class="hero-subtitle">
+          Compete against thousands using authentic F1 telemetry data
+        </p>
+        <div class="hero-actions">
+          <button @click="scrollToRaces" class="btn-primary">Get Started</button>
+          <router-link to="/replay" class="btn-secondary">View Replays</router-link>
         </div>
-        <div class="race-details">
-          <div class="detail-item"><span class="label">Date:</span><span class="value">{{ formatDate(race.date) }}</span></div>
-          <div class="detail-item"><span class="label">Laps:</span><span class="value">{{ race.laps }}</span></div>
-          <div v-if="race.currentLap" class="detail-item live-indicator">
-            <span class="label">Current Lap:</span>
-            <span class="value">{{ race.currentLap }} / {{ race.laps }}</span>
+      </div>
+    </section>
+
+    <!-- Races -->
+    <section class="races" ref="racesSection">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Races</h2>
+          <p class="section-subtitle">2025 Season</p>
+        </div>
+
+        <div v-if="loading" class="loading">Loading...</div>
+
+        <div v-else class="race-grid">
+          <div
+            v-for="race in races"
+            :key="race.id"
+            class="race-card"
+            @click="goToRace(race.id)"
+          >
+            <div class="race-status" :class="race.status">
+              {{ race.status }}
+            </div>
+            <h3 class="race-name">{{ race.name }}</h3>
+            <p class="race-circuit">{{ race.circuit }}</p>
+            <div class="race-meta">
+              <span>{{ formatDate(race.date) }}</span>
+              <span>{{ race.laps }} laps</span>
+            </div>
+            
+            <div v-if="race.currentLap" class="race-live">
+              <span>Lap {{ race.currentLap }}/{{ race.laps }}</span>
+              <div class="progress">
+                <div 
+                  class="progress-bar" 
+                  :style="{ width: ((race.currentLap / race.laps) * 100) + '%' }"
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
-        <button class="action-btn" :class="race.status">{{ getButtonText(race.status) }}</button>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script>
 import api from '../services/api.js'
+
 export default {
   name: 'Home',
-  data() { return { races: [], loading: true } },
+  data() {
+    return {
+      races: [],
+      loading: true
+    }
+  },
   async mounted() {
-    try { this.races = await api.getRaces() }
-    catch (e) { console.error(e) }
-    finally { this.loading = false }
+    await this.loadRaces()
   },
   methods: {
-    formatDate(d) { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) },
-    getButtonText(s) { return s==='live'?'🔴 Watch Live':s==='upcoming'?'View Details':'View Results' },
-    goToRace(id) { this.$router.push(`/race/${id}`) }
+    async loadRaces() {
+      try {
+        this.races = await api.getRaces()
+      } catch (error) {
+        console.error(error)
+      } finally {
+        this.loading = false
+      }
+    },
+    formatDate(dateStr) {
+      const date = new Date(dateStr)
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    },
+    goToRace(id) {
+      this.$router.push(`/race/${id}`)
+    },
+    scrollToRaces() {
+      this.$refs.racesSection.scrollIntoView({ behavior: 'smooth' })
+    }
   }
 }
 </script>
 
 <style scoped>
-.home { max-width: 1200px; margin: 0 auto; }
-.header { margin-bottom: 2rem; text-align: center; }
-.header h2 { font-size: 2.5rem; color: #fff; margin-bottom: .5rem; }
-.subtitle { color: #888; font-size: 1.1rem; }
-.loading { text-align: center; padding: 4rem; }
-.spinner {
-  width: 50px; height: 50px; border: 4px solid rgba(225,6,0,.1);
-  border-top-color: #e10600; border-radius: 50%;
-  animation: spin 1s linear infinite; margin: 0 auto 1rem;
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 4rem;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-.races-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(350px,1fr)); gap: 1.5rem; }
+
+/* Hero */
+.hero {
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 10vw, 8rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin-bottom: 2rem;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: var(--color-muted);
+  max-width: 500px;
+  margin-bottom: 3rem;
+  font-weight: 300;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.btn-primary {
+  padding: 1rem 2rem;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent);
+  color: white;
+}
+
+.btn-secondary {
+  padding: 1rem 2rem;
+  background: transparent;
+  color: var(--color-fg);
+  border: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s var(--ease);
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-fg);
+}
+
+/* Races */
+.races {
+  padding: 8rem 0;
+}
+
+.section-header {
+  margin-bottom: 4rem;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle {
+  color: var(--color-muted);
+  font-size: 1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 4rem;
+  color: var(--color-muted);
+}
+
+.race-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
 .race-card {
-  background: rgba(30,30,30,.8); border-radius: 12px; padding: 1.5rem;
-  cursor: pointer; transition: all .3s ease; border: 2px solid transparent;
-  position: relative; overflow: hidden;
+  padding: 2rem;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
 }
-.race-card:hover { transform: translateY(-5px); border-color: #e10600; box-shadow: 0 10px 30px rgba(225,6,0,.3); }
-.race-card.live { border-color: #0f0; animation: pulse 2s infinite; }
-@keyframes pulse {
-  0%,100% { box-shadow: 0 0 20px rgba(0,255,0,.3); }
-  50%      { box-shadow: 0 0 40px rgba(0,255,0,.6); }
+
+.race-card:hover {
+  border-color: var(--color-fg);
+  transform: translateY(-4px);
 }
-.race-status-badge {
-  position: absolute; top: 1rem; right: 1rem;
-  padding: .25rem .75rem; border-radius: 20px; font-size: .75rem; font-weight: bold;
+
+.race-status {
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.75rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
 }
-.race-status-badge.live     { background: #0f0; color: #000; }
-.race-status-badge.upcoming { background: #ffa500; color: #000; }
-.race-status-badge.completed{ background: #666; color: #fff; }
-.race-header { margin-bottom: 1rem; }
-.race-header h3 { font-size: 1.5rem; color: #fff; margin-bottom: .5rem; }
-.circuit { color: #888; font-size: .9rem; }
-.race-details { margin: 1.5rem 0; display: flex; flex-direction: column; gap: .5rem; }
-.detail-item { display: flex; justify-content: space-between; padding: .5rem; background: rgba(0,0,0,.3); border-radius: 6px; }
-.label { color: #888; font-size: .9rem; }
-.value { color: #fff; font-weight: 600; }
-.live-indicator { background: rgba(0,255,0,.1); border: 1px solid rgba(0,255,0,.3); }
-.action-btn { width: 100%; padding: .75rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all .3s ease; }
-.action-btn.live      { background: #0f0; color: #000; }
-.action-btn.upcoming  { background: #e10600; color: #fff; }
-.action-btn.completed { background: #555; color: #fff; }
-.action-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
+
+.race-status.live {
+  background: var(--color-accent);
+  color: white;
+}
+
+.race-status.upcoming {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-muted);
+}
+
+.race-status.completed {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-muted);
+}
+
+.race-name {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+}
+
+.race-circuit {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.race-meta {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.race-live {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.race-live span {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-muted);
+}
+
+.progress {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 0.3s var(--ease);
+}
 </style>

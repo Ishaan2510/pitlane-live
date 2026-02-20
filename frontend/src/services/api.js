@@ -38,7 +38,7 @@ class APIService {
     return response.data
   }
 
-  // ── NEW: Race Replay endpoints ──
+  // ── Race Replay endpoints ──
   async getAvailableReplays(year = 2024) {
     const response = await axios.get(`${API_BASE}/replay/available?year=${year}`)
     return response.data
@@ -56,6 +56,17 @@ class APIService {
 
   async getReplaySummary(year, round) {
     const response = await axios.get(`${API_BASE}/replay/summary/${year}/${round}`)
+    return response.data
+  }
+
+  // ── NEW: Advanced replay endpoints ──
+  async getCircuitData(year, round) {
+    const response = await axios.get(`${API_BASE}/replay/circuit/${year}/${round}`)
+    return response.data
+  }
+
+  async getWeatherData(year, round) {
+    const response = await axios.get(`${API_BASE}/replay/weather/${year}/${round}`)
     return response.data
   }
 }

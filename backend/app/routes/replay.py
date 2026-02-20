@@ -18,6 +18,22 @@ def get_race_data(year, race_round):
         return jsonify(data)
     return jsonify({'error': 'Race not found or failed to load'}), 404
 
+@bp.route('/circuit/<int:year>/<int:race_round>', methods=['GET'])
+def get_circuit_data(year, race_round):
+    """Get circuit coordinates and track layout"""
+    data = fastf1_service.get_circuit_data(year, race_round)
+    if data:
+        return jsonify(data)
+    return jsonify({'error': 'Circuit data not found'}), 404
+
+@bp.route('/weather/<int:year>/<int:race_round>', methods=['GET'])
+def get_weather_data(year, race_round):
+    """Get weather information"""
+    data = fastf1_service.get_weather_data(year, race_round)
+    if data:
+        return jsonify(data)
+    return jsonify({'error': 'Weather data not found'}), 404
+
 @bp.route('/summary/<int:year>/<int:race_round>', methods=['GET'])
 def get_race_summary(year, race_round):
     """Get quick race summary"""
