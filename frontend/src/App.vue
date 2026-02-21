@@ -37,7 +37,7 @@ export default { name: 'App' }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2rem 4rem;
+  padding: 1rem 3rem;
   background: rgba(10, 10, 10, 0.8);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--color-border);
@@ -45,7 +45,7 @@ export default { name: 'App' }
 
 .nav-logo {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   letter-spacing: 0.05em;
   color: var(--color-fg);
   text-decoration: none;
@@ -91,7 +91,7 @@ export default { name: 'App' }
 }
 
 main {
-  padding-top: 80px;
+  padding-top: 65px;
 }
 
 .fade-enter-active,
