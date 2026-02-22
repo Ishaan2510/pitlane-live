@@ -2,13 +2,26 @@
   <div class="race-replay">
     <ToastNotification :toasts="toasts" @remove="removeToast" />
 
-    <!-- ══ Race Selector ════════════════════════════════════════════════════ -->
+    <!-- ══════════════════════════════════════════════
+         RACE SELECTOR
+    ══════════════════════════════════════════════ -->
     <div v-if="!selectedRace" class="selector">
       <div class="container">
         <h1 class="page-title">Race Replay</h1>
         <p class="page-subtitle">Select a race to replay with real F1 telemetry data</p>
 
-        <div v-if="loadingRaces" class="loading">Loading races...</div>
+        <!-- Year toggle -->
+        <div class="year-selector">
+          <button
+            v-for="y in [2024, 2025]"
+            :key="y"
+            class="year-btn"
+            :class="{ active: selectedYear === y }"
+            @click="switchYear(y)"
+          >{{ y }}</button>
+        </div>
+
+        <div v-if="loadingRaces" class="loading">Loading races…</div>
 
         <div v-else class="race-list">
           <div
@@ -20,7 +33,7 @@
             <div class="race-round">R{{ race.round }}</div>
             <div class="race-details">
               <div class="race-name-text">{{ race.name }}</div>
-              <div class="race-location">{{ race.location }}</div>
+              <div class="race-location">{{ race.location }}, {{ race.country }}</div>
             </div>
             <div class="race-date">{{ formatDate(race.date) }}</div>
           </div>
@@ -28,67 +41,70 @@
       </div>
     </div>
 
-    <!-- ══ Replay Interface ══════════════════════════════════════════════════ -->
+    <!-- ══════════════════════════════════════════════
+         REPLAY INTERFACE
+    ══════════════════════════════════════════════ -->
     <div v-else class="replay-interface">
 
-      <!-- Top Bar -->
+      <!-- Top bar -->
       <div class="top-bar">
         <button @click="backToSelector" class="back-btn">← Back</button>
-        <div class="race-title">
-          <span class="race-name-label">{{ raceData.name }}</span>
-          <span class="race-circuit">{{ raceData.circuit }}</span>
+        <div class="race-title-block">
+          <span class="race-name-display">{{ raceData.name }}</span>
+          <span class="race-circuit-display">{{ raceData.circuit }}</span>
         </div>
         <div class="lap-counter">
-          Lap: <strong>{{ currentLap }}/{{ raceData.total_laps }}</strong>
+          Lap <strong>{{ currentLap }} / {{ raceData.total_laps }}</strong>
         </div>
       </div>
 
-      <!-- 3-Column Main Layout -->
+      <!-- Three-column body -->
       <div class="main-layout">
 
-        <!-- Left: Weather + Leaderboard -->
+        <!-- ── LEFT sidebar: Weather + Leaderboard ── -->
         <div class="left-sidebar">
           <WeatherPanel :weather="weatherData" />
 
-          <div class="leaderboard">
-            <h4 class="section-title">LEADERBOARD</h4>
+          <div class="lb-section">
+            <div class="sidebar-heading">LEADERBOARD</div>
             <div
-              v-for="driver in currentDrivers"
+              v-for="driver in currentLapDrivers"
               :key="driver.driver"
-              class="driver-item"
+              class="lb-row"
               :class="{ selected: selectedDriver === driver.driver }"
-              @click="selectDriver(driver.driver)"
+              @click="onSelectDriver(driver.driver)"
             >
-              <div class="driver-pos">{{ driver.position }}</div>
-              <div class="driver-code">{{ driver.driver }}</div>
-              <div class="driver-tire">{{ getTireEmoji(driver.compound) }}</div>
+              <div class="lb-pos">{{ driver.position }}</div>
+              <div class="lb-code">{{ driver.driver }}</div>
+              <div class="lb-tire">{{ getTireEmoji(driver.compound) }}</div>
             </div>
           </div>
         </div>
 
-        <!-- Centre: Track + Controls -->
+        <!-- ── CENTER: Track canvas + controls ── -->
         <div class="track-area">
-          <TrackCanvas
-            :drivers="currentDrivers"
-            :circuitData="circuitData"
-            :selectedDriver="selectedDriver"
-            @select-driver="selectDriver"
-          />
+          <!-- Track fills all available vertical space -->
+          <div class="canvas-wrapper">
+            <TrackCanvas
+              :drivers="currentLapDrivers"
+              :circuitData="circuitData"
+              :selectedDriver="selectedDriver"
+              :lapDuration="playbackSpeed"
+              @select-driver="onSelectDriver"
+            />
+          </div>
 
-          <!-- Playback Controls -->
+          <!-- Playback controls bar -->
           <div class="controls">
-            <button @click="togglePlay" class="control-btn primary">
-              {{ replayRunning ? '⏸' : '▶' }}
-            </button>
-            <button @click="previousLap" :disabled="currentLap <= 1" class="control-btn">⏮</button>
-            <button @click="nextLap" :disabled="currentLap >= raceData.total_laps" class="control-btn">⏭</button>
+            <button
+              class="control-btn primary"
+              @click="replayRunning ? pause() : play()"
+            >{{ replayRunning ? '⏸' : '▶' }}</button>
 
-            <!--
-              Speed selector — note the label↔value mapping:
-              0.5× = 2000ms per lap (slow), 1× = 1000ms, 2× = 500ms (fast) …
-              Higher ms value = slower playback.
-            -->
-            <select v-model.number="playbackSpeed" class="speed-select">
+            <button class="control-btn" @click="previousLap" :disabled="currentLap <= 1">⏮</button>
+            <button class="control-btn" @click="nextLap"     :disabled="currentLap >= raceData.total_laps">⏭</button>
+
+            <select v-model.number="playbackSpeed" @change="onSpeedChange" class="speed-select">
               <option :value="2000">0.5×</option>
               <option :value="1000">1×</option>
               <option :value="500">2×</option>
@@ -96,82 +112,117 @@
               <option :value="125">8×</option>
             </select>
 
-            <button @click="restart" class="control-btn">↻ Restart</button>
+            <button class="control-btn restart" @click="restart">↻ Restart</button>
           </div>
         </div>
 
-        <!-- Right: Telemetry -->
+        <!-- ── RIGHT sidebar: Pit stops + Telemetry ── -->
         <div class="right-sidebar">
-          <TelemetryPanel :driver="selectedDriverData" />
+
+          <!-- TOP: Recent pit stops -->
+          <div class="pit-section">
+            <div class="sidebar-heading">RECENT PIT STOPS</div>
+
+            <div v-if="pitStopLog.length === 0" class="pits-empty">
+              No pit stops yet
+            </div>
+
+            <div class="pit-scroll">
+              <div
+                v-for="(pit, i) in pitStopLog"
+                :key="i"
+                class="pit-entry"
+              >
+                <div class="pit-meta">
+                  <span class="pit-lap">Lap {{ pit.lap }}</span>
+                </div>
+                <div class="pit-driver-name">{{ pit.driver }}</div>
+                <span class="tyre-pill" :class="pit.compound.toLowerCase()">
+                  {{ getTireEmoji(pit.compound) }} {{ pit.compound }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar divider -->
+          <div class="sidebar-divider" />
+
+          <!-- BOTTOM: Telemetry -->
+          <div class="telemetry-section">
+            <TelemetryPanel
+              :driver="selectedDriverData"
+              :enriched="telemetryEnriched"
+              :loading="telemetryLoading"
+            />
+          </div>
+
         </div>
 
       </div><!-- /.main-layout -->
 
-      <!-- Bottom Progress -->
+      <!-- Bottom progress bar -->
       <ProgressBar :currentLap="currentLap" :totalLaps="raceData.total_laps" />
 
-    </div><!-- /.replay-interface -->
+    </div>
   </div>
 </template>
 
 <script>
-import api from '../services/api.js'
-import { useToast } from '../composables/useToast.js'
+import api              from '../services/api.js'
+import { useToast }     from '../composables/useToast.js'
 import ToastNotification from '../components/ToastNotification.vue'
-import TrackCanvas        from '../components/TrackCanvas.vue'
-import WeatherPanel       from '../components/WeatherPanel.vue'
-import TelemetryPanel     from '../components/TelemetryPanel.vue'
-import ProgressBar        from '../components/ProgressBar.vue'
+import TrackCanvas      from '../components/TrackCanvas.vue'
+import WeatherPanel     from '../components/WeatherPanel.vue'
+import TelemetryPanel   from '../components/TelemetryPanel.vue'
+import ProgressBar      from '../components/ProgressBar.vue'
 
 export default {
   name: 'RaceReplay',
   components: { ToastNotification, TrackCanvas, WeatherPanel, TelemetryPanel, ProgressBar },
 
   setup() {
-    const { toasts, remove: removeToast, show, pit } = useToast()
-    return { toasts, removeToast, showToast: show, pitToast: pit }
+    const { toasts, remove: removeToast, show } = useToast()
+    return { toasts, removeToast, showToast: show }
   },
 
   data() {
     return {
+      // selector
+      selectedYear:   2024,
       loadingRaces:   true,
       availableRaces: [],
+
+      // replay
       selectedRace:   null,
       raceData:       null,
       circuitData:    null,
       weatherData:    null,
       currentLap:     1,
       currentLapData: null,
+
+      // playback
       replayRunning:  false,
       replayInterval: null,
-      // 1000ms = 1 lap per second = 1× speed
       playbackSpeed:  1000,
-      lastPitLap:     {},
-      selectedDriver: null
+
+      // driver selection
+      selectedDriver:    null,
+      telemetryEnriched: {},
+      telemetryLoading:  false,
+
+      // pit stop log
+      pitStopLog:   [],   // { lap, driver, compound }
+      seenPitLaps:  {}    // driverCode → lap number last logged
     }
   },
 
   computed: {
-    currentDrivers() {
-      if (!this.currentLapData?.drivers) return []
-      return [...this.currentLapData.drivers]
-        .filter(d => d.position != null)
-        .sort((a, b) => a.position - b.position)
+    currentLapDrivers() {
+      return this.currentLapData?.drivers ?? []
     },
     selectedDriverData() {
-      if (!this.selectedDriver) return null
-      return this.currentDrivers.find(d => d.driver === this.selectedDriver) || null
-    }
-  },
-
-  watch: {
-    // Restart the interval with the new speed while playback is running
-    playbackSpeed(newMs) {
-      if (this.replayRunning) {
-        clearInterval(this.replayInterval)
-        this.replayInterval = null
-        this._startInterval(newMs)
-      }
+      if (!this.selectedDriver || !this.currentLapData) return null
+      return this.currentLapData.drivers.find(d => d.driver === this.selectedDriver) ?? null
     }
   },
 
@@ -184,10 +235,18 @@ export default {
   },
 
   methods: {
-    // ── Data loading ───────────────────────────────────────────────────────
+    // ── Year selector ─────────────────────────────────────────────────────────
+    async switchYear(year) {
+      if (year === this.selectedYear) return
+      this.selectedYear   = year
+      this.loadingRaces   = true
+      this.availableRaces = []
+      await this.loadAvailableRaces()
+    },
+
     async loadAvailableRaces() {
       try {
-        this.availableRaces = await api.getAvailableReplays(2024)
+        this.availableRaces = await api.getAvailableReplays(this.selectedYear)
       } catch (e) {
         console.error(e)
       } finally {
@@ -195,25 +254,32 @@ export default {
       }
     },
 
+    // ── Race selection ────────────────────────────────────────────────────────
     async selectRace(race) {
       this.selectedRace = race
       this.showToast('Loading race data…')
 
       try {
-        this.raceData    = await api.getReplayRaceData(race.year || 2024, race.round)
-        this.circuitData = await api.getCircuitData(race.year || 2024, race.round)
-        this.weatherData = await api.getWeatherData(race.year || 2024, race.round)
+        const year  = race.year || this.selectedYear
+        const round = race.round
 
-        this.currentLap    = 1
-        this.lastPitLap    = {}
-        this.selectedDriver = null
+        const [raceData, circuitData, weatherData] = await Promise.all([
+          api.getReplayRaceData(year, round),
+          api.getCircuitData(year, round),
+          api.getWeatherData(year, round)
+        ])
+
+        this.raceData    = raceData
+        this.circuitData = circuitData
+        this.weatherData = weatherData
+
+        this.currentLap        = 1
+        this.pitStopLog        = []
+        this.seenPitLaps       = {}
+        this.selectedDriver    = null
+        this.telemetryEnriched = {}
+
         this.updateCurrentLap()
-
-        // Auto-select P1 so right sidebar is never blank on first load
-        if (this.currentDrivers.length) {
-          this.selectedDriver = this.currentDrivers[0].driver
-        }
-
         this.showToast('Race loaded ✓')
       } catch (e) {
         console.error(e)
@@ -224,67 +290,66 @@ export default {
 
     backToSelector() {
       this.pause()
-      Object.assign(this.$data, {
-        selectedRace:   null,
-        raceData:       null,
-        circuitData:    null,
-        weatherData:    null,
-        currentLap:     1,
-        currentLapData: null,
-        replayRunning:  false,
-        replayInterval: null,
-        lastPitLap:     {},
-        selectedDriver: null
-      })
+      this.selectedRace      = null
+      this.raceData          = null
+      this.circuitData       = null
+      this.weatherData       = null
+      this.currentLap        = 1
+      this.pitStopLog        = []
+      this.seenPitLaps       = {}
+      this.selectedDriver    = null
+      this.telemetryEnriched = {}
     },
 
-    // ── Lap update ─────────────────────────────────────────────────────────
+    // ── Lap management ────────────────────────────────────────────────────────
     updateCurrentLap() {
       if (!this.raceData || this.currentLap > this.raceData.laps.length) return
       this.currentLapData = this.raceData.laps[this.currentLap - 1]
+      this.detectPitStops()
 
-      // Batch all pit-outs in this lap into a SINGLE toast
-      const pitting = []
-      this.currentDrivers.forEach(driver => {
-        const key = driver.driver
-        if (driver.pit_out && this.lastPitLap[key] !== this.currentLap) {
-          pitting.push(`${driver.driver} → ${driver.compound}`)
-          this.lastPitLap[key] = this.currentLap
-        }
-      })
-
-      if (pitting.length === 1) {
-        this.pitToast(`🔧 ${pitting[0]}`)
-      } else if (pitting.length > 1) {
-        this.pitToast(`🔧 Pits: ${pitting.join(' | ')}`)
+      // Refresh telemetry if a driver is selected
+      if (this.selectedDriver) {
+        this.fetchTelemetry(this.selectedDriver, this.currentLap)
       }
     },
 
-    // ── Playback controls ──────────────────────────────────────────────────
-    togglePlay() {
-      this.replayRunning ? this.pause() : this.play()
+    detectPitStops() {
+      if (!this.currentLapData) return
+      this.currentLapData.drivers.forEach(driver => {
+        const key = driver.driver
+        if (driver.pit_out && this.seenPitLaps[key] !== this.currentLap) {
+          this.seenPitLaps[key] = this.currentLap
+          // prepend so newest is on top
+          this.pitStopLog.unshift({
+            lap:      this.currentLap,
+            driver:   driver.driver,
+            compound: driver.compound || 'UNKNOWN'
+          })
+        }
+      })
     },
 
     play() {
-      this.replayRunning = true
-      this._startInterval(this.playbackSpeed)
-    },
-
-    _startInterval(ms) {
+      this.replayRunning  = true
       this.replayInterval = setInterval(() => {
         if (this.currentLap >= this.raceData.total_laps) {
           this.pause()
-          this.showToast('Race finished! 🏁')
+          this.showToast('Race finished!')
         } else {
-          this.nextLap()
+          this.currentLap++
+          this.updateCurrentLap()
         }
-      }, ms)
+      }, this.playbackSpeed)
     },
 
     pause() {
       this.replayRunning = false
       clearInterval(this.replayInterval)
       this.replayInterval = null
+    },
+
+    onSpeedChange() {
+      if (this.replayRunning) { this.pause(); this.play() }
     },
 
     nextLap() {
@@ -303,46 +368,96 @@ export default {
 
     restart() {
       this.pause()
-      this.currentLap = 1
+      this.currentLap  = 1
+      this.pitStopLog  = []
+      this.seenPitLaps = {}
       this.updateCurrentLap()
-      this.showToast('Restarted ↺')
+      this.showToast('Restarted')
     },
 
-    // ── Driver selection ───────────────────────────────────────────────────
-    selectDriver(code) {
-      this.selectedDriver = (this.selectedDriver === code && code !== null) ? null : code
+    // ── Driver selection + telemetry ──────────────────────────────────────────
+    async onSelectDriver(code) {
+      if (this.selectedDriver === code) {
+        this.selectedDriver    = null
+        this.telemetryEnriched = {}
+        return
+      }
+      this.selectedDriver = code
+      await this.fetchTelemetry(code, this.currentLap)
     },
 
-    // ── Helpers ────────────────────────────────────────────────────────────
+    async fetchTelemetry(code, lap) {
+      if (!this.selectedRace) return
+      this.telemetryLoading  = true
+      this.telemetryEnriched = {}
+      const year  = this.selectedRace.year || this.selectedYear
+      const round = this.selectedRace.round
+      const data  = await api.getDriverTelemetry(year, round, code, lap)
+      if (data) this.telemetryEnriched = data
+      this.telemetryLoading = false
+    },
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
     getTireEmoji(compound) {
-      return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪' }[compound] || '⚫'
+      return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪', INTERMEDIATE:'🟢', WET:'🔵' }[compound] ?? '⚫'
     },
 
     formatDate(dateStr) {
       if (!dateStr) return 'TBD'
-      return new Date(dateStr).toLocaleDateString('en-US', { month:'short', day:'numeric' })
+      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     }
   }
 }
 </script>
 
 <style scoped>
+/* ════════════════════════════════════════════════════
+   SELECTOR
+════════════════════════════════════════════════════ */
 .container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 4rem;
 }
 
-/* ══ Selector ══════════════════════════════════════════════════════════════ */
 .selector { padding: 4rem 0; }
+
 .page-title {
   font-family: var(--font-display);
   font-size: 3rem;
   letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
 }
-.page-subtitle { color: var(--color-muted); margin-bottom: 3rem; }
-.loading { text-align:center; padding:4rem; color:var(--color-muted); }
+.page-subtitle {
+  color: var(--color-muted);
+  margin-bottom: 2rem;
+}
+
+/* Year toggle */
+.year-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+.year-btn {
+  padding: 0.45rem 1.4rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 2px;
+}
+.year-btn:hover       { border-color: var(--color-fg); color: var(--color-fg); }
+.year-btn.active      { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
+
+.loading {
+  text-align: center;
+  padding: 4rem;
+  color: var(--color-muted);
+}
 
 .race-list {
   display: grid;
@@ -354,125 +469,148 @@ export default {
   display: grid;
   grid-template-columns: 80px 1fr 150px;
   align-items: center;
-  padding: 1.5rem 2rem;
+  padding: 1.25rem 2rem;
   background: var(--color-bg);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
-.race-item:hover { background: rgba(255,255,255,0.02); }
-.race-round { font-family:var(--font-display); font-size:1.5rem; color:var(--color-muted); }
-.race-name-text  { font-weight:500; margin-bottom:0.25rem; }
-.race-location { font-size:0.85rem; color:var(--color-muted); }
-.race-date { text-align:right; color:var(--color-muted); font-size:0.9rem; }
+.race-item:hover    { background: rgba(255,255,255,0.02); }
+.race-round         { font-family: var(--font-display); font-size: 1.5rem; color: var(--color-muted); }
+.race-name-text     { font-weight: 500; margin-bottom: 0.2rem; }
+.race-location      { font-size: 0.82rem; color: var(--color-muted); }
+.race-date          { text-align: right; color: var(--color-muted); font-size: 0.9rem; }
 
+
+/* ════════════════════════════════════════════════════
+   REPLAY INTERFACE — full-viewport
+════════════════════════════════════════════════════ */
 .replay-interface {
-  height: calc(100vh - 65px);
+  /* sit under the fixed 56px navbar */
+  height: calc(100vh - 56px);
   display: flex;
   flex-direction: column;
   background: #0a0a0a;
   overflow: hidden;
 }
 
-/* Top bar */
+/* ── Top bar ── */
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 2rem;
+  padding: 0.6rem 1.5rem;
   border-bottom: 1px solid var(--color-border);
   background: rgba(10,10,10,0.98);
   flex-shrink: 0;
+  height: 48px;
 }
+
 .back-btn {
-  padding: 0.4rem 0.9rem;
+  padding: 0.35rem 0.85rem;
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-fg);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   cursor: pointer;
-  border-radius: 4px;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s;
+  border-radius: 2px;
 }
 .back-btn:hover { border-color: var(--color-fg); }
-.race-title { flex:1; text-align:center; }
-.race-name-label { font-family:var(--font-display); font-size:1.2rem; margin-right:0.75rem; }
-.race-circuit    { font-size:0.8rem; color:var(--color-muted); }
-.lap-counter     { font-size:0.9rem; color:var(--color-muted); }
-.lap-counter strong { color:var(--color-fg); }
 
-/* Main 3-column */
+.race-title-block   { flex: 1; text-align: center; }
+.race-name-display  { font-family: var(--font-display); font-size: 1.15rem; margin-right: 0.6rem; }
+.race-circuit-display { font-size: 0.8rem; color: var(--color-muted); }
+
+.lap-counter        { font-size: 0.85rem; color: var(--color-muted); white-space: nowrap; }
+.lap-counter strong { color: var(--color-fg); }
+
+/* ── Three-column body ── */
 .main-layout {
   flex: 1;
   display: grid;
-  grid-template-columns: 220px 1fr 280px;
+  /* narrower sidebars → more canvas space */
+  grid-template-columns: 200px 1fr 255px;
   overflow: hidden;
   min-height: 0;
 }
 
-/* ── Left Sidebar ── */
+/* ── LEFT sidebar ── */
 .left-sidebar {
-  background: rgba(8,8,8,0.98);
   border-right: 1px solid var(--color-border);
-  padding: 1rem;
+  padding: 0.65rem;
   overflow-y: auto;
+  background: rgba(10,10,10,0.97);
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 0.5rem;
 }
-.leaderboard   { margin-top:0.75rem; }
-.section-title {
-  font-size: 0.68rem;
+
+.lb-section { flex: 1; min-height: 0; overflow-y: auto; }
+
+.sidebar-heading {
+  font-size: 0.67rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--color-muted);
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.35rem;
-  border-bottom: 1px solid var(--color-border);
+  color: #555;
+  margin-bottom: 0.45rem;
+  padding: 0 0.15rem;
 }
-.driver-item {
+
+.lb-row {
   display: grid;
-  grid-template-columns: 26px 1fr 22px;
+  grid-template-columns: 28px 1fr 22px;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.5rem 0.65rem;
+  gap: 0.35rem;
+  padding: 0.45rem 0.4rem;
   margin-bottom: 2px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.12s;
 }
-.driver-item:hover    { background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.08); }
-.driver-item.selected { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.2); }
-.driver-pos  { font-size:0.82rem; font-weight:700; color:#777; text-align:center; }
-.driver-code { font-family:monospace; font-weight:700; font-size:0.88rem; color:#fff; }
-.driver-tire { font-size:0.95rem; text-align:center; }
+.lb-row:hover    { background: rgba(255,255,255,0.04); border-color: #2a2a2a; }
+.lb-row.selected { background: rgba(255,255,255,0.07); border-color: #555; }
 
-/* ── Track Area ── */
+.lb-pos  { font-family: var(--font-display); font-size: 1rem; color: #555; text-align: center; }
+.lb-code { font-family: monospace; font-weight: 700; font-size: 0.88rem; }
+.lb-tire { font-size: 0.95rem; text-align: center; }
+
+/* ── CENTER track area ── */
 .track-area {
   display: flex;
   flex-direction: column;
-  padding: 0.75rem;
   min-height: 0;
   overflow: hidden;
 }
 
+/* Canvas wrapper fills ALL remaining vertical space above controls */
+.canvas-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Playback controls bar */
 .controls {
   display: flex;
-  gap: 0.4rem;
-  margin-top: 0.55rem;
-  flex-shrink: 0;
   align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  background: rgba(8,8,8,0.98);
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
+
 .control-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.42rem 0.9rem;
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-fg);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  border-radius: 4px;
-  transition: border-color 0.15s;
+  transition: all 0.12s;
+  border-radius: 2px;
   white-space: nowrap;
 }
 .control-btn.primary {
@@ -483,40 +621,95 @@ export default {
   text-align: center;
 }
 .control-btn:hover:not(:disabled) { border-color: var(--color-fg); }
-.control-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.control-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.control-btn.restart  { margin-left: auto; }
 
 .speed-select {
-  padding: 0.5rem 0.65rem;
-  background: #1a1a1a;
+  padding: 0.42rem 0.6rem;
+  background: transparent;
   border: 1px solid var(--color-border);
-  color: #fff;
-  font-size: 0.85rem;
+  color: var(--color-fg);
+  font-size: 0.82rem;
   cursor: pointer;
-  border-radius: 4px;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  /* small chevron via background image */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.55rem center;
-  padding-right: 1.8rem;
-  transition: border-color 0.15s;
+  border-radius: 2px;
 }
-.speed-select:hover  { border-color: rgba(255,255,255,0.3); }
-.speed-select:focus  { outline: none; border-color: rgba(255,255,255,0.4); }
-/* Dropdown options — dark background */
-.speed-select option {
-  background: #1a1a1a;
-  color: #fff;
-}
+.speed-select option { background: #111; }
 
-/* ── Right Sidebar ── */
+/* ── RIGHT sidebar ── */
 .right-sidebar {
-  background: rgba(8,8,8,0.98);
   border-left: 1px solid var(--color-border);
-  overflow-y: auto;
+  background: rgba(10,10,10,0.97);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+/* Pit stops — top portion, scrollable, up to 45% of sidebar */
+.pit-section {
+  padding: 0.65rem;
+  max-height: 42%;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.pit-scroll {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 2px;
+}
+
+.pits-empty {
+  color: #3a3a3a;
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.pit-entry {
+  padding: 0.5rem 0.4rem;
+  margin-bottom: 4px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid #181818;
+}
+.pit-meta { display: flex; justify-content: space-between; margin-bottom: 0.15rem; }
+.pit-lap  { font-size: 0.67rem; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+.pit-driver-name {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #ddd;
+  margin-bottom: 0.25rem;
+}
+
+/* Tyre pills */
+.tyre-pill {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.tyre-pill.soft         { background: rgba(200,0,0,0.3);     color: #ff7777; }
+.tyre-pill.medium       { background: rgba(200,200,0,0.25);  color: #ffff77; }
+.tyre-pill.hard         { background: rgba(220,220,220,0.18); color: #ddd;   }
+.tyre-pill.intermediate { background: rgba(0,180,0,0.25);   color: #77ff77; }
+.tyre-pill.wet          { background: rgba(0,100,255,0.25); color: #77aaff; }
+.tyre-pill.unknown      { background: rgba(100,100,100,0.2); color: #777;   }
+
+/* Divider between pit stops and telemetry */
+.sidebar-divider {
+  height: 1px;
+  background: #1a1a1a;
+  flex-shrink: 0;
+}
+
+/* Telemetry — bottom portion, fills remaining space */
+.telemetry-section {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 </style>

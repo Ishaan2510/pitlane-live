@@ -5,11 +5,15 @@ import json
 from datetime import datetime
 import numpy as np
 import threading
+import requests
+
 
 # Setup FastF1 cache
 CACHE_DIR = Path(__file__).parent.parent.parent / 'fastf1_cache'
 CACHE_DIR.mkdir(exist_ok=True)
 fastf1.Cache.enable_cache(str(CACHE_DIR))
+
+OPENF1_BASE = 'https://api.openf1.org/v1'
 
 class FastF1Service:
     """Service to fetch and process F1 race data from FastF1"""
@@ -103,7 +107,7 @@ class FastF1Service:
             try:
                 print(f"Loading {year} Round {race_round} {session_type}...")
                 session = fastf1.get_session(year, race_round, session_type)
-                session.load()
+                session.load(telemetry=False)
                 self._session_cache[key] = session
                 return session
             except Exception as e:
@@ -216,9 +220,9 @@ class FastF1Service:
                 'laps':       []
             }
             
-            laps = session.laps
+            laps = session.laps.copy()
             for lap_number in range(1, race_data['total_laps'] + 1):
-                lap_data = self._process_lap(laps, lap_number)
+                lap_data = self._build_lap(laps, lap_number)
                 race_data['laps'].append(lap_data)
             
             # Write to a temp file first, then rename — prevents corrupt reads
@@ -230,8 +234,8 @@ class FastF1Service:
             print(f"✅ Processed {len(race_data['laps'])} laps → {cache_file.name}")
             return race_data
 
-    def _process_lap(self, laps, lap_number):
-        """Process a single lap with telemetry data"""
+    def _build_lap(self, laps, lap_number):
+        """Build a single lap with telemetry data"""
         lap_laps = laps[laps['LapNumber'] == lap_number]
         
         drivers = []
@@ -292,5 +296,277 @@ class FastF1Service:
         except Exception as e:
             print(f"Error getting summary: {e}")
             return None
+
+    def get_driver_lap_telemetry(self, year, race_round, driver_code, lap_number):
+        """
+        Fetch speed telemetry for ONE driver on ONE lap, on demand.
+        Called by /api/replay/telemetry when user selects a driver in the UI.
+        """
+        cache_key = self.processed_cache_dir / f"{year}_R{race_round}_tel_{driver_code}_L{lap_number}.json"
+
+        if cache_key.exists():
+            with open(cache_key) as f:
+                return json.load(f)
+
+        try:
+            session = fastf1.get_session(year, race_round, 'Race')
+            session.load(telemetry=False)
+
+            laps = session.laps
+            lap = laps[
+                (laps['Driver'] == driver_code) &
+                (laps['LapNumber'] == lap_number)
+            ]
+            if lap.empty:
+                return None
+
+            tel = lap.iloc[0].get_telemetry()
+            result = {
+                'driver':    driver_code,
+                'lap':       lap_number,
+                'avg_speed': round(float(tel['Speed'].mean()), 1) if 'Speed' in tel else None,
+                'max_speed': round(float(tel['Speed'].max()),  1) if 'Speed' in tel else None,
+            }
+
+            with open(cache_key, 'w') as f:
+                json.dump(result, f)
+
+            return result
+
+        except Exception as e:
+            print(f"[get_driver_lap_telemetry] {e}")
+            return None
+
+    def get_live_session_key(self):
+        """Get the session_key for the current or most recent live session."""
+        try:
+            r = requests.get(f'{OPENF1_BASE}/sessions?session_type=Race', timeout=5)
+            sessions = r.json()
+            if not sessions:
+                return None
+            return sessions[-1]['session_key']
+        except Exception as e:
+            print(f"[get_live_session_key] {e}")
+            return None
+
+    def get_live_positions(self, session_key=None):
+        """
+        Current driver positions from OpenF1.
+        Returns a list ordered by position.
+        """
+        if not session_key:
+            session_key = self.get_live_session_key()
+        if not session_key:
+            return []
+
+        try:
+            r = requests.get(
+                f'{OPENF1_BASE}/position?session_key={session_key}',
+                timeout=5
+            )
+            raw = r.json()
+
+            # Keep only the latest entry per driver
+            latest = {}
+            for entry in raw:
+                drv = entry['driver_number']
+                if drv not in latest or entry['date'] > latest[drv]['date']:
+                    latest[drv] = entry
+
+            return sorted(latest.values(), key=lambda x: x.get('position', 99))
+
+        except Exception as e:
+            print(f"[get_live_positions] {e}")
+            return []
+
+    def get_live_car_data(self, session_key=None, driver_number=None):
+        """
+        Latest telemetry for a specific driver: speed, gear, throttle, brake, DRS.
+        """
+        if not session_key:
+            session_key = self.get_live_session_key()
+        if not session_key:
+            return None
+
+        try:
+            url = f'{OPENF1_BASE}/car_data?session_key={session_key}'
+            if driver_number:
+                url += f'&driver_number={driver_number}'
+
+            r = requests.get(url, timeout=5)
+            data = r.json()
+            if not data:
+                return None
+
+            latest = data[-1]
+            return {
+                'speed':    latest.get('speed'),
+                'gear':     latest.get('n_gear'),
+                'throttle': latest.get('throttle'),
+                'brake':    latest.get('brake'),
+                'drs':      latest.get('drs'),
+            }
+        except Exception as e:
+            print(f"[get_live_car_data] {e}")
+            return None
+
+    def get_live_intervals(self, session_key=None):
+        """
+        Real time gaps between drivers (the +3.2s you see on TV).
+        OpenF1 /intervals endpoint, updated every few seconds.
+        """
+        if not session_key:
+            session_key = self.get_live_session_key()
+        if not session_key:
+            return {}
+
+        try:
+            r = requests.get(
+                f'{OPENF1_BASE}/intervals?session_key={session_key}',
+                timeout=5
+            )
+            raw = r.json()
+
+            latest = {}
+            for entry in raw:
+                drv = entry['driver_number']
+                if drv not in latest or entry['date'] > latest[drv]['date']:
+                    latest[drv] = entry
+
+            return {
+                drv: {
+                    'gap_to_leader': entry.get('gap_to_leader'),
+                    'interval':      entry.get('interval'),
+                }
+                for drv, entry in latest.items()
+            }
+        except Exception as e:
+            print(f"[get_live_intervals] {e}")
+            return {}
+
+    def get_live_pit_stops(self, session_key=None):
+        """All pit stops so far in the current session."""
+        if not session_key:
+            session_key = self.get_live_session_key()
+        if not session_key:
+            return []
+
+        try:
+            r = requests.get(
+                f'{OPENF1_BASE}/pit?session_key={session_key}',
+                timeout=5
+            )
+            return r.json()
+        except Exception as e:
+            print(f"[get_live_pit_stops] {e}")
+            return []
+
+    def get_live_race_control(self, session_key=None):
+        """Race control messages: safety car, red flag, VSC, track limits, etc."""
+        if not session_key:
+            session_key = self.get_live_session_key()
+        if not session_key:
+            return []
+
+        try:
+            r = requests.get(
+                f'{OPENF1_BASE}/race_control?session_key={session_key}',
+                timeout=5
+            )
+            return r.json()
+        except Exception as e:
+            print(f"[get_live_race_control] {e}")
+            return []
+
+    def get_live_stints(self, session_key=None):
+        """Current tyre stints (compound, age) per driver."""
+        if not session_key:
+            session_key = self.get_live_session_key()
+        if not session_key:
+            return {}
+
+        try:
+            r = requests.get(
+                f'{OPENF1_BASE}/stints?session_key={session_key}',
+                timeout=5
+            )
+            raw = r.json()
+
+            # Latest stint per driver
+            stints = {}
+            for entry in raw:
+                drv = entry['driver_number']
+                if drv not in stints or entry.get('stint_number', 0) > stints[drv].get('stint_number', 0):
+                    stints[drv] = entry
+
+            return {
+                drv: {
+                    'compound': s.get('compound'),
+                    'tyre_age': s.get('tyre_age_at_start', 0),
+                    'stint_no': s.get('stint_number'),
+                }
+                for drv, s in stints.items()
+            }
+        except Exception as e:
+            print(f"[get_live_stints] {e}")
+            return {}
+
+    def get_live_full_state(self):
+        """
+        One call that assembles everything the frontend needs for live mode:
+        positions + intervals + stints + latest race control message.
+        The frontend polls this every 3 seconds via SSE or short polling.
+        """
+        session_key = self.get_live_session_key()
+        if not session_key:
+            return {'error': 'No live session', 'session_key': None}
+
+        positions = self.get_live_positions(session_key)
+        intervals = self.get_live_intervals(session_key)
+        stints    = self.get_live_stints(session_key)
+        rc_msgs   = self.get_live_race_control(session_key)
+        latest_rc = rc_msgs[-1] if rc_msgs else None
+
+        # Driver number → abbreviation/team mapping from OpenF1
+        try:
+            drv_r = requests.get(
+                f'{OPENF1_BASE}/drivers?session_key={session_key}',
+                timeout=5
+            )
+            drivers_meta = {
+                str(d['driver_number']): {
+                    'code': d.get('name_acronym', '???'),
+                    'team': d.get('team_name', 'Unknown'),
+                }
+                for d in drv_r.json()
+            }
+        except:
+            drivers_meta = {}
+
+        # Merge everything into one list
+        merged = []
+        for pos in positions:
+            drv_num  = str(pos['driver_number'])
+            meta     = drivers_meta.get(drv_num, {})
+            gap_info = intervals.get(pos['driver_number'], {})
+            stint    = stints.get(pos['driver_number'], {})
+
+            merged.append({
+                'driver_number': pos['driver_number'],
+                'driver':        meta.get('code', drv_num),
+                'team':          meta.get('team', 'Unknown'),
+                'position':      pos.get('position'),
+                'gap':           gap_info.get('gap_to_leader') or 'LEADER',
+                'interval':      gap_info.get('interval'),
+                'compound':      stint.get('compound', 'UNKNOWN'),
+                'tire_age':      stint.get('tyre_age', 0),
+            })
+
+        return {
+            'session_key':  session_key,
+            'drivers':      merged,
+            'race_control': latest_rc,
+            'timestamp':    datetime.utcnow().isoformat(),
+        }
 
 fastf1_service = FastF1Service()

@@ -69,6 +69,17 @@ class APIService {
     const response = await axios.get(`${API_BASE}/replay/weather/${year}/${round}`)
     return response.data
   }
+
+  async getDriverTelemetry(year, round, driver, lap) {
+    try {
+      const response = await axios.get(
+        `${API_BASE}/replay/telemetry/${year}/${round}/${driver}/${lap}`
+      )
+      return response.data
+    } catch (e) {
+      return null  // telemetry is optional, don't crash
+    }
+  }
 }
 
 export default new APIService()

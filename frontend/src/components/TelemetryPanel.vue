@@ -1,159 +1,125 @@
 <template>
   <div class="telemetry-panel">
+    <div class="section-title">TELEMETRY</div>
 
-    <!-- Empty / no selection -->
+    <!-- Empty state -->
     <div v-if="!driver" class="empty-state">
-      <div class="empty-icon">👆</div>
-      <p>Click a driver on the track<br>or in the leaderboard</p>
+      <div class="empty-icon">🏎</div>
+      <p>Click a driver on the track or in the leaderboard</p>
     </div>
 
+    <!-- Driver data -->
     <template v-else>
-      <!-- Header -->
-      <div class="panel-header">
-        <div class="driver-badge" :style="{ borderColor: teamColor }">
-          <span class="driver-code">{{ driver.driver }}</span>
-          <span class="driver-pos">P{{ driver.position }}</span>
-        </div>
-        <div class="driver-meta">
-          <span class="team-name" :style="{ color: teamColor }">{{ driver.team }}</span>
-          <span class="gap-label" :class="{ leader: driver.gap === 'LEADER' }">
-            {{ driver.gap || 'LEADER' }}
-          </span>
-        </div>
+      <!-- Driver header -->
+      <div class="driver-header">
+        <div class="driver-name">{{ driver.driver }}</div>
+        <div class="driver-team" :style="{ color: teamColor }">{{ driver.team }}</div>
       </div>
 
-      <!-- Stats 2-col grid -->
-      <div class="stats-grid">
+      <!-- Stats -->
+      <div class="stat-list">
 
-        <div class="stat-card" :class="{ unavailable: !hasSpeed }">
-          <span class="stat-icon">🏎️</span>
-          <span class="stat-label">Avg Speed</span>
-          <span class="stat-value" :class="{ muted: !hasSpeed }">
-            {{ formatSpeed(driver.avg_speed) }}
+        <div class="stat-row">
+          <span class="stat-label">Position</span>
+          <span class="stat-value pos">P{{ driver.position }}</span>
+        </div>
+
+        <div class="stat-row">
+          <span class="stat-label">Gap</span>
+          <span class="stat-value" :class="{ leader: driver.gap === 'LEADER' }">
+            {{ driver.gap || '—' }}
           </span>
         </div>
 
-        <div class="stat-card" :class="{ unavailable: !hasSpeed }">
-          <span class="stat-icon">⚡</span>
-          <span class="stat-label">Top Speed</span>
-          <span class="stat-value" :class="{ muted: !hasSpeed }">
-            {{ formatSpeed(driver.max_speed) }}
+        <div class="divider" />
+
+        <div class="stat-row">
+          <span class="stat-label">Tyre</span>
+          <span class="tyre-pill" :class="(driver.compound || 'unknown').toLowerCase()">
+            {{ tireEmoji }} {{ driver.compound || '?' }}
           </span>
         </div>
 
-        <div class="stat-card tire-card" :class="tireClass">
-          <span class="stat-icon">{{ tireEmoji }}</span>
-          <span class="stat-label">Compound</span>
-          <span class="stat-value">{{ driver.compound || '–' }}</span>
+        <div class="stat-row">
+          <span class="stat-label">Tyre Age</span>
+          <span class="stat-value">{{ driver.tire_life ?? '—' }} laps</span>
         </div>
 
-        <div class="stat-card">
-          <span class="stat-icon">📏</span>
-          <span class="stat-label">Tire Age</span>
-          <span class="stat-value">{{ driver.tire_life != null ? driver.tire_life + ' laps' : '–' }}</span>
-        </div>
+        <div class="divider" />
 
-        <div class="stat-card">
-          <span class="stat-icon">⏱️</span>
-          <span class="stat-label">Last Lap</span>
+        <div class="stat-row">
+          <span class="stat-label">Lap Time</span>
           <span class="stat-value mono">{{ formatLapTime(driver.lap_time) }}</span>
         </div>
 
-        <div class="stat-card" :class="{ pitting: driver.pit_in || driver.pit_out }">
-          <span class="stat-icon">{{ pitIcon }}</span>
-          <span class="stat-label">Pit Status</span>
-          <span class="stat-value">{{ pitStatus }}</span>
+        <div class="divider" />
+
+        <!-- Speed section — fetched on demand -->
+        <div class="speed-header">
+          <span v-if="loading" class="fetching">Fetching speed data…</span>
+          <span v-else-if="hasSpeedData" class="fetched">Live telemetry</span>
         </div>
 
-      </div>
-
-      <!-- Speed note when unavailable -->
-      <div v-if="!hasSpeed" class="speed-note">
-        ℹ️ Speed telemetry unavailable for this lap
-      </div>
-
-      <!-- Tire wear -->
-      <div class="tire-wear-section">
-        <div class="tire-wear-header">
-          <span class="tw-label">Tire Condition</span>
-          <span class="tw-pct">{{ tireWearPct }}%</span>
+        <div class="stat-row">
+          <span class="stat-label">Avg Speed</span>
+          <span class="stat-value">
+            <span v-if="loading" class="loading-dot">…</span>
+            <span v-else>{{ formatSpeed(enriched.avg_speed ?? driver.avg_speed) }}</span>
+          </span>
         </div>
-        <div class="tire-wear-bar">
-          <div class="tire-wear-fill" :class="tireWearClass" :style="{ width: tireWearPct + '%' }"></div>
+
+        <div class="stat-row">
+          <span class="stat-label">Top Speed</span>
+          <span class="stat-value">
+            <span v-if="loading" class="loading-dot">…</span>
+            <span v-else>{{ formatSpeed(enriched.max_speed ?? driver.max_speed) }}</span>
+          </span>
         </div>
+
       </div>
     </template>
-
   </div>
 </template>
 
 <script>
 const TEAM_COLORS = {
-  'Red Bull Racing': '#3671C6',
-  'Ferrari':         '#E8002D',
-  'Mercedes':        '#27F4D2',
-  'McLaren':         '#FF8000',
-  'Aston Martin':    '#229971',
-  'Alpine':          '#FF87BC',
-  'Williams':        '#64C4FF',
-  'RB':              '#6692FF',
-  'Haas F1 Team':    '#B6BABD',
-  'Kick Sauber':     '#52E252',
+  'Red Bull Racing': '#3671C6', 'Ferrari': '#E8002D', 'Mercedes': '#27F4D2',
+  'McLaren': '#FF8000', 'Aston Martin': '#229971', 'Alpine': '#FF87BC',
+  'Williams': '#64C4FF', 'RB': '#6692FF', 'Kick Sauber': '#52E252',
+  'Haas F1 Team': '#B6BABD'
 }
-
-const PIT_WINDOW = { SOFT: 20, MEDIUM: 32, HARD: 45 }
 
 export default {
   name: 'TelemetryPanel',
+
   props: {
-    driver: { type: Object, default: null }
+    driver:   { type: Object,  default: null },
+    enriched: { type: Object,  default: () => ({}) },
+    loading:  { type: Boolean, default: false }
   },
+
   computed: {
-    teamColor()  { return TEAM_COLORS[this.driver?.team] || '#888' },
-    tireEmoji()  { return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪' }[this.driver?.compound] || '⚫' },
-    tireClass()  { return this.driver?.compound?.toLowerCase() || '' },
-    hasSpeed()   {
-      const d = this.driver
-      return d && (d.avg_speed != null && !isNaN(d.avg_speed))
-    },
-    pitIcon()   {
-      if (this.driver?.pit_in)  return '🔧'
-      if (this.driver?.pit_out) return '✅'
-      return '🏁'
-    },
-    pitStatus() {
-      if (this.driver?.pit_in)  return 'In Pits'
-      if (this.driver?.pit_out) return 'Out Lap'
-      return 'Racing'
-    },
-    tireWearPct() {
-      if (!this.driver) return 0
-      const max = PIT_WINDOW[this.driver.compound] || 30
-      return Math.min(Math.round(((this.driver.tire_life || 0) / max) * 100), 100)
-    },
-    tireWearClass() {
-      const p = this.tireWearPct
-      if (p < 50) return 'fresh'
-      if (p < 80) return 'used'
-      return 'critical'
+    teamColor()    { return TEAM_COLORS[this.driver?.team] || '#888' },
+    tireEmoji()    { return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪', INTERMEDIATE:'🟢', WET:'🔵' }[this.driver?.compound] || '⚫' },
+    hasSpeedData() {
+      return (
+        this.enriched.avg_speed != null ||
+        this.driver?.avg_speed  != null
+      )
     }
   },
+
   methods: {
-    formatSpeed(val) {
-      if (val == null || isNaN(val)) return 'N/A'
-      return `${Math.round(val)} km/h`
+    formatSpeed(v) {
+      return v == null ? 'N/A' : `${Math.round(v)} km/h`
     },
-    // FastF1 returns pandas Timedelta strings like "0 days 00:01:32.456000"
-    formatLapTime(lapTime) {
-      if (!lapTime) return '–'
-      // Match "MM:SS.mmm" inside the string
-      const match = lapTime.match(/(\d+):(\d+\.\d+)/)
-      if (match) {
-        const mins = match[1]
-        const secs = parseFloat(match[2]).toFixed(3).padStart(6, '0')
-        return `${mins}:${secs}`
-      }
-      return lapTime
+    formatLapTime(t) {
+      if (!t) return '—'
+      // FastF1 returns timedelta strings like "0 days 00:01:32.456000"
+      // Try to extract m:ss.mmm
+      const match = t.match(/(\d+):(\d{2}\.\d+)/)
+      if (match) return `${match[1]}:${parseFloat(match[2]).toFixed(3).padStart(6,'0')}`
+      return t.slice(0, 12)
     }
   }
 }
@@ -161,105 +127,116 @@ export default {
 
 <style scoped>
 .telemetry-panel {
-  height: 100%;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  gap: 0;
+  height: 100%;
 }
 
-/* ── Empty State ── */
+.section-title {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #555;
+  margin-bottom: 0.75rem;
+  padding: 0 0.1rem;
+}
+
+/* ── Empty state ── */
 .empty-state {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.9rem;
-  padding: 2rem 1.5rem;
-  color: var(--color-muted);
+  flex: 1;
+  gap: 0.75rem;
   text-align: center;
+  padding: 1rem 0.5rem;
 }
-.empty-icon { font-size: 2rem; opacity: 0.4; }
-.empty-state p { font-size: 0.82rem; line-height: 1.6; }
+.empty-icon { font-size: 1.6rem; }
+.empty-state p {
+  font-size: 0.78rem;
+  color: #444;
+  line-height: 1.5;
+}
 
-/* ── Header ── */
-.panel-header {
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  flex-shrink: 0;
+/* ── Driver header ── */
+.driver-header {
+  padding: 0.6rem 0.25rem 0.75rem;
+  border-bottom: 1px solid #1c1c1c;
+  margin-bottom: 0.5rem;
 }
-.driver-badge {
-  border: 2px solid #888;
-  border-radius: 6px;
-  padding: 0.25rem 0.55rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 50px;
+.driver-name {
+  font-family: monospace;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.05em;
 }
-.driver-code { font-family: monospace; font-size: 1rem; font-weight: 800; color: #fff; letter-spacing: 0.04em; }
-.driver-pos  { font-size: 0.68rem; color: #aaa; font-weight: 600; }
-.driver-meta { display: flex; flex-direction: column; gap: 0.2rem; }
-.team-name   { font-size: 0.8rem; font-weight: 600; }
-.gap-label   { font-size: 0.82rem; color: #aaa; font-family: monospace; }
-.gap-label.leader { color: #ffd700; font-weight: 700; }
+.driver-team {
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
 
-/* ── Stats Grid ── */
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  background: var(--color-border);
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
-}
-.stat-card {
-  background: rgba(10,10,10,0.95);
-  padding: 0.8rem 0.9rem;
+/* ── Stat rows ── */
+.stat-list {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0;
 }
-.stat-card.pitting    { background: rgba(225,6,0,0.08); }
-.stat-card.unavailable { opacity: 0.7; }
 
-.stat-icon  { font-size: 0.95rem; }
-.stat-label { font-size: 0.67rem; color: #555; text-transform: uppercase; letter-spacing: 0.06em; }
-.stat-value { font-size: 0.9rem; font-weight: 700; color: #fff; }
-.stat-value.mono  { font-family: monospace; font-size: 0.82rem; }
-.stat-value.muted { color: #555; font-weight: 400; font-size: 0.8rem; }
-
-/* Tire compound tints */
-.tire-card.soft   { background: rgba(200,0,0,0.1); }
-.tire-card.medium { background: rgba(180,180,0,0.1); }
-.tire-card.hard   { background: rgba(200,200,200,0.06); }
-
-/* Speed note */
-.speed-note {
-  padding: 0.55rem 1rem;
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.45rem 0.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.stat-label {
   font-size: 0.72rem;
   color: #555;
-  border-top: 1px solid var(--color-border);
-  text-align: center;
-  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.stat-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ddd;
+}
+.stat-value.leader { color: #ffd700; font-weight: 800; }
+.stat-value.pos    { color: #fff; }
+.mono { font-family: monospace; font-size: 0.8rem; }
+
+.divider {
+  height: 1px;
+  background: #1c1c1c;
+  margin: 0.4rem 0;
 }
 
-/* ── Tire Wear ── */
-.tire-wear-section {
-  padding: 0.85rem 1.25rem;
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
+/* ── Tyre pill ── */
+.tyre-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
-.tire-wear-header { display: flex; justify-content: space-between; margin-bottom: 0.45rem; }
-.tw-label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.06em; }
-.tw-pct   { font-size: 0.78rem; font-weight: 700; color: #aaa; }
-.tire-wear-bar { height: 7px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
-.tire-wear-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease, background 0.4s ease; }
-.tire-wear-fill.fresh    { background: linear-gradient(90deg,#00cc66,#44ff88); }
-.tire-wear-fill.used     { background: linear-gradient(90deg,#ffaa00,#ffdd44); }
-.tire-wear-fill.critical { background: linear-gradient(90deg,#cc0000,#ff4444); animation: pulse 1s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+.tyre-pill.soft         { background: rgba(200,0,0,0.3);     color: #ff7777; }
+.tyre-pill.medium       { background: rgba(200,200,0,0.25);  color: #ffff77; }
+.tyre-pill.hard         { background: rgba(200,200,200,0.2); color: #ddd;    }
+.tyre-pill.intermediate { background: rgba(0,180,0,0.25);   color: #77ff77; }
+.tyre-pill.wet          { background: rgba(0,100,255,0.25); color: #77aaff; }
+.tyre-pill.unknown      { background: rgba(100,100,100,0.2); color: #888;   }
+
+/* ── Speed section ── */
+.speed-header {
+  padding: 0.3rem 0.25rem 0.1rem;
+}
+.fetching { font-size: 0.68rem; color: #444; font-style: italic; }
+.fetched  { font-size: 0.68rem; color: #2a6; }
+
+.loading-dot { color: #555; animation: pulse 1s ease infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
 </style>
