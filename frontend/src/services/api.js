@@ -3,7 +3,7 @@ import axios from 'axios'
 const API_BASE = 'http://localhost:5000/api'
 
 class APIService {
-  // ── Existing endpoints ──
+  // ── Existing endpoints ──────────────────────────────────────────────────────
   async getRaces() {
     const response = await axios.get(`${API_BASE}/races`)
     return response.data
@@ -12,14 +12,14 @@ class APIService {
   async getLiveRace(id) {
     const response = await axios.get(`${API_BASE}/races/${id}`)
     return {
-      id: response.data.id,
-      name: response.data.name,
-      circuit: response.data.circuit,
-      country: response.data.country,
-      status: response.data.status,
-      currentLap: response.data.currentLap,
-      totalLaps: response.data.laps,
-      leaders: response.data.leaders || []
+      id:          response.data.id,
+      name:        response.data.name,
+      circuit:     response.data.circuit,
+      country:     response.data.country,
+      status:      response.data.status,
+      currentLap:  response.data.currentLap,
+      totalLaps:   response.data.laps,
+      leaders:     response.data.leaders || []
     }
   }
 
@@ -38,7 +38,7 @@ class APIService {
     return response.data
   }
 
-  // ── Race Replay endpoints ──
+  // ── Race Replay endpoints ───────────────────────────────────────────────────
   async getAvailableReplays(year = 2024) {
     const response = await axios.get(`${API_BASE}/replay/available?year=${year}`)
     return response.data
@@ -59,15 +59,27 @@ class APIService {
     return response.data
   }
 
-  // ── NEW: Advanced replay endpoints ──
+  // Circuit data is OPTIONAL — a 404 (no telemetry cached yet) must not crash
+  // the replay. The track canvas falls back to the generic oval when null.
   async getCircuitData(year, round) {
-    const response = await axios.get(`${API_BASE}/replay/circuit/${year}/${round}`)
-    return response.data
+    try {
+      const response = await axios.get(`${API_BASE}/replay/circuit/${year}/${round}`)
+      return response.data
+    } catch (e) {
+      // 404 = circuit not cached yet (needs telemetry=True load)
+      // Return null so the replay still works with the oval fallback track
+      console.warn(`Circuit data not available for ${year} R${round}:`, e.response?.status)
+      return null
+    }
   }
 
   async getWeatherData(year, round) {
-    const response = await axios.get(`${API_BASE}/replay/weather/${year}/${round}`)
-    return response.data
+    try {
+      const response = await axios.get(`${API_BASE}/replay/weather/${year}/${round}`)
+      return response.data
+    } catch (e) {
+      return null
+    }
   }
 
   async getDriverTelemetry(year, round, driver, lap) {

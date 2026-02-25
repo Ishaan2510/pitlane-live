@@ -115,29 +115,36 @@ class FastF1Service:
                 return None
 
     def get_circuit_data(self, year, race_round):
-        """Get circuit coordinates and track info"""
+        """
+        Get circuit coordinates and track info.
+        IMPORTANT: Requires telemetry=True to get lap coordinates.
+        """
         cache_file = self.processed_cache_dir / f"{year}_R{race_round}_circuit.json"
-        
+
         if cache_file.exists():
             with open(cache_file, 'r') as f:
                 return json.load(f)
-        
+
         lock = self._get_race_lock(f"circuit_{year}_R{race_round}")
         with lock:
-            # Double check after lock
             if cache_file.exists():
                 with open(cache_file, 'r') as f:
                     return json.load(f)
 
-            session = self.load_race_session(year, race_round)
-            if not session:
-                return None
-            
             try:
+                print(f"Loading circuit data for {year} R{race_round} (telemetry=True)...")
+                session = fastf1.get_session(year, race_round, 'Race')
+                session.load(telemetry=True)  # ← KEY CHANGE
+
                 laps = session.laps
-                first_valid_lap = laps[laps['LapNumber'] == 1].iloc[0]
+                valid_laps = laps[laps['LapTime'].notna()]  # ← KEY CHANGE
+                if valid_laps.empty:
+                    print(f"No valid laps for circuit data {year} R{race_round}")
+                    return None
+
+                first_valid_lap = valid_laps.iloc[0]
                 telemetry = first_valid_lap.get_telemetry()
-                
+
                 coords = []
                 for _, point in telemetry.iterrows():
                     if pd.notna(point['X']) and pd.notna(point['Y']):
@@ -146,19 +153,25 @@ class FastF1Service:
                             'y':        float(point['Y']),
                             'distance': float(point['Distance']) if pd.notna(point['Distance']) else 0
                         })
-                
+
+                if not coords:
+                    print(f"No coordinates found for {year} R{race_round}")
+                    return None
+
                 circuit_data = {
                     'coordinates':    coords,
-                    'total_distance': max(c['distance'] for c in coords) if coords else 0,
+                    'total_distance': max(c['distance'] for c in coords),
                     'name':           session.event['EventName']
                 }
-                
+
                 with open(cache_file, 'w') as f:
                     json.dump(circuit_data, f)
-                
+
+                print(f"✅ Circuit data cached: {len(coords)} points for {year} R{race_round}")
                 return circuit_data
+
             except Exception as e:
-                print(f"Error getting circuit data: {e}")
+                print(f"Error getting circuit data for {year} R{race_round}: {e}")
                 return None
 
     def get_weather_data(self, year, race_round):
@@ -235,24 +248,14 @@ class FastF1Service:
             return race_data
 
     def _build_lap(self, laps, lap_number):
-        """Build a single lap with telemetry data"""
+        """Build a single lap WITHOUT per-lap telemetry (speeds come from on-demand endpoint)."""
         lap_laps = laps[laps['LapNumber'] == lap_number]
-        
+
         drivers = []
         for idx, lap in lap_laps.iterrows():
             if pd.isna(lap['LapTime']):
                 continue
-            
-            try:
-                telemetry    = lap.get_telemetry()
-                avg_speed    = telemetry['Speed'].mean() if 'Speed' in telemetry else None
-                max_speed    = telemetry['Speed'].max()  if 'Speed' in telemetry else None
-                lap_distance = telemetry['Distance'].iloc[-1] if 'Distance' in telemetry and len(telemetry) > 0 else 0
-            except:
-                avg_speed    = None
-                max_speed    = None
-                lap_distance = 0
-            
+
             driver_data = {
                 'driver':    lap['Driver'],
                 'team':      lap['Team'],
@@ -262,9 +265,9 @@ class FastF1Service:
                 'tire_life': int(lap['TyreLife'])    if pd.notna(lap['TyreLife'])  else 0,
                 'pit_out':   bool(lap['PitOutTime']) if 'PitOutTime' in lap and pd.notna(lap['PitOutTime']) else False,
                 'pit_in':    bool(lap['PitInTime'])  if 'PitInTime'  in lap and pd.notna(lap['PitInTime'])  else False,
-                'distance':  float(lap_distance)     if lap_distance else 0,
-                'avg_speed': float(avg_speed)        if avg_speed is not None and pd.notna(avg_speed) else None,
-                'max_speed': float(max_speed)        if max_speed is not None and pd.notna(max_speed) else None
+                'distance':  0,        
+                'avg_speed': None,     
+                'max_speed': None,     
             }
             drivers.append(driver_data)
         
@@ -337,12 +340,24 @@ class FastF1Service:
             print(f"[get_driver_lap_telemetry] {e}")
             return None
 
+    def _safe_json_list(self, url, timeout=5):
+        """
+        GET a URL and return parsed JSON only if it's a list.
+        Protects against OpenF1 returning dicts on error or no-session.
+        """
+        try:
+            r = requests.get(url, timeout=timeout)
+            data = r.json()
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
+
     def get_live_session_key(self):
         """Get the session_key for the current or most recent live session."""
         try:
             r = requests.get(f'{OPENF1_BASE}/sessions?session_type=Race', timeout=5)
             sessions = r.json()
-            if not sessions:
+            if not isinstance(sessions, list) or not sessions:
                 return None
             return sessions[-1]['session_key']
         except Exception as e:
@@ -360,17 +375,21 @@ class FastF1Service:
             return []
 
         try:
-            r = requests.get(
-                f'{OPENF1_BASE}/position?session_key={session_key}',
-                timeout=5
+            raw = self._safe_json_list(
+                f'{OPENF1_BASE}/position?session_key={session_key}'
             )
-            raw = r.json()
+            if not raw:
+                return []
 
             # Keep only the latest entry per driver
             latest = {}
             for entry in raw:
-                drv = entry['driver_number']
-                if drv not in latest or entry['date'] > latest[drv]['date']:
+                if not isinstance(entry, dict):
+                    continue
+                drv = entry.get('driver_number')
+                if drv is None:
+                    continue
+                if drv not in latest or entry.get('date', '') > latest[drv].get('date', ''):
                     latest[drv] = entry
 
             return sorted(latest.values(), key=lambda x: x.get('position', 99))
@@ -393,8 +412,7 @@ class FastF1Service:
             if driver_number:
                 url += f'&driver_number={driver_number}'
 
-            r = requests.get(url, timeout=5)
-            data = r.json()
+            data = self._safe_json_list(url)
             if not data:
                 return None
 
@@ -421,16 +439,20 @@ class FastF1Service:
             return {}
 
         try:
-            r = requests.get(
-                f'{OPENF1_BASE}/intervals?session_key={session_key}',
-                timeout=5
+            raw = self._safe_json_list(
+                f'{OPENF1_BASE}/intervals?session_key={session_key}'
             )
-            raw = r.json()
+            if not raw:
+                return {}
 
             latest = {}
             for entry in raw:
-                drv = entry['driver_number']
-                if drv not in latest or entry['date'] > latest[drv]['date']:
+                if not isinstance(entry, dict):
+                    continue
+                drv = entry.get('driver_number')
+                if drv is None:
+                    continue
+                if drv not in latest or entry.get('date', '') > latest[drv].get('date', ''):
                     latest[drv] = entry
 
             return {
@@ -451,15 +473,7 @@ class FastF1Service:
         if not session_key:
             return []
 
-        try:
-            r = requests.get(
-                f'{OPENF1_BASE}/pit?session_key={session_key}',
-                timeout=5
-            )
-            return r.json()
-        except Exception as e:
-            print(f"[get_live_pit_stops] {e}")
-            return []
+        return self._safe_json_list(f'{OPENF1_BASE}/pit?session_key={session_key}')
 
     def get_live_race_control(self, session_key=None):
         """Race control messages: safety car, red flag, VSC, track limits, etc."""
@@ -468,15 +482,7 @@ class FastF1Service:
         if not session_key:
             return []
 
-        try:
-            r = requests.get(
-                f'{OPENF1_BASE}/race_control?session_key={session_key}',
-                timeout=5
-            )
-            return r.json()
-        except Exception as e:
-            print(f"[get_live_race_control] {e}")
-            return []
+        return self._safe_json_list(f'{OPENF1_BASE}/race_control?session_key={session_key}')
 
     def get_live_stints(self, session_key=None):
         """Current tyre stints (compound, age) per driver."""
@@ -486,16 +492,20 @@ class FastF1Service:
             return {}
 
         try:
-            r = requests.get(
-                f'{OPENF1_BASE}/stints?session_key={session_key}',
-                timeout=5
+            raw = self._safe_json_list(
+                f'{OPENF1_BASE}/stints?session_key={session_key}'
             )
-            raw = r.json()
+            if not raw:
+                return {}
 
             # Latest stint per driver
             stints = {}
             for entry in raw:
-                drv = entry['driver_number']
+                if not isinstance(entry, dict):
+                    continue
+                drv = entry.get('driver_number')
+                if drv is None:
+                    continue
                 if drv not in stints or entry.get('stint_number', 0) > stints[drv].get('stint_number', 0):
                     stints[drv] = entry
 
@@ -533,26 +543,30 @@ class FastF1Service:
                 f'{OPENF1_BASE}/drivers?session_key={session_key}',
                 timeout=5
             )
-            drivers_meta = {
-                str(d['driver_number']): {
-                    'code': d.get('name_acronym', '???'),
-                    'team': d.get('team_name', 'Unknown'),
-                }
-                for d in drv_r.json()
-            }
-        except:
+            drv_data = drv_r.json()
+            drivers_meta = {}
+            if isinstance(drv_data, list):
+                for d in drv_data:
+                    if isinstance(d, dict):
+                        drivers_meta[str(d.get('driver_number', ''))] = {
+                            'code': d.get('name_acronym', '???'),
+                            'team': d.get('team_name', 'Unknown'),
+                        }
+        except Exception:
             drivers_meta = {}
 
         # Merge everything into one list
         merged = []
         for pos in positions:
-            drv_num  = str(pos['driver_number'])
+            if not isinstance(pos, dict):
+                continue
+            drv_num  = str(pos.get('driver_number', ''))
             meta     = drivers_meta.get(drv_num, {})
-            gap_info = intervals.get(pos['driver_number'], {})
-            stint    = stints.get(pos['driver_number'], {})
+            gap_info = intervals.get(pos.get('driver_number'), {})
+            stint    = stints.get(pos.get('driver_number'), {})
 
             merged.append({
-                'driver_number': pos['driver_number'],
+                'driver_number': pos.get('driver_number'),
                 'driver':        meta.get('code', drv_num),
                 'team':          meta.get('team', 'Unknown'),
                 'position':      pos.get('position'),
