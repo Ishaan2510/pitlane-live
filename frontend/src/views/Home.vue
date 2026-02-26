@@ -217,7 +217,7 @@ export default {
     async loadSchedule() {
       this.loading = true
       try {
-        const res  = await fetch(`http://localhost:5000/api/schedule?year=${this.selectedYear}`)
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/schedule?year=${this.selectedYear}`)
         this.races = await res.json()
       } catch (e) {
         console.error('Failed to load schedule:', e)

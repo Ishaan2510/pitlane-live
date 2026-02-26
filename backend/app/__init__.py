@@ -8,7 +8,7 @@ def create_app():
     app.config.from_object(Config)
     
     # Enable CORS for frontend
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
     
     # Initialize database
     db.init_app(app)
