@@ -8,6 +8,7 @@ __pycache__/
 *.pyc
 venv/
 .env
+.env.production
 
 # OS
 .DS_Store

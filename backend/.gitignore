@@ -7,13 +7,13 @@ __pycache__/
 *$py.class
 *.so
 
-# Environment variables
-.env
-
 # Virtual environment
 venv/
 env/
 ENV/
+
+.env
+
 
 # IDE
 .vscode/
