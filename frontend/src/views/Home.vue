@@ -42,7 +42,7 @@
 
         <!-- Right: quick nav -->
         <div class="hero-actions">
-          <router-link to="/race/1" class="hero-btn primary">
+          <router-link to="/live" class="hero-btn primary">
             Watch Live
           </router-link>
           <router-link to="/replay" class="hero-btn secondary">
@@ -217,7 +217,7 @@ export default {
     async loadSchedule() {
       this.loading = true
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/schedule?year=${this.selectedYear}`)
+        const res = await fetch(`/api/schedule?year=${this.selectedYear}`)
         this.races = await res.json()
       } catch (e) {
         console.error('Failed to load schedule:', e)
@@ -276,7 +276,7 @@ export default {
 
     navigateToRace(race) {
       if (race.status === 'live') {
-        this.$router.push('/race/1')
+        this.$router.push('/live')
       } else if (race.status === 'completed') {
         this.$router.push('/replay')
       }
