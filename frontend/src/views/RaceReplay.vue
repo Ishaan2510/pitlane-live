@@ -246,7 +246,19 @@ export default {
 
     async loadAvailableRaces() {
       try {
-        this.availableRaces = await api.getAvailableReplays(this.selectedYear)
+        // Use schedule API — shows all completed races, not just cached ones
+        const res = await fetch(`/api/schedule?year=${this.selectedYear}`)
+        const all = await res.json()
+        this.availableRaces = all
+          .filter(r => r.status === 'completed')
+          .map(r => ({
+            round:    r.round,
+            name:     r.name,
+            location: r.location,
+            country:  r.country,
+            date:     r.date,
+            year:     r.year
+          }))
       } catch (e) {
         console.error(e)
       } finally {

@@ -26,7 +26,7 @@ const routes = [
   },
   {
     path: '/replay',
-    name: 'RaceReplay',
+    name: 'Replay',
     component: () => import('@/views/RaceReplay.vue')
   },
   {
