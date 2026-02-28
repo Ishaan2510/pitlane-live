@@ -25,6 +25,11 @@ const routes = [
     component: () => import('@/views/LiveRace.vue')
   },
   {
+    path: '/replay',
+    name: 'RaceReplay',
+    component: () => import('@/views/RaceReplay.vue')
+  },
+  {
     path: '/replay/:year/:round',
     name: 'RaceReplay',
     component: () => import('@/views/RaceReplay.vue')
