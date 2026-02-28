@@ -4,14 +4,14 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-inner">
-        <div class="header-label">SEASON 2026</div>
-        <h1 class="header-title">STANDINGS</h1>
-        <p class="header-sub">Global prediction leaderboard</p>
+        <div class="header-label">SEASON</div>
+        <h1 class="page-title">STANDINGS</h1>
+        <p class="page-sub">Top predictors on the grid</p>
       </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="loading-screen">
+    <div v-if="loading" class="loading-state">
       <div class="loading-pip"></div>
       <p>Loading standings…</p>
     </div>
@@ -19,63 +19,80 @@
     <!-- Empty -->
     <div v-else-if="leaders.length === 0" class="empty-state">
       <div class="empty-icon">🏁</div>
-      <h2>No predictions yet</h2>
-      <p>Be the first to make a prediction on race day</p>
-      <router-link to="/live" class="btn-red">Go to Live Race →</router-link>
+      <h2>No standings yet</h2>
+      <p>Be the first to make predictions on race day</p>
+      <router-link to="/register" class="cta-btn">JOIN THE GRID →</router-link>
     </div>
 
     <!-- Table -->
-    <div v-else class="table-wrap">
-      <div class="table-header">
-        <span class="col-rank">RK</span>
-        <span class="col-user">DRIVER</span>
-        <span class="col-pts">PTS</span>
-        <span class="col-acc">ACCURACY</span>
-        <span class="col-preds">PREDICTIONS</span>
+    <div v-else class="standings-wrap">
+
+      <!-- Top 3 podium -->
+      <div class="podium" v-if="leaders.length >= 3">
+        <div class="podium-card p2">
+          <div class="podium-pos">2</div>
+          <div class="podium-avatar">{{ leaders[1].username.slice(0,2).toUpperCase() }}</div>
+          <div class="podium-name">{{ leaders[1].username }}</div>
+          <div class="podium-pts">{{ leaders[1].totalPoints }} <span>PTS</span></div>
+          <div class="podium-acc">{{ leaders[1].accuracy }}% acc</div>
+        </div>
+        <div class="podium-card p1">
+          <div class="podium-crown">👑</div>
+          <div class="podium-pos">1</div>
+          <div class="podium-avatar gold">{{ leaders[0].username.slice(0,2).toUpperCase() }}</div>
+          <div class="podium-name">{{ leaders[0].username }}</div>
+          <div class="podium-pts">{{ leaders[0].totalPoints }} <span>PTS</span></div>
+          <div class="podium-acc">{{ leaders[0].accuracy }}% acc</div>
+        </div>
+        <div class="podium-card p3">
+          <div class="podium-pos">3</div>
+          <div class="podium-avatar">{{ leaders[2].username.slice(0,2).toUpperCase() }}</div>
+          <div class="podium-name">{{ leaders[2].username }}</div>
+          <div class="podium-pts">{{ leaders[2].totalPoints }} <span>PTS</span></div>
+          <div class="podium-acc">{{ leaders[2].accuracy }}% acc</div>
+        </div>
       </div>
 
-      <div
-        v-for="user in leaders"
-        :key="user.rank"
-        class="table-row"
-        :class="{
-          'rank-1': user.rank === 1,
-          'rank-2': user.rank === 2,
-          'rank-3': user.rank === 3,
-          'is-me': user.username === currentUser
-        }"
-      >
-        <div class="col-rank">
-          <span class="rank-num" :class="`r${user.rank}`">
-            {{ user.rank <= 3 ? ['🥇','🥈','🥉'][user.rank-1] : user.rank }}
+      <!-- Full table -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <span>POS</span>
+          <span>DRIVER</span>
+          <span>POINTS</span>
+          <span>ACCURACY</span>
+          <span>PREDICTIONS</span>
+        </div>
+        <div
+          v-for="user in leaders"
+          :key="user.rank"
+          class="table-row"
+          :class="{
+            'is-p1': user.rank === 1,
+            'is-p2': user.rank === 2,
+            'is-p3': user.rank === 3,
+            'is-me': currentUser && user.username === currentUser.username
+          }"
+        >
+          <span class="col-pos">
+            <span class="pos-num">{{ user.rank }}</span>
           </span>
-        </div>
-
-        <div class="col-user">
-          <div class="user-avatar">{{ user.username.slice(0,2).toUpperCase() }}</div>
-          <div class="user-info">
-            <span class="user-name">{{ user.username }}</span>
-            <span class="you-tag" v-if="user.username === currentUser">YOU</span>
-          </div>
-        </div>
-
-        <div class="col-pts">
-          <span class="pts-value">{{ user.totalPoints.toLocaleString() }}</span>
-        </div>
-
-        <div class="col-acc">
-          <div class="acc-bar">
-            <div class="acc-fill" :style="{ width: user.accuracy + '%' }"></div>
-          </div>
-          <span class="acc-text">{{ user.accuracy }}%</span>
-        </div>
-
-        <div class="col-preds">
-          <span class="preds-count">{{ user.predictionsCount }}</span>
+          <span class="col-driver">
+            <span class="driver-avatar">{{ user.username.slice(0,2).toUpperCase() }}</span>
+            <span class="driver-name">{{ user.username }}</span>
+            <span class="you-tag" v-if="currentUser && user.username === currentUser.username">YOU</span>
+          </span>
+          <span class="col-pts">{{ user.totalPoints.toLocaleString() }}</span>
+          <span class="col-acc">
+            <div class="acc-bar">
+              <div class="acc-fill" :style="{ width: user.accuracy + '%' }"></div>
+            </div>
+            <span class="acc-text">{{ user.accuracy }}%</span>
+          </span>
+          <span class="col-preds">{{ user.predictionsCount }}</span>
         </div>
       </div>
-    </div>
 
+    </div>
   </div>
 </template>
 
@@ -92,7 +109,7 @@ export default {
   },
   computed: {
     currentUser() {
-      return useAuthStore().user?.username || null
+      return useAuthStore().user
     }
   },
   async mounted() {
@@ -116,8 +133,8 @@ export default {
 }
 
 .page-header {
-  border-bottom: 1px solid #111;
-  padding: 4rem 5rem 2.5rem;
+  border-bottom: 1px solid #161616;
+  padding: 3rem 5rem 2rem;
   position: relative;
 }
 .page-header::after {
@@ -134,20 +151,20 @@ export default {
   font-weight: 700;
   margin-bottom: 0.4rem;
 }
-.header-title {
+.page-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 4rem;
+  letter-spacing: 0.05em;
   color: #f5f5f5;
-  letter-spacing: 0.04em;
   margin: 0 0 0.4rem;
 }
-.header-sub {
-  color: #333;
+.page-sub {
   font-size: 0.82rem;
+  color: #333;
 }
 
 /* Loading */
-.loading-screen {
+.loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -172,51 +189,133 @@ export default {
   text-align: center;
   padding: 6rem 2rem;
 }
-.empty-icon { font-size: 3rem; margin-bottom: 1.5rem; }
+.empty-icon { font-size: 3rem; margin-bottom: 1rem; }
 .empty-state h2 {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 2rem;
+  font-size: 2.5rem;
   color: #fff;
   margin-bottom: 0.5rem;
 }
 .empty-state p { color: #444; margin-bottom: 2rem; }
-.btn-red {
+.cta-btn {
+  display: inline-block;
+  padding: 0.7rem 1.8rem;
   background: #e10600;
   color: #fff;
-  padding: 0.6rem 1.4rem;
   text-decoration: none;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
 }
+
+/* Standings wrap */
+.standings-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 3rem 5rem 6rem;
+}
+
+/* Podium */
+.podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+.podium-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.5rem 1.2rem 1.2rem;
+  border: 1px solid #1a1a1a;
+  min-width: 160px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+.podium-card:hover { border-color: #333; }
+.podium-card.p1 {
+  border-color: rgba(255,215,0,0.2);
+  background: rgba(255,215,0,0.03);
+  padding-top: 2rem;
+}
+.podium-card.p2 { margin-bottom: 20px; }
+.podium-card.p3 { margin-bottom: 20px; }
+
+.podium-crown {
+  position: absolute;
+  top: -16px;
+  font-size: 1.4rem;
+}
+.podium-pos {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.9rem;
+  color: #333;
+  letter-spacing: 0.1em;
+}
+.podium-card.p1 .podium-pos { color: #ffd700; }
+.podium-card.p2 .podium-pos { color: #c0c0c0; }
+.podium-card.p3 .podium-pos { color: #cd7f32; }
+
+.podium-avatar {
+  width: 44px; height: 44px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #888;
+}
+.podium-avatar.gold {
+  background: rgba(255,215,0,0.1);
+  border-color: rgba(255,215,0,0.3);
+  color: #ffd700;
+}
+
+.podium-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ddd;
+}
+.podium-pts {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
+.podium-pts span {
+  font-size: 0.8rem;
+  color: #555;
+  letter-spacing: 0.1em;
+}
+.podium-acc { font-size: 0.72rem; color: #444; }
 
 /* Table */
 .table-wrap {
-  max-width: 1000px;
-  margin: 2rem auto;
-  padding: 0 5rem 6rem;
+  border: 1px solid #111;
 }
-
 .table-header {
   display: grid;
-  grid-template-columns: 60px 1fr 100px 180px 120px;
-  padding: 0.5rem 1rem;
+  grid-template-columns: 60px 1fr 120px 180px 120px;
+  padding: 0.6rem 1.5rem;
+  background: #0a0a0a;
   border-bottom: 1px solid #111;
-  margin-bottom: 0.25rem;
 }
 .table-header span {
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   letter-spacing: 0.12em;
-  color: #2a2a2a;
+  color: #333;
   font-weight: 700;
   text-transform: uppercase;
 }
-
 .table-row {
   display: grid;
-  grid-template-columns: 60px 1fr 100px 180px 120px;
+  grid-template-columns: 60px 1fr 120px 180px 120px;
   align-items: center;
-  padding: 0.85rem 1rem;
+  padding: 0.9rem 1.5rem;
   border-bottom: 1px solid #0e0e0e;
   transition: background 0.12s;
   position: relative;
@@ -226,35 +325,31 @@ export default {
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 2px;
-  background: transparent;
 }
-.table-row.rank-1::before { background: #ffd700; }
-.table-row.rank-2::before { background: #c0c0c0; }
-.table-row.rank-3::before { background: #cd7f32; }
+.table-row.is-p1::before { background: #ffd700; }
+.table-row.is-p2::before { background: #c0c0c0; }
+.table-row.is-p3::before { background: #cd7f32; }
 .table-row.is-me { background: rgba(225,6,0,0.04); }
-.table-row.is-me::before { background: #e10600; }
 .table-row:hover { background: rgba(255,255,255,0.02); }
 
-/* Rank */
-.rank-num {
+.col-pos .pos-num {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.2rem;
   color: #2a2a2a;
 }
-.rank-num.r1 { color: #ffd700; }
-.rank-num.r2 { color: #c0c0c0; }
-.rank-num.r3 { color: #cd7f32; }
+.is-p1 .pos-num { color: #ffd700; }
+.is-p2 .pos-num { color: #c0c0c0; }
+.is-p3 .pos-num { color: #cd7f32; }
 
-/* User */
-.col-user {
+.col-driver {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
-.user-avatar {
+.driver-avatar {
   width: 30px; height: 30px;
-  background: #1a1a1a;
-  border: 1px solid #222;
+  background: #111;
+  border: 1px solid #1e1e1e;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,51 +358,40 @@ export default {
   color: #555;
   flex-shrink: 0;
 }
-.table-row.is-me .user-avatar {
+.is-me .driver-avatar {
   background: rgba(225,6,0,0.15);
   border-color: rgba(225,6,0,0.3);
   color: #e10600;
 }
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.user-name {
+.driver-name {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #888;
+  color: #ccc;
 }
-.table-row.rank-1 .user-name,
-.table-row.rank-2 .user-name,
-.table-row.rank-3 .user-name { color: #ddd; }
 .you-tag {
-  font-size: 0.58rem;
-  background: rgba(225,6,0,0.2);
-  color: #e10600;
-  border: 1px solid rgba(225,6,0,0.3);
-  padding: 0.1rem 0.35rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
+  color: #e10600;
+  background: rgba(225,6,0,0.1);
+  border: 1px solid rgba(225,6,0,0.2);
+  padding: 0.1rem 0.35rem;
 }
 
-/* Points */
-.pts-value {
+.col-pts {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
-  color: #e10600;
+  color: #fff;
   letter-spacing: 0.03em;
 }
 
-/* Accuracy bar */
 .col-acc {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
 }
 .acc-bar {
-  flex: 1;
-  height: 3px;
+  width: 80px; height: 3px;
   background: #1a1a1a;
   border-radius: 2px;
   overflow: hidden;
@@ -316,20 +400,16 @@ export default {
   height: 100%;
   background: #e10600;
   border-radius: 2px;
-  transition: width 0.5s ease;
 }
 .acc-text {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: #555;
   font-family: monospace;
-  width: 38px;
-  text-align: right;
 }
 
-/* Predictions count */
-.preds-count {
-  font-family: monospace;
+.col-preds {
   font-size: 0.85rem;
   color: #333;
+  font-family: monospace;
 }
 </style>
