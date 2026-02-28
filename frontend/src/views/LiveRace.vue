@@ -339,7 +339,7 @@ export default {
 
     connectSSE() {
       try {
-        this.eventSource = new EventSource(`${import.meta.env.VITE_API_URL}/api/replay/live/stream`)
+        this.eventSource = new EventSource(`/api/replay/live/stream`)
 
         this.eventSource.onmessage = (e) => {
           try {
@@ -376,7 +376,7 @@ export default {
     },
 
     async fetchState() {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/replay/live/state`)
+      const res = await fetch(`/api/replay/live/state`)
       return await res.json()
     },
 
