@@ -194,7 +194,7 @@ export default {
     return {
       // selector
       selectedYear:   2025,
-      availableYears: [2025, 2026],
+      availableYears: [2024, 2025, 2026],
       loadingRaces:   true,
       availableRaces: [],
 
@@ -253,9 +253,14 @@ export default {
     async loadAvailableRaces() {
       try {
         // Use schedule API — shows all completed races, not just cached ones
-        const res = await fetch(`/api/schedule?year=${this.selectedYear}`)
-        const all = await res.json()
-        this.availableRaces = all
+        const [scheduleRes, cachedRes] = await Promise.all([
+          fetch(`/api/schedule?year=${this.selectedYear}`),
+          fetch(`/api/replay/available?year=${this.selectedYear}`)
+        ])
+        const schedule = await scheduleRes.json()
+        const cached = await cachedRes.json()
+        const cachedRounds = new Set(cached.map(r => r.round))
+        this.availableRaces = schedule
           .filter(r => r.status === 'completed')
           .map(r => ({
             round:    r.round,
