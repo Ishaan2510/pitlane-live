@@ -13,7 +13,7 @@
         <!-- Year toggle -->
         <div class="year-selector">
           <button
-            v-for="y in [2024, 2025]"
+            v-for="y in [2024, 2025, 2026]"
             :key="y"
             class="year-btn"
             :class="{ active: selectedYear === y }"
@@ -28,14 +28,19 @@
             v-for="race in availableRaces"
             :key="race.round"
             class="race-item"
-            @click="selectRace(race)"
+            :class="{ 'not-ready': !race.ready }"
+            @click="race.ready ? selectRace(race) : null"
           >
             <div class="race-round">R{{ race.round }}</div>
             <div class="race-details">
               <div class="race-name-text">{{ race.name }}</div>
               <div class="race-location">{{ race.location }}, {{ race.country }}</div>
             </div>
-            <div class="race-date">{{ formatDate(race.date) }}</div>
+            <div class="race-date">
+              {{ formatDate(race.date) }}
+              <span v-if="race.ready" class="ready-badge">REPLAY →</span>
+              <span v-else class="pending-badge">PROCESSING</span>
+            </div>
           </div>
         </div>
       </div>
@@ -188,7 +193,8 @@ export default {
   data() {
     return {
       // selector
-      selectedYear:   2024,
+      selectedYear:   2025,
+      availableYears: [2025, 2026],
       loadingRaces:   true,
       availableRaces: [],
 
@@ -257,7 +263,8 @@ export default {
             location: r.location,
             country:  r.country,
             date:     r.date,
-            year:     r.year
+            year:     r.year || this.selectedYear,
+            ready:    cachedRounds.has(r.round)
           }))
       } catch (e) {
         console.error(e)
@@ -431,6 +438,10 @@ export default {
   margin: 0 auto;
   padding: 0 4rem;
 }
+
+.race-item.not-ready { opacity: 0.4; cursor: not-allowed; }
+.ready-badge  { color: #e10600; font-size: 0.72rem; font-weight: 700; margin-left: 0.5rem; }
+.pending-badge { color: #555; font-size: 0.72rem; margin-left: 0.5rem; }
 
 .selector { padding: 4rem 0; }
 
