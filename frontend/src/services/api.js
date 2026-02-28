@@ -29,7 +29,10 @@ class APIService {
   }
 
   async submitPrediction(prediction) {
-    const response = await axios.post(`${API_BASE}/predictions`, prediction)
+    const token = localStorage.getItem('pitlane_token')
+    const response = await axios.post(`${API_BASE}/predictions`, prediction, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
     return response.data
   }
 
