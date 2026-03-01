@@ -695,11 +695,11 @@ export default {
 }
 .sim-controls {
   display: flex;
-  gap: 0.75rem;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 .sim-select {
-  flex: 1;
+  width: 100%;
   background: #111;
   border: 1px solid #2a2a2a;
   color: #ccc;
@@ -710,7 +710,8 @@ export default {
 }
 .sim-select option { background: #111; }
 .sim-btn {
-  padding: 0.5rem 1.1rem;
+  width: 100%;
+  padding: 0.55rem 1.1rem;
   background: rgba(225,6,0,0.15);
   border: 1px solid rgba(225,6,0,0.35);
   color: #e10600;
@@ -719,7 +720,6 @@ export default {
   letter-spacing: 0.04em;
   cursor: pointer;
   border-radius: 2px;
-  white-space: nowrap;
   transition: all 0.15s;
 }
 .sim-btn:hover:not(:disabled) {

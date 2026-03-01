@@ -246,7 +246,17 @@ class FastF1Service:
             
             print(f"✅ Processed {len(race_data['laps'])} laps → {cache_file.name}")
             return race_data
+        
+    def _lap_speed_avg(self, lap):
+        spds = [float(lap[c]) for c in ['SpeedI1','SpeedI2','SpeedFL','SpeedST']
+                if c in lap.index and pd.notna(lap[c]) and float(lap[c]) > 0]
+        return round(sum(spds)/len(spds), 1) if spds else None
 
+    def _lap_speed_max(self, lap):
+        spds = [float(lap[c]) for c in ['SpeedI1','SpeedI2','SpeedFL','SpeedST']
+                if c in lap.index and pd.notna(lap[c]) and float(lap[c]) > 0]
+        return round(max(spds), 1) if spds else None
+    
     def _build_lap(self, laps, lap_number):
         """Build a single lap WITHOUT per-lap telemetry (speeds come from on-demand endpoint)."""
         lap_laps = laps[laps['LapNumber'] == lap_number]
@@ -267,8 +277,8 @@ class FastF1Service:
                 'pit_in':    bool(lap['PitInTime'])  if 'PitInTime'  in lap and pd.notna(lap['PitInTime'])  else False,
                 '_gap_raw':  lap['GapToLeader'] if 'GapToLeader' in lap.index and pd.notna(lap.get('GapToLeader')) else None,
                 'distance':  0,        
-                'avg_speed': None,     
-                'max_speed': None,     
+                'avg_speed': self._lap_speed_avg(lap),
+                'max_speed': self._lap_speed_max(lap),     
             }
             drivers.append(driver_data)
         
