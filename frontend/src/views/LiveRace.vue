@@ -4,7 +4,7 @@
     <!-- ═══════════════════════════════════════════════
          NO LIVE SESSION
     ═══════════════════════════════════════════════ -->
-    <div v-if="!liveState && !loading" class="no-session">
+    <div v-if="(!liveState || !liveState.drivers?.length) && !loading" class="no-session">
       <div class="no-session-inner">
         <div class="no-session-icon">🏁</div>
         <h2>No Live Session</h2>
