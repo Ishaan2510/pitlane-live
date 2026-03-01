@@ -228,7 +228,9 @@
                     :class="[action.cls, { active: prediction.action === action.value }]"
                     @click="prediction.action = action.value"
                   >
-                    {{ action.emoji }} {{ action.label }}
+                    <span v-if="action.cls !== 'stay'" class="action-dot" :class="action.cls"></span>
+                    <span v-else class="action-arrow">▶▶</span>
+                    {{ action.label }}
                   </button>
                 </div>
               </div>
@@ -261,11 +263,16 @@
                 :disabled="!prediction.action || submitting"
                 class="pred-submit"
               >
-                {{ submitting ? 'Submitting…' : '🔒 Lock In Prediction' }}
+                <svg v-if="!submitting" width="11" height="13" viewBox="0 0 11 13" fill="none" style="margin-right:6px;flex-shrink:0">
+                  <rect x="1" y="5.5" width="9" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M3 5.5V3.5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                {{ submitting ? 'Submitting…' : 'Lock In Prediction' }}
               </button>
 
               <div v-if="lastPrediction" class="last-prediction">
-                ✓ Locked: {{ lastPrediction.driver }} · {{ formatAction(lastPrediction.action) }}
+                <svg width="10" height="10" viewBox="0 0 10 10" style="margin-right:4px"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#2a6" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+                {{ lastPrediction.driver }} · {{ formatAction(lastPrediction.action) }}
               </div>
             </div>
           </div>
@@ -314,10 +321,10 @@ export default {
       lastPrediction: null,
 
       actions: [
-        { value: 'pit_soft',   label: 'Pit → Soft',   emoji: '🔴', cls: 'soft'   },
-        { value: 'pit_medium', label: 'Pit → Medium', emoji: '🟡', cls: 'medium' },
-        { value: 'pit_hard',   label: 'Pit → Hard',   emoji: '⚪', cls: 'hard'   },
-        { value: 'stay_out',   label: 'Stay Out',     emoji: '⏩', cls: 'stay'   },
+        { value: 'pit_soft',   label: 'Pit  S',  cls: 'soft'   },
+        { value: 'pit_medium', label: 'Pit  M',  cls: 'medium' },
+        { value: 'pit_hard',   label: 'Pit  H',  cls: 'hard'   },
+        { value: 'stay_out',   label: 'Stay Out', cls: 'stay'   },
       ],
 
       // ── Simulation state ──
@@ -1079,6 +1086,9 @@ export default {
 .pred-field label strong { color: #888; }
 .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   padding: 0.4rem 0.3rem;
   border: 1px solid #1a1a1a;
   background: transparent;
@@ -1088,7 +1098,7 @@ export default {
   cursor: pointer;
   border-radius: 2px;
   transition: all 0.12s;
-  white-space: nowrap;
+  justify-content: center;
 }
 .action-btn.soft.active   { background: rgba(200,0,0,0.25);    border-color: #aa0000; color: #ff9999; }
 .action-btn.medium.active { background: rgba(180,180,0,0.2);   border-color: #aaaa00; color: #ffff88; }
@@ -1097,7 +1107,19 @@ export default {
 .action-btn:hover:not(.active) { border-color: #333; color: #888; }
 .conf-slider { width: 100%; height: 3px; background: #1a1a1a; border-radius: 2px; outline: none; cursor: pointer; appearance: none; }
 .conf-slider::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; background: #e10600; border-radius: 50%; cursor: pointer; }
+.action-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.action-dot.soft   { background: #cc2222; }
+.action-dot.medium { background: #cccc00; }
+.action-dot.hard   { background: #cccccc; }
+.action-arrow { font-size: 0.5rem; color: inherit; opacity: 0.7; letter-spacing: -2px; }
 .pred-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(225, 6, 0, 0.15);
   border: 1px solid rgba(225, 6, 0, 0.3);
   color: #e10600;
@@ -1108,10 +1130,11 @@ export default {
   cursor: pointer;
   border-radius: 2px;
   transition: all 0.15s;
+  width: 100%;
 }
 .pred-submit:hover:not(:disabled) { background: rgba(225, 6, 0, 0.3); border-color: #e10600; }
 .pred-submit:disabled { opacity: 0.3; cursor: not-allowed; }
-.last-prediction { font-size: 0.7rem; color: #2a6; text-align: center; padding: 0.3rem; }
+.last-prediction { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #2a6; padding: 0.3rem; }
 .window-hint { font-size: 0.58rem; color: #2a2a2a; margin-left: 0.4rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
 .lap-range-hint { font-size: 0.62rem; color: #2a2a2a; margin-top: 0.2rem; font-family: monospace; }
 </style>
