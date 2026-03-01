@@ -275,7 +275,8 @@ class FastF1Service:
                 'tire_life': int(lap['TyreLife'])    if pd.notna(lap['TyreLife'])  else 0,
                 'pit_out':   bool(lap['PitOutTime']) if 'PitOutTime' in lap and pd.notna(lap['PitOutTime']) else False,
                 'pit_in':    bool(lap['PitInTime'])  if 'PitInTime'  in lap and pd.notna(lap['PitInTime'])  else False,
-                '_gap_raw':  lap['GapToLeader'] if 'GapToLeader' in lap.index and pd.notna(lap.get('GapToLeader')) else None,
+                'gap_seconds': (lambda g: g.total_seconds() if hasattr(g, 'total_seconds') else float(g))(lap['GapToLeader'])
+                if 'GapToLeader' in lap.index and pd.notna(lap.get('GapToLeader')) else None,
                 'distance':  0,        
                 'avg_speed': self._lap_speed_avg(lap),
                 'max_speed': self._lap_speed_max(lap),     
@@ -287,16 +288,12 @@ class FastF1Service:
         if drivers and drivers[0]['position'] == 1:
             for i, driver in enumerate(drivers):
                 # driver['gap'] = 'LEADER' if i == 0 else f"+{i * 0.5:.1f}s"
-                raw_gap = driver.pop('_gap_raw', None)
-                if i == 0 or raw_gap is None:
+                secs = driver.pop('gap_seconds', None)
+                if i == 0 or secs is None:
                     driver['gap'] = 'LEADER'
                 else:
-                    try:
-                        secs = raw_gap.total_seconds() if hasattr(raw_gap, 'total_seconds') else float(raw_gap)
-                        driver['gap'] = f"+{secs:.3f}s"
-                    except:
-                        driver['gap'] = None
-        
+                    driver['gap'] = f"+{float(secs):.3f}s"
+                        
         return {
             'lap_number': lap_number,
             'drivers':    drivers
