@@ -137,19 +137,19 @@
           </div>
         </div>
 
-        <!-- CENTER: Track canvas -->
+        <!-- CENTER: Track canvas + pit log strip -->
         <div class="track-area">
           <TrackCanvas
             :drivers="canvasDrivers"
-            :circuitData="null"
+            :circuitData="circuitData"
             :selectedDriver="selectedDriver"
             :lapDuration="3000"
             @select-driver="selectDriver"
           />
 
-          <!-- Race control history overlay -->
+          <!-- Pit stop log — compact strip below canvas, no overlap -->
           <div class="rc-log" v-if="rcHistory.length">
-            <div
+            <span
               v-for="(msg, i) in rcHistory.slice(0, 3)"
               :key="i"
               class="rc-log-item"
@@ -157,7 +157,7 @@
             >
               <span class="rc-log-time">{{ msg.time }}</span>
               <span class="rc-log-text">{{ msg.text }}</span>
-            </div>
+            </span>
           </div>
         </div>
 
@@ -233,6 +233,24 @@
                 </div>
               </div>
 
+              <!-- Predicted lap with ±2 window explanation -->
+              <div class="pred-field" v-if="isSimulated">
+                <label>On lap: <strong>{{ prediction.targetLap }}</strong>
+                  <span class="window-hint">(scores if ±2 laps correct)</span>
+                </label>
+                <input
+                  v-model.number="prediction.targetLap"
+                  type="range"
+                  :min="simLap"
+                  :max="simTotalLaps"
+                  step="1"
+                  class="conf-slider"
+                />
+                <div class="lap-range-hint">
+                  Window: laps {{ Math.max(1, prediction.targetLap - 2) }}–{{ Math.min(simTotalLaps, prediction.targetLap + 2) }}
+                </div>
+              </div>
+
               <div class="pred-field">
                 <label>Confidence: <strong>{{ prediction.confidence }}%</strong></label>
                 <input v-model.number="prediction.confidence" type="range" min="10" max="100" step="5" class="conf-slider" />
@@ -289,8 +307,9 @@ export default {
       eventSource:    null,
       pollInterval:   null,
       sessionName:    'Live Race',
+      circuitData:    null,   // ← real circuit SVG coords for TrackCanvas
 
-      prediction:     { action: '', confidence: 75 },
+      prediction:     { action: '', confidence: 75, targetLap: 1 },
       submitting:     false,
       lastPrediction: null,
 
@@ -476,8 +495,16 @@ export default {
       this.simTotalLaps = this.simSelection.total_laps
       this.simLap       = 1
       this.rcHistory    = []
+      this.circuitData  = null
+
+      // Load real circuit layout for TrackCanvas
+      try {
+        const res = await fetch(`/api/replay/circuit/${this.simYear}/${this.simRound}`)
+        if (res.ok) this.circuitData = await res.json()
+      } catch { /* TrackCanvas falls back to oval if null */ }
 
       await this.fetchSimState()
+      this.prediction.targetLap = Math.min(this.simTotalLaps, this.simLap + 3)
       this.simPlaying = true
       this.simPlayInterval = setInterval(async () => {
         if (this.simLap >= this.simTotalLaps) {
@@ -486,7 +513,7 @@ export default {
         }
         this.simLap++
         await this.fetchSimState()
-      }, 3000)   // advance one lap every 3s, same cadence as real live
+      }, 3000)
     },
 
     stopSimulation() {
@@ -495,6 +522,7 @@ export default {
       clearInterval(this.simPlayInterval)
       this.simPlayInterval = null
       this.liveState   = null
+      this.circuitData = null
       this.sessionName = 'Live Race'
       this.rcHistory   = []
     },
@@ -554,14 +582,19 @@ export default {
           raceId:     0,
           driver:     this.selectedDriver,
           action:     this.prediction.action,
-          lap:        this.isSimulated ? this.simLap : 0,
+          lap:        this.isSimulated ? this.prediction.targetLap : 0,
           confidence: this.prediction.confidence
         })
         this.lastPrediction = {
           driver: this.selectedDriver,
-          action: this.prediction.action
+          action: this.prediction.action,
+          lap:    this.isSimulated ? this.prediction.targetLap : null
         }
-        this.prediction.action = ''
+        this.prediction.action    = ''
+        // Advance targetLap default forward for next prediction
+        if (this.isSimulated) {
+          this.prediction.targetLap = Math.min(this.simTotalLaps, this.simLap + 3)
+        }
       } catch (e) {
         console.error('Prediction failed:', e)
       } finally {
@@ -951,37 +984,43 @@ export default {
    TRACK AREA (center)
 ════════════════════════════════════════════════════ */
 .track-area {
-  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
 }
+/* TrackCanvas itself gets all the remaining space */
+.track-area > :first-child {
+  flex: 1;
+  min-height: 0;
+}
+/* Compact pit-stop strip — sits BELOW the canvas, never overlaps */
 .rc-log {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  padding: 0.5rem 0.75rem;
-  background: linear-gradient(transparent, rgba(8,8,8,0.9));
+  flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  padding: 0.3rem 0.75rem;
+  background: #0a0a0a;
+  border-top: 1px solid #141414;
+  overflow: hidden;
+  max-height: 28px;   /* single-line strip */
   pointer-events: none;
 }
 .rc-log-item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.72rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 2px;
-  backdrop-filter: blur(4px);
+  gap: 0.4rem;
+  font-size: 0.65rem;
+  white-space: nowrap;
 }
-.rc-log-time { color: #444; font-family: monospace; flex-shrink: 0; }
-.rc-log-text { color: #666; }
-.rc-log-red    .rc-log-text { color: #ff7777; }
-.rc-log-yellow .rc-log-text { color: #ffee77; }
-.rc-log-safety .rc-log-text { color: #ffaa44; }
-.rc-log-green  .rc-log-text { color: #77ff99; }
+.rc-log-time { color: #333; font-family: monospace; }
+.rc-log-text { color: #555; }
+.rc-log-red    .rc-log-text { color: #ff6666; }
+.rc-log-yellow .rc-log-text { color: #ddcc55; }
+.rc-log-safety .rc-log-text { color: #ff9944; }
+.rc-log-green  .rc-log-text { color: #66dd88; }
 
 /* ════════════════════════════════════════════════════
    RIGHT PANEL
@@ -1073,4 +1112,6 @@ export default {
 .pred-submit:hover:not(:disabled) { background: rgba(225, 6, 0, 0.3); border-color: #e10600; }
 .pred-submit:disabled { opacity: 0.3; cursor: not-allowed; }
 .last-prediction { font-size: 0.7rem; color: #2a6; text-align: center; padding: 0.3rem; }
+.window-hint { font-size: 0.58rem; color: #2a2a2a; margin-left: 0.4rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.lap-range-hint { font-size: 0.62rem; color: #2a2a2a; margin-top: 0.2rem; font-family: monospace; }
 </style>
