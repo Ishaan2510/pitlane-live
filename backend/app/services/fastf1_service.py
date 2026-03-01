@@ -275,8 +275,7 @@ class FastF1Service:
                 'tire_life': int(lap['TyreLife'])    if pd.notna(lap['TyreLife'])  else 0,
                 'pit_out':   bool(lap['PitOutTime']) if 'PitOutTime' in lap and pd.notna(lap['PitOutTime']) else False,
                 'pit_in':    bool(lap['PitInTime'])  if 'PitInTime'  in lap and pd.notna(lap['PitInTime'])  else False,
-                'gap_seconds': (lambda g: g.total_seconds() if hasattr(g, 'total_seconds') else float(g))(lap['GapToLeader'])
-                if 'GapToLeader' in lap.index and pd.notna(lap.get('GapToLeader')) else None,
+                '_lap_time_val': lap['Time'] if pd.notna(lap['Time']) else None,
                 'distance':  0,        
                 'avg_speed': self._lap_speed_avg(lap),
                 'max_speed': self._lap_speed_max(lap),     
@@ -284,15 +283,18 @@ class FastF1Service:
             drivers.append(driver_data)
         
         drivers.sort(key=lambda x: x['position'] if x['position'] else 999)
-        
-        if drivers and drivers[0]['position'] == 1:
-            for i, driver in enumerate(drivers):
-                # driver['gap'] = 'LEADER' if i == 0 else f"+{i * 0.5:.1f}s"
-                secs = driver.pop('gap_seconds', None)
-                if i == 0 or secs is None:
-                    driver['gap'] = 'LEADER'
-                else:
-                    driver['gap'] = f"+{float(secs):.3f}s"
+
+        leader_time = drivers[0].get('_lap_time_val') if drivers else None
+        for i, driver in enumerate(drivers):
+            lap_time_val = driver.pop('_lap_time_val', None)
+            if i == 0 or leader_time is None or lap_time_val is None:
+                driver['gap'] = 'LEADER'
+            else:
+                try:
+                    gap_secs = (lap_time_val - leader_time).total_seconds()
+                    driver['gap'] = f"+{gap_secs:.3f}s" if gap_secs >= 0 else 'LEADER'
+                except:
+                    driver['gap'] = None
                         
         return {
             'lap_number': lap_number,
