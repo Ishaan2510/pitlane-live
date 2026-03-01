@@ -10,7 +10,35 @@
         <h2>No Live Session</h2>
         <p>There's no F1 race happening right now.</p>
         <p class="hint">The live feed activates automatically during race weekends.<br>Check back on race day — usually Sundays from ~13:00 local circuit time.</p>
-        <div class="next-race-links">
+
+        <!-- ── Simulation picker ── -->
+        <div class="sim-box" v-if="simulatableRaces.length">
+          <div class="sim-heading">TEST WITH SIMULATION</div>
+          <p class="sim-sub">Replay a cached race through the live UI to test predictions, timing tower and track canvas.</p>
+
+          <div class="sim-controls">
+            <select v-model="simSelection" class="sim-select">
+              <option :value="null" disabled>Select a race…</option>
+              <option
+                v-for="r in simulatableRaces"
+                :key="`${r.year}_${r.round}`"
+                :value="r"
+              >{{ r.year }} — {{ r.name }}</option>
+            </select>
+
+            <button
+              class="sim-btn"
+              :disabled="!simSelection"
+              @click="startSimulation"
+            >▶ START SIMULATION</button>
+          </div>
+        </div>
+        <div class="sim-box sim-loading" v-else-if="loadingSimRaces">
+          <div class="sim-heading">TEST WITH SIMULATION</div>
+          <p class="sim-sub">Loading available races…</p>
+        </div>
+
+        <div class="next-race-links" style="margin-top: 1rem">
           <router-link to="/replay" class="btn-outline">← Browse Replays</router-link>
           <button @click="retryConnection" class="btn-outline">↻ Check Again</button>
         </div>
@@ -24,17 +52,30 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════
-         LIVE INTERFACE
+         LIVE / SIMULATED INTERFACE
     ═══════════════════════════════════════════════ -->
     <div v-else class="live-interface">
 
       <!-- ── Top bar ── -->
       <div class="top-bar">
         <div class="top-left">
-          <span class="live-pill">
-            <span class="live-dot"></span> LIVE
+          <span class="live-pill" :class="{ 'sim-pill': isSimulated }">
+            <span class="live-dot"></span>
+            {{ isSimulated ? 'SIMULATED' : 'LIVE' }}
           </span>
           <span class="session-name">{{ sessionName }}</span>
+          <!-- Simulation lap counter + controls -->
+          <span v-if="isSimulated" class="sim-lap-display">
+            Lap {{ simLap }} / {{ simTotalLaps }}
+            <button class="sim-nav-btn" @click="simStepLap(-5)"  title="−5 laps">«</button>
+            <button class="sim-nav-btn" @click="simStepLap(-1)"  title="−1 lap">‹</button>
+            <button class="sim-nav-btn" @click="simTogglePlay()" title="Play/Pause">
+              {{ simPlaying ? '⏸' : '▶' }}
+            </button>
+            <button class="sim-nav-btn" @click="simStepLap(1)"   title="+1 lap">›</button>
+            <button class="sim-nav-btn" @click="simStepLap(5)"   title="+5 laps">»</button>
+            <button class="sim-nav-btn stop" @click="stopSimulation" title="Stop simulation">✕</button>
+          </span>
         </div>
 
         <!-- Race control message banner (center) -->
@@ -106,7 +147,7 @@
             @select-driver="selectDriver"
           />
 
-          <!-- Race control history overlay (bottom of canvas) -->
+          <!-- Race control history overlay -->
           <div class="rc-log" v-if="rcHistory.length">
             <div
               v-for="(msg, i) in rcHistory.slice(0, 3)"
@@ -241,15 +282,15 @@ export default {
   data() {
     return {
       loading:        true,
-      liveState:      null,        // latest state from SSE / polling
+      liveState:      null,
       selectedDriver: null,
-      rcHistory:      [],          // race control message history
+      rcHistory:      [],
       lastUpdated:    '—',
-      eventSource:    null,        // SSE connection
-      pollInterval:   null,        // fallback polling
+      eventSource:    null,
+      pollInterval:   null,
       sessionName:    'Live Race',
 
-      prediction: { action: '', confidence: 75 },
+      prediction:     { action: '', confidence: 75 },
       submitting:     false,
       lastPrediction: null,
 
@@ -258,7 +299,19 @@ export default {
         { value: 'pit_medium', label: 'Pit → Medium', emoji: '🟡', cls: 'medium' },
         { value: 'pit_hard',   label: 'Pit → Hard',   emoji: '⚪', cls: 'hard'   },
         { value: 'stay_out',   label: 'Stay Out',     emoji: '⏩', cls: 'stay'   },
-      ]
+      ],
+
+      // ── Simulation state ──
+      simulatableRaces:  [],
+      loadingSimRaces:   true,
+      simSelection:      null,   // selected race object from picker
+      isSimulated:       false,
+      simLap:            1,
+      simTotalLaps:      0,
+      simPlaying:        false,
+      simPlayInterval:   null,
+      simYear:           null,
+      simRound:          null,
     }
   },
 
@@ -267,20 +320,17 @@ export default {
       if (!this.selectedDriver || !this.liveState) return null
       return this.liveState.drivers.find(d => d.driver === this.selectedDriver) ?? null
     },
-
-    // Convert live drivers to the shape TrackCanvas expects
     canvasDrivers() {
       if (!this.liveState) return []
       return this.liveState.drivers.map(d => ({
-        driver:   d.driver,
-        team:     d.team,
-        position: d.position,
-        gap:      d.gap,
-        compound: d.compound,
+        driver:    d.driver,
+        team:      d.team,
+        position:  d.position,
+        gap:       d.gap,
+        compound:  d.compound,
         tire_life: d.tire_age
       }))
     },
-
     rcBannerClass() {
       if (!this.liveState?.race_control) return ''
       const flag = this.liveState.race_control.flag || ''
@@ -288,35 +338,36 @@ export default {
       if (flag.includes('YELLOW') || flag.includes('VSC')) return 'rc-yellow'
       if (flag.includes('SAFETY')) return 'rc-safety'
       if (flag.includes('GREEN'))  return 'rc-green'
+      if (flag === 'PIT')          return 'rc-neutral'
       return 'rc-neutral'
     },
-
     rcFlag() {
       const flag = this.liveState?.race_control?.flag || ''
-      if (flag.includes('RED'))         return '🚩'
-      if (flag.includes('YELLOW'))      return '🟡'
-      if (flag.includes('SAFETY'))      return '🚗'
-      if (flag.includes('VSC'))         return '🟡'
-      if (flag.includes('GREEN'))       return '🟢'
-      if (flag.includes('CHEQUERED'))   return '🏁'
+      if (flag.includes('RED'))       return '🚩'
+      if (flag.includes('YELLOW'))    return '🟡'
+      if (flag.includes('SAFETY'))    return '🚗'
+      if (flag.includes('VSC'))       return '🟡'
+      if (flag.includes('GREEN'))     return '🟢'
+      if (flag.includes('CHEQUERED')) return '🏁'
+      if (flag === 'PIT')             return '🔧'
       return '📢'
     }
   },
 
   async mounted() {
     await this.connect()
+    this.loadSimulatableRaces()
   },
 
   beforeUnmount() {
     this.disconnect()
+    this.stopSimulation()
   },
 
   methods: {
-    // ── Connection ────────────────────────────────────────────────────────────
+    // ── Connection (real live) ────────────────────────────────────────────────
     async connect() {
       this.loading = true
-
-      // First fetch to check if there's a live session at all
       try {
         const state = await this.fetchState()
         if (!state || state.error) {
@@ -330,26 +381,20 @@ export default {
         this.loading   = false
         return
       }
-
       this.loading = false
-
-      // Try SSE first for push updates
       this.connectSSE()
     },
 
     connectSSE() {
       try {
         this.eventSource = new EventSource(`/api/replay/live/stream`)
-
         this.eventSource.onmessage = (e) => {
           try {
             const state = JSON.parse(e.data)
             if (!state.error) this.applyState(state)
-          } catch { /* ignore parse errors */ }
+          } catch { /* ignore */ }
         }
-
         this.eventSource.onerror = () => {
-          // SSE failed — fall back to polling
           this.eventSource?.close()
           this.eventSource = null
           this.startPolling()
@@ -382,28 +427,22 @@ export default {
 
     applyState(state) {
       this.liveState = state
-
-      // Update session name from first driver's team if possible
       if (state.drivers?.length) {
-        this.sessionName = `Formula 1 – Session ${state.session_key}`
+        this.sessionName = this.isSimulated
+          ? `SIMULATION — ${state.sim_race_name || ''}`
+          : `Formula 1 – Session ${state.session_key}`
       }
-
-      // Track race control history
       if (state.race_control) {
-        const rc = state.race_control
-        const text = rc.message || rc.flag || ''
+        const text = state.race_control.message || state.race_control.flag || ''
         if (text && (this.rcHistory.length === 0 || this.rcHistory[0].text !== text)) {
           this.rcHistory.unshift({
             text,
-            flag: rc.flag || '',
+            flag: state.race_control.flag || '',
             time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
           })
-          // Keep only last 10
           if (this.rcHistory.length > 10) this.rcHistory.pop()
         }
       }
-
-      // Last updated timestamp
       this.lastUpdated = new Date().toLocaleTimeString('en-GB', {
         hour: '2-digit', minute: '2-digit', second: '2-digit'
       })
@@ -414,10 +453,92 @@ export default {
       await this.connect()
     },
 
+    // ── Simulation ────────────────────────────────────────────────────────────
+    async loadSimulatableRaces() {
+      this.loadingSimRaces = true
+      try {
+        const res = await fetch('/api/replay/simulate/races')
+        this.simulatableRaces = await res.json()
+      } catch {
+        this.simulatableRaces = []
+      } finally {
+        this.loadingSimRaces = false
+      }
+    },
+
+    async startSimulation() {
+      if (!this.simSelection) return
+      this.disconnect()   // stop polling real live endpoint
+
+      this.isSimulated  = true
+      this.simYear      = this.simSelection.year
+      this.simRound     = this.simSelection.round
+      this.simTotalLaps = this.simSelection.total_laps
+      this.simLap       = 1
+      this.rcHistory    = []
+
+      await this.fetchSimState()
+      this.simPlaying = true
+      this.simPlayInterval = setInterval(async () => {
+        if (this.simLap >= this.simTotalLaps) {
+          this.simTogglePlay()   // auto-pause at end
+          return
+        }
+        this.simLap++
+        await this.fetchSimState()
+      }, 3000)   // advance one lap every 3s, same cadence as real live
+    },
+
+    stopSimulation() {
+      this.isSimulated = false
+      this.simPlaying  = false
+      clearInterval(this.simPlayInterval)
+      this.simPlayInterval = null
+      this.liveState   = null
+      this.sessionName = 'Live Race'
+      this.rcHistory   = []
+    },
+
+    simTogglePlay() {
+      if (this.simPlaying) {
+        this.simPlaying = false
+        clearInterval(this.simPlayInterval)
+        this.simPlayInterval = null
+      } else {
+        this.simPlaying = true
+        this.simPlayInterval = setInterval(async () => {
+          if (this.simLap >= this.simTotalLaps) {
+            this.simTogglePlay()
+            return
+          }
+          this.simLap++
+          await this.fetchSimState()
+        }, 3000)
+      }
+    },
+
+    async simStepLap(delta) {
+      this.simLap = Math.max(1, Math.min(this.simTotalLaps, this.simLap + delta))
+      await this.fetchSimState()
+    },
+
+    async fetchSimState() {
+      try {
+        const res = await fetch(
+          `/api/replay/simulate/state?year=${this.simYear}&round=${this.simRound}&lap=${this.simLap}`
+        )
+        const state = await res.json()
+        if (!state.error) {
+          this.simTotalLaps = state.sim_total_laps || this.simTotalLaps
+          this.applyState(state)
+        }
+      } catch { /* ignore */ }
+    },
+
     // ── Driver selection ──────────────────────────────────────────────────────
     selectDriver(code) {
       if (this.selectedDriver === code) {
-        this.selectedDriver   = null
+        this.selectedDriver    = null
         this.prediction.action = ''
         return
       }
@@ -429,13 +550,11 @@ export default {
       if (!this.prediction.action || !this.selectedDriver) return
       this.submitting = true
       try {
-        // Use the existing predictions endpoint
-        // We use race_id = 0 as a placeholder for live races (scoring comes in a later feature)
         await api.submitPrediction({
           raceId:     0,
           driver:     this.selectedDriver,
           action:     this.prediction.action,
-          lap:        0,   // live — lap TBD
+          lap:        this.isSimulated ? this.simLap : 0,
           confidence: this.prediction.confidence
         })
         this.lastPrediction = {
@@ -453,24 +572,20 @@ export default {
     // ── Helpers ───────────────────────────────────────────────────────────────
     teamColor(team)  { return TEAM_COLORS[team] || '#888' },
     shortTeam(team)  { return SHORT_TEAM[team]  || team?.slice(0, 3).toUpperCase() || '???' },
-
-    tyreEmoji(compound) {
-      return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪', INTERMEDIATE:'🟢', WET:'🔵' }[compound] || '⚫'
+    tyreEmoji(c) {
+      return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪', INTERMEDIATE:'🟢', WET:'🔵' }[c] || '⚫'
     },
-
     posClass(pos) {
       if (pos === 1) return 'p1'
       if (pos === 2) return 'p2'
       if (pos === 3) return 'p3'
       return ''
     },
-
     formatInterval(interval) {
       if (!interval) return '—'
       if (typeof interval === 'number') return `+${interval.toFixed(3)}`
       return interval
     },
-
     rcClass(msg) {
       const f = msg.flag || ''
       if (f.includes('RED'))    return 'rc-log-red'
@@ -479,7 +594,6 @@ export default {
       if (f.includes('GREEN'))  return 'rc-log-green'
       return 'rc-log-neutral'
     },
-
     formatAction(a) {
       return { pit_soft:'Pit → Soft', pit_medium:'Pit → Medium',
                pit_hard:'Pit → Hard', stay_out:'Stay Out' }[a] || a
@@ -511,7 +625,7 @@ export default {
 }
 .no-session-inner {
   text-align: center;
-  max-width: 480px;
+  max-width: 520px;
   padding: 3rem;
 }
 .no-session-icon { font-size: 4rem; margin-bottom: 1.5rem; }
@@ -524,11 +638,68 @@ export default {
 }
 .no-session-inner p { color: #555; line-height: 1.7; margin-bottom: 0.5rem; }
 .hint { font-size: 0.85rem; color: #444; }
+
+/* ── Simulation box ── */
+.sim-box {
+  margin-top: 2rem;
+  border: 1px solid #1e1e1e;
+  padding: 1.5rem;
+  text-align: left;
+  background: #0d0d0d;
+}
+.sim-heading {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: #e10600;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.sim-sub {
+  font-size: 0.8rem;
+  color: #444;
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+}
+.sim-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.sim-select {
+  flex: 1;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  color: #ccc;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.sim-select option { background: #111; }
+.sim-btn {
+  padding: 0.5rem 1.1rem;
+  background: rgba(225,6,0,0.15);
+  border: 1px solid rgba(225,6,0,0.35);
+  color: #e10600;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border-radius: 2px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.sim-btn:hover:not(:disabled) {
+  background: rgba(225,6,0,0.3);
+  border-color: #e10600;
+}
+.sim-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.sim-loading .sim-sub { color: #333; font-style: italic; }
+
 .next-race-links {
   display: flex;
   gap: 1rem;
   justify-content: center;
-  margin-top: 2rem;
 }
 .btn-outline {
   padding: 0.55rem 1.4rem;
@@ -592,6 +763,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  overflow: hidden;
 }
 
 .live-pill {
@@ -606,10 +778,16 @@ export default {
   letter-spacing: 0.12em;
   padding: 0.25rem 0.65rem;
   border-radius: 2px;
+  flex-shrink: 0;
+}
+.live-pill.sim-pill {
+  background: rgba(100, 100, 255, 0.1);
+  border-color: rgba(100, 100, 255, 0.3);
+  color: #8888ff;
 }
 .live-dot {
   width: 6px; height: 6px;
-  background: #e10600;
+  background: currentColor;
   border-radius: 50%;
   animation: live-blink 1.2s ease-in-out infinite;
 }
@@ -621,9 +799,39 @@ export default {
   font-size: 0.8rem;
   color: #666;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Race control banner (center) */
+/* Simulation lap display */
+.sim-lap-display {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #8888ff;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+.sim-nav-btn {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  width: 22px; height: 22px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.12s;
+}
+.sim-nav-btn:hover  { border-color: #8888ff; color: #8888ff; }
+.sim-nav-btn.stop:hover { border-color: #e10600; color: #e10600; }
+
+/* Race control banner */
 .rc-banner {
   padding: 0.3rem 1rem;
   border-radius: 2px;
@@ -677,11 +885,9 @@ export default {
   display: flex;
   flex-direction: column;
 }
-
 .tower-header {
   display: grid;
   grid-template-columns: 32px 1fr 56px 56px 52px;
-  gap: 0;
   padding: 0.4rem 0.75rem;
   border-bottom: 1px solid #141414;
   position: sticky;
@@ -696,12 +902,10 @@ export default {
   color: #333;
   font-weight: 700;
 }
-
 .tower-row {
   display: grid;
   grid-template-columns: 32px 1fr 56px 56px 52px;
   align-items: center;
-  gap: 0;
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid rgba(255,255,255,0.025);
   cursor: pointer;
@@ -723,75 +927,25 @@ export default {
 .tower-row.selected { background: rgba(255,255,255,0.06); }
 .tower-row.selected::before { background: #e10600; }
 
-.tr-pos {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.05rem;
-  color: #444;
-  text-align: center;
-}
+.tr-pos { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; color: #444; text-align: center; }
 .tr-pos.p1 { color: #ffd700; }
 .tr-pos.p2 { color: #c0c0c0; }
 .tr-pos.p3 { color: #cd7f32; }
-
-.tr-driver {
-  display: flex;
-  flex-direction: column;
-  gap: 0.05rem;
-  padding-left: 0.3rem;
-}
-.tr-code {
-  font-family: monospace;
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: #ddd;
-  letter-spacing: 0.03em;
-}
-.tr-team {
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  opacity: 0.8;
-}
-
-.tr-gap {
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: #666;
-  text-align: right;
-  padding-right: 0.25rem;
-}
+.tr-driver { display: flex; flex-direction: column; gap: 0.05rem; padding-left: 0.3rem; }
+.tr-code { font-family: monospace; font-size: 0.85rem; font-weight: 800; color: #ddd; letter-spacing: 0.03em; }
+.tr-team { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.05em; opacity: 0.8; }
+.tr-gap { font-family: monospace; font-size: 0.75rem; color: #666; text-align: right; padding-right: 0.25rem; }
 .tr-gap.leader { color: #ffd700; font-weight: 800; font-size: 0.65rem; }
-
-.tr-interval {
-  font-family: monospace;
-  font-size: 0.72rem;
-  color: #444;
-  text-align: right;
-  padding-right: 0.25rem;
-}
-
-.tr-tyre {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  justify-content: center;
-}
-.tyre-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+.tr-interval { font-family: monospace; font-size: 0.72rem; color: #444; text-align: right; padding-right: 0.25rem; }
+.tr-tyre { display: flex; align-items: center; gap: 0.3rem; justify-content: center; }
+.tyre-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .tyre-dot.soft         { background: #cc2222; }
 .tyre-dot.medium       { background: #cccc00; }
 .tyre-dot.hard         { background: #cccccc; }
 .tyre-dot.intermediate { background: #00aa44; }
 .tyre-dot.wet          { background: #2255cc; }
 .tyre-dot.unknown      { background: #444; }
-.tyre-age {
-  font-family: monospace;
-  font-size: 0.68rem;
-  color: #444;
-}
+.tyre-age { font-family: monospace; font-size: 0.68rem; color: #444; }
 
 /* ════════════════════════════════════════════════════
    TRACK AREA (center)
@@ -803,13 +957,9 @@ export default {
   min-height: 0;
   overflow: hidden;
 }
-
-/* Race control history — floats over bottom of canvas */
 .rc-log {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   padding: 0.5rem 0.75rem;
   background: linear-gradient(transparent, rgba(8,8,8,0.9));
   display: flex;
@@ -843,12 +993,7 @@ export default {
   flex-direction: column;
   overflow-y: auto;
 }
-
-/* Selected driver card */
-.selected-card {
-  padding: 1rem 0.9rem;
-  border-bottom: 1px solid #111;
-}
+.selected-card { padding: 1rem 0.9rem; border-bottom: 1px solid #111; }
 .selected-card-empty {
   display: flex;
   flex-direction: column;
@@ -862,128 +1007,38 @@ export default {
   border-bottom: 1px solid #111;
 }
 .selected-card-empty span { font-size: 1.6rem; }
-
-.sc-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.2rem;
-}
-.sc-code {
-  font-family: monospace;
-  font-size: 1.3rem;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: 0.05em;
-}
-.sc-pos {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.2rem;
-  color: #555;
-  letter-spacing: 0.05em;
-}
+.sc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem; }
+.sc-code { font-family: monospace; font-size: 1.3rem; font-weight: 900; color: #fff; letter-spacing: 0.05em; }
+.sc-pos { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: #555; letter-spacing: 0.05em; }
 .sc-pos.p1 { color: #ffd700; }
 .sc-pos.p2 { color: #c0c0c0; }
 .sc-pos.p3 { color: #cd7f32; }
-.sc-team {
-  font-size: 0.72rem;
-  font-weight: 600;
-  margin-bottom: 0.9rem;
-  letter-spacing: 0.04em;
-}
-
-.sc-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.65rem 0.5rem;
-}
-.sc-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-.sc-label {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #3a3a3a;
-}
-.sc-value {
-  font-family: monospace;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #bbb;
-}
+.sc-team { font-size: 0.72rem; font-weight: 600; margin-bottom: 0.9rem; letter-spacing: 0.04em; }
+.sc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 0.5rem; }
+.sc-stat { display: flex; flex-direction: column; gap: 0.15rem; }
+.sc-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: #3a3a3a; }
+.sc-value { font-family: monospace; font-size: 0.82rem; font-weight: 600; color: #bbb; }
 .sc-value.leader { color: #ffd700; font-weight: 800; }
-
-.sc-tyre-pill {
-  display: inline-block;
-  padding: 0.15rem 0.4rem;
-  border-radius: 2px;
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-.sc-tyre-pill.soft         { background: rgba(200,0,0,0.25);   color: #ff9999; }
-.sc-tyre-pill.medium       { background: rgba(200,200,0,0.2);  color: #ffff99; }
-.sc-tyre-pill.hard         { background: rgba(200,200,200,0.15); color: #ccc;  }
-.sc-tyre-pill.intermediate { background: rgba(0,180,0,0.2);   color: #99ff99;  }
-.sc-tyre-pill.wet          { background: rgba(0,80,220,0.2);  color: #99aaff;  }
-.sc-tyre-pill.unknown      { background: rgba(80,80,80,0.2);  color: #666;     }
-
-.panel-divider {
-  height: 1px;
-  background: #111;
-  flex-shrink: 0;
-}
+.sc-tyre-pill { display: inline-block; padding: 0.15rem 0.4rem; border-radius: 2px; font-size: 0.72rem; font-weight: 700; }
+.sc-tyre-pill.soft         { background: rgba(200,0,0,0.25);    color: #ff9999; }
+.sc-tyre-pill.medium       { background: rgba(200,200,0,0.2);   color: #ffff99; }
+.sc-tyre-pill.hard         { background: rgba(200,200,200,0.15); color: #ccc; }
+.sc-tyre-pill.intermediate { background: rgba(0,180,0,0.2);    color: #99ff99; }
+.sc-tyre-pill.wet          { background: rgba(0,80,220,0.2);   color: #99aaff; }
+.sc-tyre-pill.unknown      { background: rgba(80,80,80,0.2);   color: #666; }
+.panel-divider { height: 1px; background: #111; flex-shrink: 0; }
 
 /* ── Prediction panel ── */
-.prediction-panel {
-  padding: 0.9rem;
-  flex: 1;
-}
-.panel-heading {
-  font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #333;
-  margin-bottom: 0.9rem;
-}
-.pred-hint {
-  font-size: 0.78rem;
-  color: #2d2d2d;
-  text-align: center;
-  padding: 1rem 0;
-}
+.prediction-panel { padding: 0.9rem; flex: 1; }
+.panel-heading { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em; color: #333; margin-bottom: 0.9rem; }
+.pred-hint { font-size: 0.78rem; color: #2d2d2d; text-align: center; padding: 1rem 0; }
 .pred-form { display: flex; flex-direction: column; gap: 0.8rem; }
-
-.pred-driver-chip {
-  font-size: 0.72rem;
-  color: #555;
-  background: #0f0f0f;
-  border: 1px solid #1a1a1a;
-  padding: 0.35rem 0.6rem;
-  border-radius: 2px;
-}
+.pred-driver-chip { font-size: 0.72rem; color: #555; background: #0f0f0f; border: 1px solid #1a1a1a; padding: 0.35rem 0.6rem; border-radius: 2px; }
 .pred-driver-chip strong { color: #fff; font-family: monospace; }
-
-.pred-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.pred-field label {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #3a3a3a;
-}
+.pred-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.pred-field label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #3a3a3a; }
 .pred-field label strong { color: #888; }
-
-.action-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-}
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .action-btn {
   padding: 0.4rem 0.3rem;
   border: 1px solid #1a1a1a;
@@ -1001,24 +1056,8 @@ export default {
 .action-btn.hard.active   { background: rgba(180,180,180,0.15); border-color: #aaa;   color: #ddd; }
 .action-btn.stay.active   { background: rgba(0,100,220,0.2);   border-color: #0055aa; color: #88aaff; }
 .action-btn:hover:not(.active) { border-color: #333; color: #888; }
-
-.conf-slider {
-  width: 100%;
-  height: 3px;
-  background: #1a1a1a;
-  border-radius: 2px;
-  outline: none;
-  cursor: pointer;
-  appearance: none;
-}
-.conf-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 14px; height: 14px;
-  background: #e10600;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
+.conf-slider { width: 100%; height: 3px; background: #1a1a1a; border-radius: 2px; outline: none; cursor: pointer; appearance: none; }
+.conf-slider::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; background: #e10600; border-radius: 50%; cursor: pointer; }
 .pred-submit {
   background: rgba(225, 6, 0, 0.15);
   border: 1px solid rgba(225, 6, 0, 0.3);
@@ -1031,19 +1070,7 @@ export default {
   border-radius: 2px;
   transition: all 0.15s;
 }
-.pred-submit:hover:not(:disabled) {
-  background: rgba(225, 6, 0, 0.3);
-  border-color: #e10600;
-}
-.pred-submit:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.last-prediction {
-  font-size: 0.7rem;
-  color: #2a6;
-  text-align: center;
-  padding: 0.3rem;
-}
+.pred-submit:hover:not(:disabled) { background: rgba(225, 6, 0, 0.3); border-color: #e10600; }
+.pred-submit:disabled { opacity: 0.3; cursor: not-allowed; }
+.last-prediction { font-size: 0.7rem; color: #2a6; text-align: center; padding: 0.3rem; }
 </style>
