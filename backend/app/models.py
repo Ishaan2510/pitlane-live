@@ -105,6 +105,7 @@ class Prediction(db.Model):
     def to_dict(self):
         return {
             'id':         self.id,
+            'race_id':    self.race_id,
             'driver':     self.driver_name,
             'action':     self.action,
             'lap':        self.predicted_lap,
