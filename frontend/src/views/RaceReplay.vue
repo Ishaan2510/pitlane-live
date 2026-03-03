@@ -740,4 +740,26 @@ export default {
   overflow-y: auto;
   min-height: 0;
 }
+
+@media (max-width: 768px) {
+  .replay-page { overflow-x: hidden !important; }
+  .race-list-row {
+    display: grid !important;
+    grid-template-columns: 40px 1fr auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 14px 12px !important;
+  }
+  .replay-badge, .status-badge {
+    white-space: nowrap !important;
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+    justify-self: end !important;
+  }
+  .race-info { overflow: hidden !important; }
+  .race-name { white-space: normal !important; line-height: 1.2 !important; }
+  .year-tabs { gap: 6px !important; }
+  .year-tab { padding: 6px 14px !important; font-size: 13px !important; }
+}
+
 </style>

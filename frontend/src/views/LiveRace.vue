@@ -1137,4 +1137,51 @@ export default {
 .last-prediction { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #2a6; padding: 0.3rem; }
 .window-hint { font-size: 0.58rem; color: #2a2a2a; margin-left: 0.4rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
 .lap-range-hint { font-size: 0.62rem; color: #2a2a2a; margin-top: 0.2rem; font-family: monospace; }
+
+@media (max-width: 768px) {
+  .race-layout, .live-layout, .race-content, .race-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .timing-tower, .leaderboard-panel, .left-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 55vh !important;
+    overflow-y: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid #1a1a1a !important;
+  }
+  .track-panel, .right-panel, .telemetry-panel, .center-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+  }
+  .track-canvas, .track-container, canvas {
+    width: 100% !important;
+    max-width: 360px !important;
+    height: auto !important;
+    aspect-ratio: 1;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+  .prediction-panel, .make-prediction {
+    width: 100% !important;
+    border-left: none !important;
+    border-top: 1px solid #1a1a1a !important;
+    padding: 12px !important;
+  }
+  .race-status, .status-bar {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    font-size: 11px !important;
+  }
+  .driver-row { font-size: 12px !important; }
+  .col-gap, .col-interval { display: none !important; }
+  .race-page, .live-page { overflow-x: hidden !important; }
+}
 </style>
