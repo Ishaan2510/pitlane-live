@@ -110,3 +110,113 @@ def preview_scoring(year, round_num):
         'pending_to_score': pending_count,
         'pit_stops':       pit_registry,   # driver -> [{lap_in, new_compound}]
     })
+
+# ── Sim predictions scoring test ──────────────────────────────────────────────
+
+@bp.route('/score-sim-test', methods=['POST'])
+def score_sim_test():
+    """
+    Score all sim predictions (race_id IS NULL) against any cached race.
+    Used to verify the scoring engine is working before race day.
+
+    Body JSON: { "year": 2025, "round": 1 }
+    Header:    X-Admin-Key: <your key>
+
+    Example curl:
+        curl -X POST http://20.198.85.246/api/scoring/score-sim-test \\
+             -H "Content-Type: application/json" \\
+             -H "X-Admin-Key: pitlane-admin-2026" \\
+             -d '{"year": 2025, "round": 1}'
+    """
+    if not _check_admin(request):
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data      = request.get_json() or {}
+    year      = data.get('year')
+    round_num = data.get('round')
+
+    if not year or not round_num:
+        return jsonify({'error': 'year and round required'}), 400
+
+    from app.services.fastf1_service import fastf1_service
+
+    cache_file = fastf1_service.processed_cache_dir / f"{int(year)}_R{int(round_num)}_processed.json"
+    if not cache_file.exists():
+        return jsonify({'error': f'Race not cached: {year} R{round_num}'}), 404
+
+    with open(cache_file) as f:
+        race_data = json.load(f)
+
+    pit_registry = build_pit_registry(race_data)
+
+    # All sim predictions have race_id = NULL
+    sim_preds = Prediction.query.filter(Prediction.race_id == None).all()
+    if not sim_preds:
+        return jsonify({'message': 'No sim predictions found', 'scored': 0}), 200
+
+    COMPOUND_LOOKUP = {
+        'pit_soft':   'SOFT',
+        'pit_medium': 'MEDIUM',
+        'pit_hard':   'HARD',
+    }
+
+    results = []
+    for pred in sim_preds:
+        driver       = pred.driver_name.upper()
+        action       = pred.action
+        predicted_lap = pred.predicted_lap
+        confidence   = pred.confidence
+        driver_pits  = pit_registry.get(driver, [])
+
+        is_pit = action in COMPOUND_LOOKUP
+
+        if is_pit:
+            target   = COMPOUND_LOOKUP[action]
+            matching = [p for p in driver_pits if p['new_compound'] == target]
+
+            if matching and predicted_lap > 0:
+                closest = min(matching, key=lambda p: abs(p['lap_in'] - predicted_lap))
+                diff    = abs(closest['lap_in'] - predicted_lap)
+                if diff == 0:
+                    multiplier, outcome = 1.5 * 1.25, 'exact'
+                elif diff == 1:
+                    multiplier, outcome = 1.5 * 1.10, 'close'
+                elif diff <= 2:
+                    multiplier, outcome = 1.5, 'within_window'
+                else:
+                    multiplier, outcome = 0, 'miss'
+            elif matching and predicted_lap == 0:
+                multiplier, outcome = 1.5, 'correct_no_lap'
+            else:
+                multiplier, outcome = 0, 'wrong_compound'
+
+        elif action == 'stay_out':
+            if not driver_pits:
+                multiplier, outcome = 1.5, 'correct_stay_out'
+            else:
+                multiplier, outcome = 0, 'pitted_unexpectedly'
+
+        else:
+            multiplier, outcome = 0, 'unknown_action'
+
+        points = round(confidence * multiplier, 1)
+        results.append({
+            'prediction_id': pred.id,
+            'driver':        driver,
+            'action':        action,
+            'predicted_lap': predicted_lap,
+            'actual_pits':   driver_pits,
+            'confidence':    confidence,
+            'outcome':       outcome,
+            'points':        points
+        })
+
+    total = sum(r['points'] for r in results)
+    return jsonify({
+        'test_race':   race_data.get('name'),
+        'year':        year,
+        'round':       round_num,
+        'scored':      len(results),
+        'total_points': total,
+        'breakdown':   results
+    }), 200

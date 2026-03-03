@@ -124,7 +124,15 @@ export default {
     },
     formatTime(ts) {
       if (!ts) return '—'
-      return new Date(ts).toLocaleDateString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })
+      const iso = ts.endsWith('Z') ? ts : ts + 'Z'
+      return new Date(iso).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day:      'numeric',
+        month:    'short',
+        hour:     '2-digit',
+        minute:   '2-digit',
+        hour12:   true
+      })
     }
   }
 }
