@@ -126,7 +126,7 @@ export default {
       if (!ts) return '—'
       const iso = ts.endsWith('Z') ? ts : ts + 'Z'
       return new Date(iso).toLocaleString('en-IN', {
-        timeZone: 'Asia/Kolkata',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         day:      'numeric',
         month:    'short',
         hour:     '2-digit',

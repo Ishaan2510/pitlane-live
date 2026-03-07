@@ -39,8 +39,6 @@ const DEFAULT_ANIM_MS = 800
 export default {
   name: 'TrackCanvas',
 
-  name: 'TrackCanvas',
-
   props: {
     drivers:        { type: Array,  default: () => [] },
     circuitData:    { type: Object, default: null },
