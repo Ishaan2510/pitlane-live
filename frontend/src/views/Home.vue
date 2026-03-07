@@ -216,9 +216,21 @@ export default {
     },
 
     tickCountdown() {
-      if (!this.nextRace) return
-      const raceDate = new Date(this.nextRace.date + 'T14:00:00Z')
-      const diff     = raceDate - new Date()
+      // Use the exact race start time from FastF1 if available.
+      // Fall back to noon UTC on race day — still wrong but less wrong than 14:00 UTC.
+      let raceDate
+      if (this.nextRace.race_time_utc) {
+        // Session5DateUtc from FastF1 — already in UTC, may or may not have 'Z'
+        const utcStr = this.nextRace.race_time_utc.endsWith('Z')
+          ? this.nextRace.race_time_utc
+          : this.nextRace.race_time_utc + 'Z'
+        raceDate = new Date(utcStr)
+      } else {
+        // Fallback: noon UTC on race day (better than the old 14:00 UTC)
+        raceDate = new Date(this.nextRace.date + 'T12:00:00Z')
+      }
+
+      const diff = raceDate - new Date()
 
       if (diff <= 0) {
         this.countdown = { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 }

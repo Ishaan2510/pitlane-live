@@ -14,7 +14,6 @@ def _race_status(race_date: date, race_date_end: date = None) -> str:
     'upcoming'  — race date is in the future
     """
     today = date.today()
-    now   = datetime.utcnow()
 
     if race_date > today:
         return 'upcoming'
@@ -65,12 +64,29 @@ def get_schedule():
         # Sprint weekend detection
         is_sprint = event.get('EventFormat', '') in ('sprint', 'sprint_qualifying')
 
+        # ── Exact race start time ──────────────────────────────────────────────
+        # FastF1 provides Session5DateUtc for the race session.
+        # Fall back to Session5Date (local) → EventDate if not available.
+        race_time_utc = None
+        for col in ('Session5DateUtc', 'Session5Date'):
+            val = event.get(col)
+            if val is not None and not (isinstance(val, float) and pd.isna(val)):
+                try:
+                    if hasattr(val, 'isoformat'):
+                        race_time_utc = val.isoformat()
+                    else:
+                        race_time_utc = str(val)
+                    break
+                except Exception:
+                    continue
+
         races.append({
             'round':     round_num,
             'name':      event['EventName'],
             'location':  event['Location'],
             'country':   event['Country'],
             'date':      race_date.isoformat(),
+            'race_time_utc':  race_time_utc,   # NEW — exact race start UTC
             'year':      year,
             'status':    status,
             'is_next':   is_next,
