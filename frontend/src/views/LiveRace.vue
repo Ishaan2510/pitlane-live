@@ -96,11 +96,11 @@
 
         <!-- LEFT: Timing tower -->
         <div class="timing-tower">
-          <div class="tower-header">
+          <div class="tower-header" :class="{ 'no-interval': isSimulated }">
             <span class="th-pos">P</span>
             <span class="th-driver">DRIVER</span>
             <span class="th-gap">GAP</span>
-            <span class="th-interval">INT</span>
+            <span class="th-interval" v-show="!isSimulated">INT</span>
             <span class="th-tyre">TYRE</span>
           </div>
 
@@ -113,7 +113,8 @@
               'pos-1':   driver.position === 1,
               'pos-2':   driver.position === 2,
               'pos-3':   driver.position === 3,
-              'in-zone': driver.position <= 10
+              'in-zone': driver.position <= 10,
+              'no-interval': isSimulated
             }"
             @click="selectDriver(driver.driver)"
           >
@@ -127,7 +128,7 @@
             <span class="tr-gap" :class="{ leader: driver.gap === 'LEADER' }">
               {{ driver.gap === 'LEADER' ? '—' : driver.gap }}
             </span>
-            <span class="tr-interval">
+            <span class="tr-interval" v-show="!isSimulated">
               {{ formatInterval(driver.interval) }}
             </span>
             <div class="tr-tyre">
@@ -776,6 +777,8 @@ export default {
   50%       { transform: scale(2.4); opacity: 0.4; }
 }
 
+
+
 /* ════════════════════════════════════════════════════
    LIVE INTERFACE
 ════════════════════════════════════════════════════ */
@@ -966,6 +969,13 @@ export default {
 .tower-row:hover    { background: rgba(255,255,255,0.03); }
 .tower-row.selected { background: rgba(255,255,255,0.06); }
 .tower-row.selected::before { background: #e10600; }
+
+.tower-header.no-interval,
+.tower-row.no-interval {
+  grid-template-columns: 32px 1fr 56px 52px;
+}
+
+.th-gap { text-align: right; padding-right: 0.25rem; }
 
 .tr-pos { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; color: #444; text-align: center; }
 .tr-pos.p1 { color: #ffd700; }
