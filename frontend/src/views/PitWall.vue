@@ -175,43 +175,60 @@
       </section>
 
       <!-- PRO TIPS -->
-      <section class="block">
-        <div class="block-num">06</div>
-        <div class="block-content">
-          <h2 class="block-title">Pro Tips</h2>
-          <div class="tips">
-            <div class="tip">
-              <span class="tip-icon">🔢</span>
-              <div>
-                <div class="tip-title">Watch tyre age</div>
-                <div class="tip-desc">A soft tyre past lap 20 is almost always pitting soon. Use that number aggressively.</div>
-              </div>
-            </div>
-            <div class="tip">
-              <span class="tip-icon">📊</span>
-              <div>
-                <div class="tip-title">Confidence is a lever</div>
-                <div class="tip-desc">If you're 90% sure, go 90%. If you're guessing, go 30%. Don't bleed points on uncertain calls.</div>
-              </div>
-            </div>
-            <div class="tip">
-              <span class="tip-icon">🏎</span>
-              <div>
-                <div class="tip-title">Volume beats perfection</div>
-                <div class="tip-desc">More predictions across more drivers = more scoring opportunities per race.</div>
-              </div>
-            </div>
-            <div class="tip">
-              <span class="tip-icon">🟡</span>
-              <div>
-                <div class="tip-title">Safety car changes everything</div>
-                <div class="tip-desc">When the yellow banner appears, expect a wave of pit stops. Predict fast.</div>
-              </div>
-            </div>
+      <div class="tips">
+        <div class="tip">
+          <span class="tip-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="9" cy="9" r="7" stroke="#e10600" stroke-width="1.5"/>
+              <path d="M9 5v4l2.5 2.5" stroke="#e10600" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div>
+            <div class="tip-title">Watch tyre age</div>
+            <div class="tip-desc">A soft tyre past lap 20 is almost always pitting soon. Use that number aggressively.</div>
           </div>
         </div>
-      </section>
 
+        <div class="tip">
+          <span class="tip-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <rect x="2" y="10" width="3" height="6" rx="1" fill="#e10600"/>
+              <rect x="7" y="6" width="3" height="10" rx="1" fill="#e10600" opacity="0.6"/>
+              <rect x="12" y="2" width="3" height="14" rx="1" fill="#e10600" opacity="0.3"/>
+            </svg>
+          </span>
+          <div>
+            <div class="tip-title">Confidence is a lever</div>
+            <div class="tip-desc">If you're 90% sure, go 90%. If you're guessing, go 30%. Don't bleed points on uncertain calls.</div>
+          </div>
+        </div>
+
+        <div class="tip">
+          <span class="tip-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M2 9h3l2-5 3 9 2-4h4" stroke="#e10600" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <div>
+            <div class="tip-title">Volume beats perfection</div>
+            <div class="tip-desc">More predictions across more drivers = more scoring opportunities per race.</div>
+          </div>
+        </div>
+
+        <div class="tip">
+          <span class="tip-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M9 2L9 5M9 13L9 16M2 9L5 9M13 9L16 9" stroke="#e10600" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="9" cy="9" r="3" stroke="#e10600" stroke-width="1.5"/>
+              <circle cx="9" cy="9" r="6" stroke="#e10600" stroke-width="1" opacity="0.3" stroke-dasharray="2 2"/>
+            </svg>
+          </span>
+          <div>
+            <div class="tip-title">Safety car changes everything</div>
+            <div class="tip-desc">When the yellow banner appears, expect a wave of pit stops. Predict fast.</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ── Bottom CTA ── -->
@@ -312,6 +329,19 @@ export default {
   line-height: 1.8;
   margin-bottom: 1.5rem;
 }
+
+.tip-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(225,6,0,0.08);
+  border: 1px solid rgba(225,6,0,0.15);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 
 /* callout */
 .callout {
