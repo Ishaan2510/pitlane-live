@@ -6,6 +6,7 @@
       <router-link to="/live"      class="nav-link">LIVE</router-link>
       <router-link to="/replay"    class="nav-link">REPLAY</router-link>
       <router-link to="/standings" class="nav-link">STANDINGS</router-link>
+      <router-link to="/pit-wall"  class="nav-link">PIT WALL</router-link>
     </div>
 
     <div class="nav-auth">

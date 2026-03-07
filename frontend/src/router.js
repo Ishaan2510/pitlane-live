@@ -44,6 +44,11 @@ const routes = [
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/pit-wall',
+    name: 'PitWall',
+    component: () => import('@/views/PitWall.vue')
   }
 ]
 

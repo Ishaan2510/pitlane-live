@@ -124,7 +124,7 @@
           <div class="cr-info">
             <div class="cr-name">{{ race.name }}</div>
             <div class="cr-loc">{{ race.location }}, {{ race.country }}
-              <span v-if="race.is_sprint" class="sprint-tag">S</span>
+              <span v-if="race.is_sprint" class="sprint-tag">SPRINT</span>
             </div>
           </div>
 
