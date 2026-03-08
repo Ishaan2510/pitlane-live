@@ -34,7 +34,7 @@
       <div class="section-label">WATCH LIVE ON</div>
       <div class="platforms">
 
-        <a href="https://www.fancode.com/sports/formula1" target="_blank" class="platform-card fancode">
+        <a href="https://www.fancode.com/formula1/" target="_blank" class="platform-card fancode">
           <div class="platform-top">
             <div class="platform-name">FanCode</div>
             <div class="platform-tag">INDIA</div>
@@ -47,21 +47,6 @@
             </svg>
           </div>
         </a>
-
-        <a href="https://www.sonyliv.com/sports/motorsport" target="_blank" class="platform-card sony">
-          <div class="platform-top">
-            <div class="platform-name">Sony LIV</div>
-            <div class="platform-tag">INDIA</div>
-          </div>
-          <div class="platform-desc">Sony Sports Network streaming — live F1 coverage with Hindi and English commentary.</div>
-          <div class="platform-cta">
-            WATCH NOW
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-        </a>
-
         <a href="https://f1tv.formula1.com" target="_blank" class="platform-card f1tv">
           <div class="platform-top">
             <div class="platform-name">F1 TV</div>
@@ -319,7 +304,6 @@ export default {
   transition: background 0.2s;
 }
 .platform-card.fancode::before { background: #00c4ff; }
-.platform-card.sony::before    { background: #ffcc00; }
 .platform-card.f1tv::before    { background: #e10600; }
 .platform-card:hover {
   border-color: #2a2a2a;
@@ -363,7 +347,6 @@ export default {
   transition: gap 0.2s;
 }
 .fancode .platform-cta { color: #00c4ff; }
-.sony    .platform-cta { color: #ffcc00; }
 .f1tv   .platform-cta { color: #e10600; }
 .platform-card:hover .platform-cta { gap: 0.75rem; }
 

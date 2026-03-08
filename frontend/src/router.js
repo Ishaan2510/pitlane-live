@@ -49,6 +49,11 @@ const routes = [
     path: '/pit-wall',
     name: 'PitWall',
     component: () => import('@/views/PitWall.vue')
+  },
+  {
+    path: '/the-grid', 
+    name: 'TheGrid',
+    component: () => import('@/views/TheGrid.vue')
   }
 ]
 

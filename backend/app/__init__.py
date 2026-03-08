@@ -14,7 +14,7 @@ def create_app():
     db.init_app(app)
     
     # Register blueprints
-    from app.routes import races, predictions, leaderboard, users, replay, schedule, scoring
+    from app.routes import races, predictions, leaderboard, users, replay, schedule, scoring, news
     app.register_blueprint(races.bp)
     app.register_blueprint(predictions.bp)
     app.register_blueprint(leaderboard.bp)
@@ -22,5 +22,6 @@ def create_app():
     app.register_blueprint(replay.bp)
     app.register_blueprint(schedule.bp)
     app.register_blueprint(scoring.bp)
-    
+    app.register_blueprint(news.bp)
+
     return app
