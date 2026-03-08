@@ -21,8 +21,8 @@ const routes = [
   },
   {
     path: '/live',
-    name: 'LiveRace',
-    component: () => import('@/views/LiveRace.vue')
+    name: 'WatchLive',
+    component: () => import('@/views/WatchLive.vue')
   },
   {
     path: '/replay',

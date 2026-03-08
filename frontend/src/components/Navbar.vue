@@ -3,7 +3,7 @@
     <router-link to="/" class="nav-logo">PITLANE<span class="logo-dot">.</span></router-link>
 
     <div class="nav-links">
-      <router-link to="/live"      class="nav-link">LIVE</router-link>
+      <router-link to="/live"      class="nav-link">WATCH LIVE</router-link>
       <router-link to="/replay"    class="nav-link">REPLAY</router-link>
       <router-link to="/standings" class="nav-link">STANDINGS</router-link>
       <router-link to="/pit-wall"  class="nav-link">PIT WALL</router-link>
