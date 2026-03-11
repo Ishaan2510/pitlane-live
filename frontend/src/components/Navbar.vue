@@ -10,6 +10,8 @@
     </div>
 
     <div class="nav-auth">
+      <ThemeToggle />
+
       <!-- Logged in -->
       <template v-if="auth.isLoggedIn">
         <router-link to="/profile" class="user-pill">
@@ -32,6 +34,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import ThemeToggle from './ThemeToggle.vue'
 
 const auth   = useAuthStore()
 const router = useRouter()
@@ -59,9 +62,9 @@ function handleLogout() {
   justify-content: space-between;
   padding: 0 40px;
   height: 56px;
-  background: rgba(10,10,10,0.95);
+  background: var(--nav-bg);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid #1e1e1e;
+  border-bottom: 1px solid var(--nav-border);
   font-family: 'DM Mono', monospace;
 }
 
@@ -69,11 +72,11 @@ function handleLogout() {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 22px;
   letter-spacing: 3px;
-  color: #f0f0f0;
+  color: var(--text-primary);
   text-decoration: none;
 }
 
-.logo-dot { color: #e8202a; }
+.logo-dot { color: var(--accent); }
 
 .nav-links {
   display: flex;
@@ -83,13 +86,13 @@ function handleLogout() {
 .nav-link {
   font-size: 11px;
   letter-spacing: 2px;
-  color: #555;
+  color: var(--text-muted);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .nav-link:hover,
-.nav-link.router-link-active { color: #e8e8e8; }
+.nav-link.router-link-active { color: var(--text-primary); }
 
 .nav-auth {
   display: flex;
@@ -104,17 +107,17 @@ function handleLogout() {
   gap: 8px;
   text-decoration: none;
   padding: 4px 12px 4px 4px;
-  border: 1px solid #222;
+  border: 1px solid var(--border-primary);
   transition: border-color 0.2s;
 }
 
-.user-pill:hover { border-color: #444; }
+.user-pill:hover { border-color: var(--text-muted); }
 
 .user-avatar {
   width: 26px;
   height: 26px;
-  background: #e8202a;
-  color: #fff;
+  background: var(--accent);
+  color: var(--text-inverse);
   font-size: 10px;
   font-weight: 500;
   display: flex;
@@ -126,14 +129,14 @@ function handleLogout() {
 .user-name {
   font-size: 11px;
   letter-spacing: 1px;
-  color: #e8e8e8;
+  color: var(--text-primary);
 }
 
 /* Buttons */
 .nav-btn-ghost {
   background: none;
-  border: 1px solid #333;
-  color: #888;
+  border: 1px solid var(--border-primary);
+  color: var(--text-secondary);
   padding: 6px 14px;
   font-family: 'DM Mono', monospace;
   font-size: 10px;
@@ -145,11 +148,11 @@ function handleLogout() {
   align-items: center;
 }
 
-.nav-btn-ghost:hover { border-color: #888; color: #e8e8e8; }
+.nav-btn-ghost:hover { border-color: var(--text-secondary); color: var(--text-primary); }
 
 .nav-btn-red {
-  background: #e8202a;
-  border: 1px solid #e8202a;
+  background: var(--accent);
+  border: 1px solid var(--accent);
   color: #fff;
   padding: 6px 14px;
   font-family: 'DM Mono', monospace;
@@ -161,7 +164,7 @@ function handleLogout() {
   align-items: center;
 }
 
-.nav-btn-red:hover { background: #c0181f; }
+.nav-btn-red:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
 @media (max-width: 600px) {
   .navbar { padding: 0 20px; }

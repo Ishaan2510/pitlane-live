@@ -1,0 +1,75 @@
+/* ============================================================
+   PITLANE LIVE — THEME SYSTEM
+   Place this file at: frontend/src/assets/theme.css
+   Import it in main.js: import './assets/theme.css'
+   ============================================================ */
+
+/* ── Dark theme (default) ───────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg-primary:       #080808;
+  --bg-secondary:     #111111;
+  --bg-card:          #161616;
+  --bg-hover:         #1e1e1e;
+  --bg-input:         #1a1a1a;
+
+  --border-primary:   #2a2a2a;
+  --border-accent:    #e10600;
+
+  --text-primary:     #ffffff;
+  --text-secondary:   #a0a0a0;
+  --text-muted:       #555555;
+  --text-inverse:     #080808;
+
+  --accent:           #e10600;
+  --accent-hover:     #ff1a16;
+  --accent-dim:       rgba(225, 6, 0, 0.12);
+
+  --nav-bg:           rgba(8, 8, 8, 0.95);
+  --nav-border:       #1e1e1e;
+
+  --shadow-card:      0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-hover:     0 4px 24px rgba(225, 6, 0, 0.15);
+
+  --toggle-bg:        #1e1e1e;
+  --toggle-border:    #2a2a2a;
+  --toggle-icon:      #a0a0a0;
+}
+
+/* ── Light theme ─────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-primary:       #f4f4f4;
+  --bg-secondary:     #ebebeb;
+  --bg-card:          #ffffff;
+  --bg-hover:         #f0f0f0;
+  --bg-input:         #f9f9f9;
+
+  --border-primary:   #e0e0e0;
+  --border-accent:    #e10600;
+
+  --text-primary:     #0a0a0a;
+  --text-secondary:   #555555;
+  --text-muted:       #999999;
+  --text-inverse:     #ffffff;
+
+  --accent:           #e10600;
+  --accent-hover:     #c40000;
+  --accent-dim:       rgba(225, 6, 0, 0.08);
+
+  --nav-bg:           rgba(244, 244, 244, 0.95);
+  --nav-border:       #e0e0e0;
+
+  --shadow-card:      0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-hover:     0 4px 20px rgba(225, 6, 0, 0.12);
+
+  --toggle-bg:        #e8e8e8;
+  --toggle-border:    #d0d0d0;
+  --toggle-icon:      #555555;
+}
+
+/* ── Base resets using variables ─────────────────────────────── */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
