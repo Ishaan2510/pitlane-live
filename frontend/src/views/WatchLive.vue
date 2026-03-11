@@ -4,15 +4,12 @@
     <!-- ── Hero bar ── -->
     <div class="hero">
       <div class="hero-left">
-        <div class="live-pill">
+        <!-- Only show RACE IN PROGRESS pill if it's actually race day -->
+        <div class="live-pill" v-if="isRaceDay">
           <span class="live-dot"></span>
           RACE IN PROGRESS
         </div>
-        <div class="race-info" v-if="currentRace">
-          <h1 class="race-name">{{ currentRace.name }}</h1>
-          <p class="race-location">{{ currentRace.location }}, {{ currentRace.country }}</p>
-        </div>
-        <div class="race-info" v-else-if="nextRace">
+        <div class="race-info" v-if="nextRace">
           <h1 class="race-name">{{ nextRace.name }}</h1>
           <p class="race-location">{{ nextRace.location }}, {{ nextRace.country }}</p>
         </div>
@@ -21,9 +18,13 @@
           <p class="race-location">2026 Season</p>
         </div>
       </div>
-      <div class="hero-right" v-if="nextRace && !currentRace">
+      <div class="hero-right" v-if="nextRace && !isRaceDay">
         <div class="countdown-label">NEXT RACE IN</div>
         <div class="countdown">{{ countdown }}</div>
+      </div>
+      <div class="hero-right" v-else-if="isRaceDay">
+        <div class="countdown-label">RACE DAY</div>
+        <div class="countdown live-red">LIVE</div>
       </div>
     </div>
 
@@ -65,28 +66,91 @@
 
       <div class="divider"></div>
 
-      <div class="section-label">RACE WEEKEND</div>
-      <div class="weekend-grid" v-if="currentRace || nextRace">
-        <div class="session-row">
-          <div class="session-name">Practice 1</div>
-          <div class="session-status past">COMPLETED</div>
+      <!-- Race weekend schedule -->
+      <template v-if="nextRace">
+        <div class="section-label">RACE WEEKEND — {{ nextRace.name }}</div>
+        <div class="weekend-grid">
+
+          <!-- Sprint weekend -->
+          <template v-if="nextRace.is_sprint">
+            <div class="session-row" :class="{ highlight: sessions.fp1 === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.fp1 === 'live'" class="live-dot small"></span>
+                Practice 1
+              </div>
+              <div class="session-status" :class="sessions.fp1">{{ sessionLabel(sessions.fp1) }}</div>
+            </div>
+            <div class="session-row" :class="{ highlight: sessions.quali === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.quali === 'live'" class="live-dot small"></span>
+                Sprint Qualifying
+              </div>
+              <div class="session-status" :class="sessions.quali">{{ sessionLabel(sessions.quali) }}</div>
+            </div>
+            <div class="session-row" :class="{ highlight: sessions.sprint === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.sprint === 'live'" class="live-dot small"></span>
+                Sprint Race
+              </div>
+              <div class="session-status" :class="sessions.sprint">{{ sessionLabel(sessions.sprint) }}</div>
+            </div>
+            <div class="session-row" :class="{ highlight: sessions.qualiMain === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.qualiMain === 'live'" class="live-dot small"></span>
+                Qualifying
+              </div>
+              <div class="session-status" :class="sessions.qualiMain">{{ sessionLabel(sessions.qualiMain) }}</div>
+            </div>
+            <div class="session-row" :class="{ highlight: sessions.race === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.race === 'live'" class="live-dot small"></span>
+                Race
+              </div>
+              <div class="session-status" :class="sessions.race">{{ sessionLabel(sessions.race) }}</div>
+            </div>
+          </template>
+
+          <!-- Standard weekend -->
+          <template v-else>
+            <div class="session-row" :class="{ highlight: sessions.fp1 === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.fp1 === 'live'" class="live-dot small"></span>
+                Practice 1
+              </div>
+              <div class="session-status" :class="sessions.fp1">{{ sessionLabel(sessions.fp1) }}</div>
+            </div>
+            <div class="session-row" :class="{ highlight: sessions.fp2 === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.fp2 === 'live'" class="live-dot small"></span>
+                Practice 2
+              </div>
+              <div class="session-status" :class="sessions.fp2">{{ sessionLabel(sessions.fp2) }}</div>
+            </div>
+            <div class="session-row" :class="{ highlight: sessions.fp3 === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.fp3 === 'live'" class="live-dot small"></span>
+                Practice 3
+              </div>
+              <div class="session-status" :class="sessions.fp3">{{ sessionLabel(sessions.fp3) }}</div>
+            </div>
+            <div class="session-row" :class="{ highlight: sessions.quali === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.quali === 'live'" class="live-dot small"></span>
+                Qualifying
+              </div>
+              <div class="session-status" :class="sessions.quali">{{ sessionLabel(sessions.quali) }}</div>
+            </div>
+            <div class="session-row" :class="{ highlight: sessions.race === 'live' }">
+              <div class="session-name">
+                <span v-if="sessions.race === 'live'" class="live-dot small"></span>
+                Race
+              </div>
+              <div class="session-status" :class="sessions.race">{{ sessionLabel(sessions.race) }}</div>
+            </div>
+          </template>
+
         </div>
-        <div class="session-row">
-          <div class="session-name">Practice 2</div>
-          <div class="session-status past">COMPLETED</div>
-        </div>
-        <div class="session-row">
-          <div class="session-name">Qualifying</div>
-          <div class="session-status past">COMPLETED</div>
-        </div>
-        <div class="session-row highlight">
-          <div class="session-name">
-            <span class="live-dot small"></span>
-            Race
-          </div>
-          <div class="session-status live">LIVE NOW</div>
-        </div>
-      </div>
+      </template>
 
       <div class="divider"></div>
 
@@ -131,10 +195,33 @@ export default {
 
   data() {
     return {
-      currentRace: null,
-      nextRace:    null,
-      countdown:   '—',
-      ticker:      null,
+      nextRace:  null,
+      countdown: '—',
+      ticker:    null,
+    }
+  },
+
+  computed: {
+    // Days until race day. 0 = today is race day, negative = past
+    daysUntilRace() {
+      if (!this.nextRace) return null
+      const today    = new Date()
+      const raceDate = new Date(this.nextRace.date)
+      today.setHours(0, 0, 0, 0)
+      raceDate.setHours(0, 0, 0, 0)
+      return Math.round((raceDate - today) / 86400000)
+    },
+
+    isRaceDay() {
+      return this.daysUntilRace === 0
+    },
+
+    sessions() {
+      const d = this.daysUntilRace
+      if (d === null) return {}
+      return this.nextRace?.is_sprint
+        ? this.sprintSessions(d)
+        : this.standardSessions(d)
     }
   },
 
@@ -152,24 +239,47 @@ export default {
       try {
         const res  = await fetch('/api/schedule')
         const data = await res.json()
-        const today = new Date().toISOString().slice(0, 10)
-        this.currentRace = data.find(r => r.date === today && r.status === 'live') || null
-        this.nextRace    = data.find(r => r.is_next) || null
+        // Use is_next flag — do NOT use status === 'live' as that triggers on race day
+        this.nextRace = data.find(r => r.is_next) || null
       } catch { /* silent */ }
     },
 
     tick() {
-      const race = this.currentRace || this.nextRace
-      if (!race) return
-      const target = race.race_time_utc
-        ? new Date(race.race_time_utc)
-        : new Date(race.date + 'T12:00:00Z')
+      if (!this.nextRace) return
+      const target = this.nextRace.race_time_utc
+        ? new Date(this.nextRace.race_time_utc)
+        : new Date(this.nextRace.date + 'T12:00:00Z')
       const diff = target - new Date()
       if (diff <= 0) { this.countdown = 'NOW'; return }
       const h = Math.floor(diff / 3600000)
       const m = Math.floor((diff % 3600000) / 60000)
       const s = Math.floor((diff % 60000) / 1000)
       this.countdown = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+    },
+
+    // Standard weekend: FP1+FP2 on Friday (D-2), FP3+Quali on Saturday (D-1), Race on Sunday (D-0)
+    standardSessions(d) {
+      if (d > 2)   return { fp1: 'upcoming', fp2: 'upcoming', fp3: 'upcoming', quali: 'upcoming', race: 'upcoming' }
+      if (d === 2) return { fp1: 'past',     fp2: 'past',     fp3: 'upcoming', quali: 'upcoming', race: 'upcoming' }
+      if (d === 1) return { fp1: 'past',     fp2: 'past',     fp3: 'past',     quali: 'past',     race: 'upcoming' }
+      if (d === 0) return { fp1: 'past',     fp2: 'past',     fp3: 'past',     quali: 'past',     race: 'live'     }
+      return               { fp1: 'past',     fp2: 'past',     fp3: 'past',     quali: 'past',     race: 'past'     }
+    },
+
+    // Sprint weekend: FP1+Sprint Quali on Friday (D-2), Sprint Race+Quali on Saturday (D-1), Race on Sunday (D-0)
+    sprintSessions(d) {
+      if (d > 2)   return { fp1: 'upcoming', quali: 'upcoming', sprint: 'upcoming', qualiMain: 'upcoming', race: 'upcoming' }
+      if (d === 2) return { fp1: 'past',     quali: 'past',     sprint: 'upcoming', qualiMain: 'upcoming', race: 'upcoming' }
+      if (d === 1) return { fp1: 'past',     quali: 'past',     sprint: 'past',     qualiMain: 'past',     race: 'upcoming' }
+      if (d === 0) return { fp1: 'past',     quali: 'past',     sprint: 'past',     qualiMain: 'past',     race: 'live'     }
+      return               { fp1: 'past',     quali: 'past',     sprint: 'past',     qualiMain: 'past',     race: 'past'     }
+    },
+
+    sessionLabel(status) {
+      if (status === 'past')     return 'COMPLETED'
+      if (status === 'live')     return 'LIVE NOW'
+      if (status === 'upcoming') return 'UPCOMING'
+      return '—'
     }
   }
 }
@@ -185,7 +295,6 @@ export default {
   color: var(--text-primary);
 }
 
-/* ── Hero ── */
 .hero {
   display: flex;
   align-items: center;
@@ -233,7 +342,6 @@ export default {
   font-family: 'DM Mono', monospace;
   letter-spacing: 0.04em;
 }
-
 .hero-right { text-align: right; flex-shrink: 0; }
 .countdown-label {
   font-size: 0.6rem;
@@ -249,13 +357,9 @@ export default {
   letter-spacing: 0.08em;
   line-height: 1;
 }
+.countdown.live-red { animation: blink 1s ease-in-out infinite; }
 
-/* ── Main ── */
-.main {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 3rem 2rem;
-}
+.main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
 .section-label {
   font-size: 0.6rem;
   letter-spacing: 0.2em;
@@ -264,19 +368,9 @@ export default {
   font-weight: 500;
   margin-bottom: 1.25rem;
 }
-.divider {
-  height: 1px;
-  background: var(--bg-card);
-  margin: 2.5rem 0;
-}
+.divider { height: 1px; background: var(--bg-card); margin: 2.5rem 0; }
 
-/* ── Platform cards ── */
-.platforms {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 0;
-}
+.platforms { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
 .platform-card {
   display: flex;
   flex-direction: column;
@@ -295,61 +389,22 @@ export default {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: transparent;
-  transition: background 0.2s;
 }
 .platform-card.fancode::before { background: #00c4ff; }
 .platform-card.f1tv::before    { background: var(--accent); }
-.platform-card:hover {
-  border-color: var(--border-secondary);
-  background: var(--bg-card);
-  transform: translateY(-2px);
-}
-.platform-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.platform-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3rem;
-  color: var(--text-primary);
-  letter-spacing: 0.05em;
-}
-.platform-tag {
-  font-size: 0.58rem;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  font-family: 'DM Mono', monospace;
-  background: var(--bg-hover);
-  padding: 0.2rem 0.5rem;
-  border: 1px solid var(--border-primary);
-}
-.platform-desc {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  line-height: 1.65;
-  flex: 1;
-}
-.platform-cta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  font-family: 'DM Mono', monospace;
-  transition: gap 0.2s;
-}
+.platform-card:hover { border-color: var(--border-secondary); background: var(--bg-card); transform: translateY(-2px); }
+.platform-top { display: flex; align-items: center; justify-content: space-between; }
+.platform-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--text-primary); letter-spacing: 0.05em; }
+.platform-tag  { font-size: 0.58rem; letter-spacing: 0.12em; color: var(--text-muted); font-family: 'DM Mono', monospace; background: var(--bg-hover); padding: 0.2rem 0.5rem; border: 1px solid var(--border-primary); }
+.platform-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.65; flex: 1; }
+.platform-cta  { display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; font-family: 'DM Mono', monospace; transition: gap 0.2s; }
 .fancode .platform-cta { color: #00c4ff; }
 .f1tv   .platform-cta { color: var(--accent); }
 .platform-card:hover .platform-cta { gap: 0.75rem; }
 
-/* ── Weekend schedule ── */
 .weekend-grid {
   display: flex;
   flex-direction: column;
-  gap: 0;
   border: 1px solid var(--border-primary);
   border-radius: 2px;
   overflow: hidden;
@@ -380,16 +435,12 @@ export default {
   padding: 0.2rem 0.6rem;
   border-radius: 2px;
 }
-.session-status.past { color: var(--text-faint); background: var(--bg-hover); border: 1px solid var(--border-primary); }
-.session-status.live { color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(225,6,0,0.25); animation: live-pulse 2s ease-in-out infinite; }
+.session-status.past     { color: var(--text-faint);  background: var(--bg-hover); border: 1px solid var(--border-primary); }
+.session-status.upcoming { color: var(--text-muted);  background: var(--bg-hover); border: 1px solid var(--border-primary); }
+.session-status.live     { color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(225,6,0,0.25); animation: live-pulse 2s ease-in-out infinite; }
 @keyframes live-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
-/* ── Coming up ── */
-.coming-up {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
+.coming-up { display: flex; flex-direction: column; gap: 0.75rem; }
 .coming-card {
   display: flex;
   align-items: center;
@@ -409,17 +460,8 @@ export default {
   justify-content: center;
   flex-shrink: 0;
 }
-.coming-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.2rem;
-}
-.coming-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
+.coming-title { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem; }
+.coming-desc  { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
 .coming-link {
   margin-left: auto;
   font-size: 0.7rem;
@@ -438,9 +480,9 @@ export default {
 .coming-link:hover { background: var(--accent-dim); border-color: var(--accent); }
 
 @media (max-width: 700px) {
-  .hero { flex-direction: column; align-items: flex-start; padding: 1.5rem; }
+  .hero      { flex-direction: column; align-items: flex-start; padding: 1.5rem; }
   .hero-right { text-align: left; }
   .platforms { grid-template-columns: 1fr; }
-  .main { padding: 2rem 1.25rem; }
+  .main      { padding: 2rem 1.25rem; }
 }
 </style>

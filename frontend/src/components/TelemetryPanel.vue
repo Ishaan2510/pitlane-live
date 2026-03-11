@@ -10,13 +10,11 @@
 
     <!-- Driver data -->
     <template v-else>
-      <!-- Driver header -->
       <div class="driver-header">
         <div class="driver-name">{{ driver.driver }}</div>
         <div class="driver-team" :style="{ color: teamColor }">{{ driver.team }}</div>
       </div>
 
-      <!-- Stats -->
       <div class="stat-list">
 
         <div class="stat-row">
@@ -54,7 +52,6 @@
 
         <div class="divider" />
 
-        <!-- Speed section — fetched on demand -->
         <div class="speed-header">
           <span v-if="loading" class="fetching">Fetching speed data…</span>
           <span v-else-if="hasSpeedData" class="fetched">Live telemetry</span>
@@ -85,8 +82,9 @@
 const TEAM_COLORS = {
   'Red Bull Racing': '#3671C6', 'Ferrari': '#E8002D', 'Mercedes': '#27F4D2',
   'McLaren': '#FF8000', 'Aston Martin': '#229971', 'Alpine': '#FF87BC',
-  'Williams': '#64C4FF', 'RB': '#6692FF', 'Kick Sauber': '#52E252',
-  'Haas F1 Team': '#B6BABD'
+  'Williams': '#64C4FF', 'RB': '#6692FF', 'Racing Bulls': '#6692FF',
+  'Kick Sauber': '#52E252', 'Haas F1 Team': '#B6BABD', 'Haas': '#B6BABD',
+  'Audi': '#ffffff', 'Cadillac': '#CC0000',
 }
 
 export default {
@@ -115,8 +113,6 @@ export default {
     },
     formatLapTime(t) {
       if (!t) return '—'
-      // FastF1 returns timedelta strings like "0 days 00:01:32.456000"
-      // Try to extract m:ss.mmm
       const match = t.match(/(\d+):(\d{2}\.\d+)/)
       if (match) return `${match[1]}:${parseFloat(match[2]).toFixed(3).padStart(6,'0')}`
       return t.slice(0, 12)
@@ -138,7 +134,7 @@ export default {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #555;
+  color: var(--text-secondary);
   margin-bottom: 0.75rem;
   padding: 0 0.1rem;
 }
@@ -157,27 +153,28 @@ export default {
 .empty-icon { font-size: 1.6rem; }
 .empty-state p {
   font-size: 0.78rem;
-  color: #444;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
 /* ── Driver header ── */
 .driver-header {
   padding: 0.6rem 0.25rem 0.75rem;
-  border-bottom: 1px solid #1c1c1c;
+  border-bottom: 1px solid var(--border-primary);
   margin-bottom: 0.5rem;
 }
 .driver-name {
   font-family: monospace;
   font-size: 1.05rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: 0.05em;
 }
 .driver-team {
   font-size: 0.72rem;
   font-weight: 600;
   margin-top: 0.15rem;
+  /* color set inline via teamColor */
 }
 
 /* ── Stat rows ── */
@@ -186,36 +183,35 @@ export default {
   flex-direction: column;
   gap: 0;
 }
-
 .stat-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.45rem 0.25rem;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border-primary);
 }
 .stat-label {
   font-size: 0.72rem;
-  color: #555;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 .stat-value {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #ddd;
+  color: var(--text-primary);
 }
 .stat-value.leader { color: #ffd700; font-weight: 800; }
-.stat-value.pos    { color: #fff; }
+.stat-value.pos    { color: var(--text-primary); }
 .mono { font-family: monospace; font-size: 0.8rem; }
 
 .divider {
   height: 1px;
-  background: #1c1c1c;
+  background: var(--border-primary);
   margin: 0.4rem 0;
 }
 
-/* ── Tyre pill ── */
+/* ── Tyre pills — intentional brand colours, not themed ── */
 .tyre-pill {
   display: inline-block;
   padding: 0.15rem 0.5rem;
@@ -223,20 +219,20 @@ export default {
   font-size: 0.75rem;
   font-weight: 700;
 }
-.tyre-pill.soft         { background: rgba(200,0,0,0.3);     color: #ff7777; }
-.tyre-pill.medium       { background: rgba(200,200,0,0.25);  color: #ffff77; }
-.tyre-pill.hard         { background: rgba(200,200,200,0.2); color: #ddd;    }
-.tyre-pill.intermediate { background: rgba(0,180,0,0.25);   color: #77ff77; }
-.tyre-pill.wet          { background: rgba(0,100,255,0.25); color: #77aaff; }
-.tyre-pill.unknown      { background: rgba(100,100,100,0.2); color: #888;   }
+.tyre-pill.soft         { background: rgba(200,0,0,0.3);      color: #ff7777; }
+.tyre-pill.medium       { background: rgba(200,200,0,0.25);   color: #cccc00; }
+.tyre-pill.hard         { background: rgba(150,150,150,0.2);  color: var(--text-secondary); }
+.tyre-pill.intermediate { background: rgba(0,180,0,0.25);    color: #44cc44; }
+.tyre-pill.wet          { background: rgba(0,100,255,0.25);  color: #77aaff; }
+.tyre-pill.unknown      { background: rgba(100,100,100,0.15); color: var(--text-muted); }
 
 /* ── Speed section ── */
 .speed-header {
   padding: 0.3rem 0.25rem 0.1rem;
 }
-.fetching { font-size: 0.68rem; color: #444; font-style: italic; }
-.fetched  { font-size: 0.68rem; color: #2a6; }
+.fetching { font-size: 0.68rem; color: var(--text-muted); font-style: italic; }
+.fetched  { font-size: 0.68rem; color: #2a9a5a; }
 
-.loading-dot { color: #555; animation: pulse 1s ease infinite; }
+.loading-dot { color: var(--text-muted); animation: pulse 1s ease infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
 </style>

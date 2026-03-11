@@ -73,14 +73,14 @@ export default {
 <style scoped>
 .weather-panel {
   padding: 1rem;
-  border: 1px solid var(--color-border, #1a1a1a);
-  background: rgba(255,255,255,0.015);
+  border: 1px solid var(--border-primary);
+  background: var(--bg-hover);
   margin-bottom: 1rem;
 }
 .panel-title {
   font-size: 0.58rem;
   letter-spacing: 0.14em;
-  color: #333;
+  color: var(--text-secondary);
   font-weight: 700;
   margin-bottom: 0.85rem;
 }
@@ -99,16 +99,16 @@ export default {
   align-items: center;
   gap: 0.35rem;
   font-size: 0.65rem;
-  color: #3a3a3a;
+  color: var(--text-muted);
   font-weight: 500;
   letter-spacing: 0.03em;
 }
-.w-label svg { color: #3a3a3a; flex-shrink: 0; }
+.w-label svg { color: var(--text-muted); flex-shrink: 0; }
 .w-value {
   font-family: monospace;
   font-size: 0.88rem;
   font-weight: 600;
-  color: #aaa;
+  color: var(--text-primary);
   padding-left: 1px;
 }
 .weather-rain .w-label svg { color: #5599ff; }
