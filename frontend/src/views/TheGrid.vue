@@ -170,7 +170,7 @@ const DRIVERS = [
   { code:'LIN', number:41, firstName:'Arvid',     lastName:'Lindblad',   team:'Racing Bulls',    flag:'🇬🇧', nationality:'British',     dob:'12 Jun 2007', seasons:1,  championships:0, wins:0,  podiums:0,  poles:0,  points:0,    bio:'The youngest British driver to reach F1. Lindblad\'s rapid ascent through the Red Bull junior programme signals the team\'s belief that he is the real deal.' },
   // Red Bull Racing
   { code:'VER', number:1,  firstName:'Max',       lastName:'Verstappen', team:'Red Bull Racing', flag:'🇳🇱', nationality:'Dutch',       dob:'30 Sep 1997', seasons:10, championships:4, wins:63, podiums:112,poles:40, points:2862, bio:'Four consecutive world championships. Verstappen has rewritten the record books and is widely regarded as the dominant force of his generation. Ruthless, fast and relentless.' },
-  { code:'HAD', number:6, firstName:'Isack',     lastName:'Hadjar',     team:'Red Bull Racing', flag:'🇫🇷', nationality:'French',      dob:'28 Feb 2004', seasons:1,  championships:0, wins:0,  podiums:0,  poles:0,  points:0,    bio:'The 2024 F2 runner-up who earned the coveted second Red Bull seat. Hadjar has the speed — now the question is whether he can handle the pressure of being Verstappen\'s teammate.' },
+  { code:'HAD', number:6,  firstName:'Isack',     lastName:'Hadjar',     team:'Red Bull Racing', flag:'🇫🇷', nationality:'French',      dob:'28 Feb 2004', seasons:1,  championships:0, wins:0,  podiums:0,  poles:0,  points:0,    bio:'The 2024 F2 runner-up who earned the coveted second Red Bull seat. Hadjar has the speed — now the question is whether he can handle the pressure of being Verstappen\'s teammate.' },
   // Williams
   { code:'SAI', number:55, firstName:'Carlos',    lastName:'Sainz',      team:'Williams',        flag:'🇪🇸', nationality:'Spanish',     dob:'1 Sep 1994',  seasons:10, championships:0, wins:3,  podiums:26, poles:5,  points:1021, bio:'A race winner and consistent points scorer who left Ferrari after Hamilton\'s arrival. Sainz brings championship-level experience to Williams as they target a return to the front.' },
   { code:'ALB', number:23, firstName:'Alexander', lastName:'Albon',      team:'Williams',        flag:'🇹🇭', nationality:'Thai',        dob:'23 Mar 1996', seasons:5,  championships:0, wins:0,  podiums:2,  poles:0,  points:260,  bio:'The Williams cornerstone. Albon has been instrumental in the team\'s revival and is one of the most well-liked figures in the paddock. Consistent, intelligent and relentlessly positive.' },
@@ -233,20 +233,20 @@ export default {
 
 .the-grid {
   min-height: calc(100vh - 56px);
-  background: #080808;
+  background: var(--bg-primary);
   font-family: 'Work Sans', sans-serif;
-  color: #ccc;
+  color: var(--text-primary);
 }
 
 /* ── Header ── */
 .page-header {
   padding: 3rem 3rem 2rem;
-  border-bottom: 1px solid #111;
+  border-bottom: 1px solid var(--bg-card);
 }
 .header-tag {
   font-size: 0.62rem;
   letter-spacing: 0.2em;
-  color: #e10600;
+  color: var(--accent);
   font-family: 'DM Mono', monospace;
   font-weight: 500;
   margin-bottom: 0.75rem;
@@ -254,14 +254,14 @@ export default {
 .page-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(3rem, 7vw, 5.5rem);
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: 0.04em;
   line-height: 1;
   margin: 0 0 0.5rem;
 }
 .page-sub {
   font-size: 0.85rem;
-  color: #333;
+  color: var(--text-muted);
   font-family: 'DM Mono', monospace;
 }
 
@@ -271,13 +271,13 @@ export default {
   gap: 0.4rem;
   padding: 1rem 3rem;
   flex-wrap: wrap;
-  border-bottom: 1px solid #111;
-  background: #0a0a0a;
+  border-bottom: 1px solid var(--bg-card);
+  background: var(--bg-secondary);
 }
 .filter-btn {
   background: transparent;
-  border: 1px solid #1a1a1a;
-  color: #333;
+  border: 1px solid var(--border-primary);
+  color: var(--text-muted);
   padding: 0.3rem 0.75rem;
   font-family: 'DM Mono', monospace;
   font-size: 0.62rem;
@@ -287,26 +287,26 @@ export default {
   transition: all 0.15s;
   white-space: nowrap;
 }
-.filter-btn:hover { border-color: #333; color: #888; }
-.filter-btn.active { border-color: #e10600; color: #e10600; background: rgba(225,6,0,0.08); }
+.filter-btn:hover  { border-color: var(--border-secondary); color: var(--text-secondary); }
+.filter-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 
 /* ── Driver grid ── */
 .drivers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1px;
-  background: #111;
+  background: var(--bg-card);
   padding: 0;
 }
 .driver-card {
-  background: #080808;
+  background: var(--bg-primary);
   padding: 1.25rem;
   cursor: pointer;
   transition: background 0.15s;
   position: relative;
 }
-.driver-card:hover { background: #0d0d0d; }
-.driver-card.expanded { background: #0d0d0d; }
+.driver-card:hover    { background: var(--bg-secondary); }
+.driver-card.expanded { background: var(--bg-secondary); }
 .driver-card::before {
   content: '';
   position: absolute;
@@ -335,13 +335,13 @@ export default {
 .driver-name {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1rem;
-  color: #888;
+  color: var(--text-secondary);
   letter-spacing: 0.04em;
   line-height: 1.1;
 }
 .driver-surname {
   font-size: 1.3rem;
-  color: #fff;
+  color: var(--text-primary);
 }
 .driver-team {
   font-size: 0.6rem;
@@ -350,11 +350,7 @@ export default {
   margin-top: 0.3rem;
   font-weight: 500;
 }
-.driver-flag {
-  margin-left: auto;
-  font-size: 1.4rem;
-  flex-shrink: 0;
-}
+.driver-flag { margin-left: auto; font-size: 1.4rem; flex-shrink: 0; }
 
 .card-stats {
   display: grid;
@@ -362,8 +358,8 @@ export default {
   gap: 0.25rem;
 }
 .stat {
-  background: #0d0d0d;
-  border: 1px solid #111;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
   padding: 0.4rem 0.25rem;
   text-align: center;
   border-radius: 1px;
@@ -371,13 +367,13 @@ export default {
 .stat-val {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
-  color: #ddd;
+  color: var(--text-primary);
   letter-spacing: 0.03em;
   line-height: 1;
 }
 .stat-label {
   font-size: 0.52rem;
-  color: #333;
+  color: var(--text-muted);
   letter-spacing: 0.1em;
   font-family: 'DM Mono', monospace;
   margin-top: 0.15rem;
@@ -387,46 +383,46 @@ export default {
 .card-detail {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #141414;
+  border-top: 1px solid var(--border-primary);
 }
 .detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.35rem 0;
-  border-bottom: 1px solid #0f0f0f;
+  border-bottom: 1px solid var(--border-primary);
 }
 .detail-label {
   font-size: 0.6rem;
-  color: #2a2a2a;
+  color: var(--text-faint);
   letter-spacing: 0.1em;
   font-family: 'DM Mono', monospace;
 }
 .detail-val {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-secondary);
   font-family: 'DM Mono', monospace;
 }
 .driver-bio {
   margin-top: 0.85rem;
   font-size: 0.75rem;
-  color: #3a3a3a;
+  color: var(--text-muted);
   line-height: 1.7;
 }
 .card-expand-hint {
   margin-top: 0.85rem;
   font-size: 0.55rem;
-  color: #1e1e1e;
+  color: var(--text-faint);
   letter-spacing: 0.12em;
   font-family: 'DM Mono', monospace;
   text-align: right;
 }
-.driver-card:hover .card-expand-hint { color: #333; }
+.driver-card:hover .card-expand-hint { color: var(--text-muted); }
 
 /* ── News section ── */
 .news-section {
   padding: 3rem;
-  border-top: 1px solid #111;
+  border-top: 1px solid var(--bg-card);
 }
 .news-header {
   display: flex;
@@ -437,21 +433,21 @@ export default {
 .section-tag {
   font-size: 0.62rem;
   letter-spacing: 0.2em;
-  color: #e10600;
+  color: var(--accent);
   font-family: 'DM Mono', monospace;
   margin-bottom: 0.5rem;
 }
 .news-heading {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 2.5rem;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: 0.04em;
   margin: 0;
   line-height: 1;
 }
 .news-source {
   font-size: 0.62rem;
-  color: #222;
+  color: var(--text-faint);
   font-family: 'DM Mono', monospace;
   letter-spacing: 0.08em;
 }
@@ -459,37 +455,37 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #333;
+  color: var(--text-muted);
   font-size: 0.8rem;
   font-family: 'DM Mono', monospace;
 }
 .news-pip {
   width: 8px; height: 8px;
-  background: #e10600;
+  background: var(--accent);
   border-radius: 50%;
   animation: pip 1s ease-in-out infinite;
 }
 @keyframes pip { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(1.5)} }
 .news-error {
   font-size: 0.8rem;
-  color: #333;
+  color: var(--text-muted);
   font-family: 'DM Mono', monospace;
 }
-.news-error a { color: #e10600; text-decoration: none; }
+.news-error a { color: var(--accent); text-decoration: none; }
 
 .news-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1px;
-  background: #111;
+  background: var(--bg-card);
 }
 .news-item {
-  background: #080808;
+  background: var(--bg-primary);
   text-decoration: none;
   display: block;
   transition: background 0.15s;
 }
-.news-item:hover { background: #0d0d0d; }
+.news-item:hover { background: var(--bg-secondary); }
 .news-item.featured { grid-column: span 2; }
 .news-item-inner { padding: 1.25rem; }
 .news-meta {
@@ -501,29 +497,29 @@ export default {
 .news-category {
   font-size: 0.58rem;
   letter-spacing: 0.14em;
-  color: #e10600;
+  color: var(--accent);
   font-family: 'DM Mono', monospace;
-  background: rgba(225,6,0,0.08);
+  background: var(--accent-dim);
   border: 1px solid rgba(225,6,0,0.15);
   padding: 0.15rem 0.5rem;
   border-radius: 1px;
 }
 .news-time {
   font-size: 0.6rem;
-  color: #2a2a2a;
+  color: var(--text-faint);
   font-family: 'DM Mono', monospace;
 }
 .news-headline {
   font-size: 0.92rem;
   font-weight: 700;
-  color: #ccc;
+  color: var(--text-primary);
   line-height: 1.4;
   margin-bottom: 0.5rem;
 }
 .news-item.featured .news-headline { font-size: 1.1rem; }
 .news-summary {
   font-size: 0.75rem;
-  color: #3a3a3a;
+  color: var(--text-muted);
   line-height: 1.65;
   margin-bottom: 0.75rem;
   display: -webkit-box;
@@ -534,12 +530,12 @@ export default {
 }
 .news-read {
   font-size: 0.62rem;
-  color: #222;
+  color: var(--text-faint);
   letter-spacing: 0.1em;
   font-family: 'DM Mono', monospace;
   transition: color 0.15s;
 }
-.news-item:hover .news-read { color: #e10600; }
+.news-item:hover .news-read { color: var(--accent); }
 
 @media (max-width: 768px) {
   .page-header, .filter-bar, .news-section { padding: 1.5rem; }

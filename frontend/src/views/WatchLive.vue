@@ -30,7 +30,6 @@
     <!-- ── Main content ── -->
     <div class="main">
 
-      <!-- Watch section -->
       <div class="section-label">WATCH LIVE ON</div>
       <div class="platforms">
 
@@ -47,6 +46,7 @@
             </svg>
           </div>
         </a>
+
         <a href="https://f1tv.formula1.com" target="_blank" class="platform-card f1tv">
           <div class="platform-top">
             <div class="platform-name">F1 TV</div>
@@ -63,10 +63,8 @@
 
       </div>
 
-      <!-- Divider -->
       <div class="divider"></div>
 
-      <!-- Race weekend schedule -->
       <div class="section-label">RACE WEEKEND</div>
       <div class="weekend-grid" v-if="currentRace || nextRace">
         <div class="session-row">
@@ -90,10 +88,8 @@
         </div>
       </div>
 
-      <!-- Divider -->
       <div class="divider"></div>
 
-      <!-- Coming up -->
       <div class="section-label">COMING UP ON PITLANE LIVE</div>
       <div class="coming-up">
         <div class="coming-card">
@@ -157,7 +153,6 @@ export default {
         const res  = await fetch('/api/schedule')
         const data = await res.json()
         const today = new Date().toISOString().slice(0, 10)
-
         this.currentRace = data.find(r => r.date === today && r.status === 'live') || null
         this.nextRace    = data.find(r => r.is_next) || null
       } catch { /* silent */ }
@@ -185,9 +180,9 @@ export default {
 
 .watch-live {
   min-height: calc(100vh - 56px);
-  background: #080808;
+  background: var(--bg-primary);
   font-family: 'Work Sans', sans-serif;
-  color: #ccc;
+  color: var(--text-primary);
 }
 
 /* ── Hero ── */
@@ -196,17 +191,17 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 2.5rem 3rem;
-  border-bottom: 1px solid #111;
-  background: linear-gradient(135deg, #0d0d0d 0%, #080808 100%);
+  border-bottom: 1px solid var(--bg-card);
+  background: var(--bg-secondary);
   gap: 2rem;
 }
 .live-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(225,6,0,0.12);
+  background: var(--accent-dim);
   border: 1px solid rgba(225,6,0,0.3);
-  color: #e10600;
+  color: var(--accent);
   font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -217,7 +212,7 @@ export default {
 }
 .live-dot {
   width: 6px; height: 6px;
-  background: #e10600;
+  background: var(--accent);
   border-radius: 50%;
   animation: blink 1.2s ease-in-out infinite;
 }
@@ -227,14 +222,14 @@ export default {
 .race-name {
   font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(2rem, 4vw, 3.2rem);
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: 0.03em;
   margin: 0 0 0.3rem;
   line-height: 1;
 }
 .race-location {
   font-size: 0.82rem;
-  color: #444;
+  color: var(--text-muted);
   font-family: 'DM Mono', monospace;
   letter-spacing: 0.04em;
 }
@@ -243,14 +238,14 @@ export default {
 .countdown-label {
   font-size: 0.6rem;
   letter-spacing: 0.18em;
-  color: #333;
+  color: var(--text-muted);
   font-family: 'DM Mono', monospace;
   margin-bottom: 0.4rem;
 }
 .countdown {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 2.8rem;
-  color: #e10600;
+  color: var(--accent);
   letter-spacing: 0.08em;
   line-height: 1;
 }
@@ -264,21 +259,21 @@ export default {
 .section-label {
   font-size: 0.6rem;
   letter-spacing: 0.2em;
-  color: #333;
+  color: var(--text-muted);
   font-family: 'DM Mono', monospace;
   font-weight: 500;
   margin-bottom: 1.25rem;
 }
 .divider {
   height: 1px;
-  background: #111;
+  background: var(--bg-card);
   margin: 2.5rem 0;
 }
 
 /* ── Platform cards ── */
 .platforms {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   margin-bottom: 0;
 }
@@ -287,8 +282,8 @@ export default {
   flex-direction: column;
   gap: 0.75rem;
   padding: 1.4rem;
-  border: 1px solid #1a1a1a;
-  background: #0d0d0d;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
   text-decoration: none;
   border-radius: 2px;
   transition: all 0.2s;
@@ -304,10 +299,10 @@ export default {
   transition: background 0.2s;
 }
 .platform-card.fancode::before { background: #00c4ff; }
-.platform-card.f1tv::before    { background: #e10600; }
+.platform-card.f1tv::before    { background: var(--accent); }
 .platform-card:hover {
-  border-color: #2a2a2a;
-  background: #111;
+  border-color: var(--border-secondary);
+  background: var(--bg-card);
   transform: translateY(-2px);
 }
 .platform-top {
@@ -318,21 +313,21 @@ export default {
 .platform-name {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: 0.05em;
 }
 .platform-tag {
   font-size: 0.58rem;
   letter-spacing: 0.12em;
-  color: #333;
+  color: var(--text-muted);
   font-family: 'DM Mono', monospace;
-  background: #141414;
+  background: var(--bg-hover);
   padding: 0.2rem 0.5rem;
-  border: 1px solid #1e1e1e;
+  border: 1px solid var(--border-primary);
 }
 .platform-desc {
   font-size: 0.78rem;
-  color: #444;
+  color: var(--text-muted);
   line-height: 1.65;
   flex: 1;
 }
@@ -347,7 +342,7 @@ export default {
   transition: gap 0.2s;
 }
 .fancode .platform-cta { color: #00c4ff; }
-.f1tv   .platform-cta { color: #e10600; }
+.f1tv   .platform-cta { color: var(--accent); }
 .platform-card:hover .platform-cta { gap: 0.75rem; }
 
 /* ── Weekend schedule ── */
@@ -355,7 +350,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid #111;
+  border: 1px solid var(--border-primary);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -364,20 +359,20 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.1rem;
-  border-bottom: 1px solid #111;
-  background: #0d0d0d;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
 }
 .session-row:last-child { border-bottom: none; }
-.session-row.highlight { background: rgba(225,6,0,0.04); }
+.session-row.highlight  { background: var(--accent-dim); }
 .session-name {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   font-size: 0.82rem;
-  color: #555;
+  color: var(--text-secondary);
   font-family: 'DM Mono', monospace;
 }
-.session-row.highlight .session-name { color: #ddd; font-weight: 500; }
+.session-row.highlight .session-name { color: var(--text-primary); font-weight: 500; }
 .session-status {
   font-size: 0.6rem;
   letter-spacing: 0.14em;
@@ -385,8 +380,8 @@ export default {
   padding: 0.2rem 0.6rem;
   border-radius: 2px;
 }
-.session-status.past { color: #2a2a2a; background: #111; border: 1px solid #1a1a1a; }
-.session-status.live { color: #e10600; background: rgba(225,6,0,0.1); border: 1px solid rgba(225,6,0,0.25); animation: live-pulse 2s ease-in-out infinite; }
+.session-status.past { color: var(--text-faint); background: var(--bg-hover); border: 1px solid var(--border-primary); }
+.session-status.live { color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(225,6,0,0.25); animation: live-pulse 2s ease-in-out infinite; }
 @keyframes live-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
 /* ── Coming up ── */
@@ -400,13 +395,13 @@ export default {
   align-items: center;
   gap: 1.1rem;
   padding: 1rem 1.25rem;
-  border: 1px solid #111;
-  background: #0d0d0d;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
   border-radius: 2px;
 }
 .coming-icon {
   width: 40px; height: 40px;
-  background: rgba(225,6,0,0.07);
+  background: var(--accent-dim);
   border: 1px solid rgba(225,6,0,0.12);
   border-radius: 2px;
   display: flex;
@@ -417,12 +412,12 @@ export default {
 .coming-title {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #ccc;
+  color: var(--text-primary);
   margin-bottom: 0.2rem;
 }
 .coming-desc {
   font-size: 0.75rem;
-  color: #3a3a3a;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 .coming-link {
@@ -430,7 +425,7 @@ export default {
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.1em;
-  color: #e10600;
+  color: var(--accent);
   text-decoration: none;
   font-family: 'DM Mono', monospace;
   padding: 0.4rem 0.9rem;
@@ -440,7 +435,7 @@ export default {
   transition: all 0.15s;
   flex-shrink: 0;
 }
-.coming-link:hover { background: rgba(225,6,0,0.12); border-color: #e10600; }
+.coming-link:hover { background: var(--accent-dim); border-color: var(--accent); }
 
 @media (max-width: 700px) {
   .hero { flex-direction: column; align-items: flex-start; padding: 1.5rem; }

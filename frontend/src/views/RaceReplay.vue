@@ -10,7 +10,6 @@
         <h1 class="page-title">Race Replay</h1>
         <p class="page-subtitle">Select a race to replay with real F1 telemetry data</p>
 
-        <!-- Year toggle -->
         <div class="year-selector">
           <button
             v-for="y in [2024, 2025, 2026]"
@@ -51,7 +50,6 @@
     ══════════════════════════════════════════════ -->
     <div v-else class="replay-interface">
 
-      <!-- Top bar -->
       <div class="top-bar">
         <button @click="backToSelector" class="back-btn">← Back</button>
         <div class="race-title-block">
@@ -63,10 +61,9 @@
         </div>
       </div>
 
-      <!-- Three-column body -->
       <div class="main-layout">
 
-        <!-- ── LEFT sidebar: Weather + Leaderboard ── -->
+        <!-- ── LEFT sidebar ── -->
         <div class="left-sidebar">
           <WeatherPanel :weather="weatherData" />
 
@@ -86,9 +83,8 @@
           </div>
         </div>
 
-        <!-- ── CENTER: Track canvas + controls ── -->
+        <!-- ── CENTER ── -->
         <div class="track-area">
-          <!-- Track fills all available vertical space -->
           <div class="canvas-wrapper">
             <TrackCanvas
               :drivers="currentLapDrivers"
@@ -99,7 +95,6 @@
             />
           </div>
 
-          <!-- Playback controls bar -->
           <div class="controls">
             <button
               class="control-btn primary"
@@ -121,10 +116,9 @@
           </div>
         </div>
 
-        <!-- ── RIGHT sidebar: Pit stops + Telemetry ── -->
+        <!-- ── RIGHT sidebar ── -->
         <div class="right-sidebar">
 
-          <!-- TOP: Recent pit stops -->
           <div class="pit-section">
             <div class="sidebar-heading">RECENT PIT STOPS</div>
 
@@ -149,10 +143,8 @@
             </div>
           </div>
 
-          <!-- Sidebar divider -->
           <div class="sidebar-divider" />
 
-          <!-- BOTTOM: Telemetry -->
           <div class="telemetry-section">
             <TelemetryPanel
               :driver="selectedDriverData"
@@ -163,9 +155,8 @@
 
         </div>
 
-      </div><!-- /.main-layout -->
+      </div>
 
-      <!-- Bottom progress bar -->
       <ProgressBar :currentLap="currentLap" :totalLaps="raceData.total_laps" />
 
     </div>
@@ -192,33 +183,24 @@ export default {
 
   data() {
     return {
-      // selector
       selectedYear:   2025,
       availableYears: [2024, 2025, 2026],
       loadingRaces:   true,
       availableRaces: [],
-
-      // replay
       selectedRace:   null,
       raceData:       null,
       circuitData:    null,
       weatherData:    null,
       currentLap:     1,
       currentLapData: null,
-
-      // playback
       replayRunning:  false,
       replayInterval: null,
       playbackSpeed:  1000,
-
-      // driver selection
       selectedDriver:    null,
       telemetryEnriched: {},
       telemetryLoading:  false,
-
-      // pit stop log
-      pitStopLog:   [],   // { lap, driver, compound }
-      seenPitLaps:  {}    // driverCode → lap number last logged
+      pitStopLog:   [],
+      seenPitLaps:  {}
     }
   },
 
@@ -241,7 +223,6 @@ export default {
   },
 
   methods: {
-    // ── Year selector ─────────────────────────────────────────────────────────
     async switchYear(year) {
       if (year === this.selectedYear) return
       this.selectedYear   = year
@@ -252,7 +233,6 @@ export default {
 
     async loadAvailableRaces() {
       try {
-        // Use schedule API — shows all completed races, not just cached ones
         const [scheduleRes, cachedRes] = await Promise.all([
           fetch(`/api/schedule?year=${this.selectedYear}`),
           fetch(`/api/replay/available?year=${this.selectedYear}`)
@@ -278,31 +258,25 @@ export default {
       }
     },
 
-    // ── Race selection ────────────────────────────────────────────────────────
     async selectRace(race) {
       this.selectedRace = race
       this.showToast('Loading race data…')
-
       try {
         const year  = race.year || this.selectedYear
         const round = race.round
-
         const [raceData, circuitData, weatherData] = await Promise.all([
           api.getReplayRaceData(year, round),
           api.getCircuitData(year, round),
           api.getWeatherData(year, round)
         ])
-
         this.raceData    = raceData
         this.circuitData = circuitData
         this.weatherData = weatherData
-
         this.currentLap        = 1
         this.pitStopLog        = []
         this.seenPitLaps       = {}
         this.selectedDriver    = null
         this.telemetryEnriched = {}
-
         this.updateCurrentLap()
         this.showToast('Race loaded ✓')
       } catch (e) {
@@ -325,13 +299,10 @@ export default {
       this.telemetryEnriched = {}
     },
 
-    // ── Lap management ────────────────────────────────────────────────────────
     updateCurrentLap() {
       if (!this.raceData || this.currentLap > this.raceData.laps.length) return
       this.currentLapData = this.raceData.laps[this.currentLap - 1]
       this.detectPitStops()
-
-      // Refresh telemetry if a driver is selected
       if (this.selectedDriver) {
         this.fetchTelemetry(this.selectedDriver, this.currentLap)
       }
@@ -343,7 +314,6 @@ export default {
         const key = driver.driver
         if (driver.pit_out && this.seenPitLaps[key] !== this.currentLap) {
           this.seenPitLaps[key] = this.currentLap
-          // prepend so newest is on top
           this.pitStopLog.unshift({
             lap:      this.currentLap,
             driver:   driver.driver,
@@ -377,17 +347,11 @@ export default {
     },
 
     nextLap() {
-      if (this.currentLap < this.raceData.total_laps) {
-        this.currentLap++
-        this.updateCurrentLap()
-      }
+      if (this.currentLap < this.raceData.total_laps) { this.currentLap++; this.updateCurrentLap() }
     },
 
     previousLap() {
-      if (this.currentLap > 1) {
-        this.currentLap--
-        this.updateCurrentLap()
-      }
+      if (this.currentLap > 1) { this.currentLap--; this.updateCurrentLap() }
     },
 
     restart() {
@@ -399,7 +363,6 @@ export default {
       this.showToast('Restarted')
     },
 
-    // ── Driver selection + telemetry ──────────────────────────────────────────
     async onSelectDriver(code) {
       if (this.selectedDriver === code) {
         this.selectedDriver    = null
@@ -421,7 +384,6 @@ export default {
       this.telemetryLoading = false
     },
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
     getTireEmoji(compound) {
       return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪', INTERMEDIATE:'🟢', WET:'🔵' }[compound] ?? '⚫'
     },
@@ -445,8 +407,8 @@ export default {
 }
 
 .race-item.not-ready { opacity: 0.4; cursor: not-allowed; }
-.ready-badge  { color: #e10600; font-size: 0.72rem; font-weight: 700; margin-left: 0.5rem; }
-.pending-badge { color: #555; font-size: 0.72rem; margin-left: 0.5rem; }
+.ready-badge   { color: var(--accent); font-size: 0.72rem; font-weight: 700; margin-left: 0.5rem; }
+.pending-badge { color: var(--text-secondary); font-size: 0.72rem; margin-left: 0.5rem; }
 
 .selector { padding: 4rem 0; }
 
@@ -455,9 +417,10 @@ export default {
   font-size: 3rem;
   letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
+  color: var(--text-primary);
 }
 .page-subtitle {
-  color: var(--color-muted);
+  color: var(--text-secondary);
   margin-bottom: 2rem;
 }
 
@@ -470,54 +433,52 @@ export default {
 .year-btn {
   padding: 0.45rem 1.4rem;
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
+  border: 1px solid var(--border-primary);
+  color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
   border-radius: 2px;
 }
-.year-btn:hover       { border-color: var(--color-fg); color: var(--color-fg); }
-.year-btn.active      { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
+.year-btn:hover  { border-color: var(--text-primary); color: var(--text-primary); }
+.year-btn.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
 
 .loading {
   text-align: center;
   padding: 4rem;
-  color: var(--color-muted);
+  color: var(--text-secondary);
 }
 
 .race-list {
   display: grid;
   gap: 1px;
-  background: var(--color-border);
-  border: 1px solid var(--color-border);
+  background: var(--border-primary);
+  border: 1px solid var(--border-primary);
 }
 .race-item {
   display: grid;
   grid-template-columns: 80px 1fr 150px;
   align-items: center;
   padding: 1.25rem 2rem;
-  background: var(--color-bg);
+  background: var(--bg-primary);
   cursor: pointer;
   transition: background 0.15s;
 }
-.race-item:hover    { background: rgba(255,255,255,0.02); }
-.race-round         { font-family: var(--font-display); font-size: 1.5rem; color: var(--color-muted); }
-.race-name-text     { font-weight: 500; margin-bottom: 0.2rem; }
-.race-location      { font-size: 0.82rem; color: var(--color-muted); }
-.race-date          { text-align: right; color: var(--color-muted); font-size: 0.9rem; }
-
+.race-item:hover    { background: var(--bg-secondary); }
+.race-round         { font-family: var(--font-display); font-size: 1.5rem; color: var(--text-secondary); }
+.race-name-text     { font-weight: 500; margin-bottom: 0.2rem; color: var(--text-primary); }
+.race-location      { font-size: 0.82rem; color: var(--text-secondary); }
+.race-date          { text-align: right; color: var(--text-secondary); font-size: 0.9rem; }
 
 /* ════════════════════════════════════════════════════
-   REPLAY INTERFACE — full-viewport
+   REPLAY INTERFACE
 ════════════════════════════════════════════════════ */
 .replay-interface {
-  /* sit under the fixed 56px navbar */
   height: calc(100vh - 56px);
   display: flex;
   flex-direction: column;
-  background: #0a0a0a;
+  background: var(--bg-primary);
   overflow: hidden;
 }
 
@@ -527,8 +488,8 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 0.6rem 1.5rem;
-  border-bottom: 1px solid var(--color-border);
-  background: rgba(10,10,10,0.98);
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-primary);
   flex-shrink: 0;
   height: 48px;
 }
@@ -536,27 +497,26 @@ export default {
 .back-btn {
   padding: 0.35rem 0.85rem;
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-fg);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   font-size: 0.82rem;
   cursor: pointer;
   transition: border-color 0.15s;
   border-radius: 2px;
 }
-.back-btn:hover { border-color: var(--color-fg); }
+.back-btn:hover { border-color: var(--text-primary); }
 
 .race-title-block   { flex: 1; text-align: center; }
-.race-name-display  { font-family: var(--font-display); font-size: 1.15rem; margin-right: 0.6rem; }
-.race-circuit-display { font-size: 0.8rem; color: var(--color-muted); }
+.race-name-display  { font-family: var(--font-display); font-size: 1.15rem; margin-right: 0.6rem; color: var(--text-primary); }
+.race-circuit-display { font-size: 0.8rem; color: var(--text-secondary); }
 
-.lap-counter        { font-size: 0.85rem; color: var(--color-muted); white-space: nowrap; }
-.lap-counter strong { color: var(--color-fg); }
+.lap-counter        { font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; }
+.lap-counter strong { color: var(--text-primary); }
 
 /* ── Three-column body ── */
 .main-layout {
   flex: 1;
   display: grid;
-  /* narrower sidebars → more canvas space */
   grid-template-columns: 200px 1fr 255px;
   overflow: hidden;
   min-height: 0;
@@ -564,10 +524,10 @@ export default {
 
 /* ── LEFT sidebar ── */
 .left-sidebar {
-  border-right: 1px solid var(--color-border);
+  border-right: 1px solid var(--border-primary);
   padding: 0.65rem;
   overflow-y: auto;
-  background: rgba(10,10,10,0.97);
+  background: var(--bg-secondary);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -579,7 +539,7 @@ export default {
   font-size: 0.67rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #555;
+  color: var(--text-secondary);
   margin-bottom: 0.45rem;
   padding: 0 0.15rem;
 }
@@ -596,11 +556,11 @@ export default {
   cursor: pointer;
   transition: all 0.12s;
 }
-.lb-row:hover    { background: rgba(255,255,255,0.04); border-color: #2a2a2a; }
-.lb-row.selected { background: rgba(255,255,255,0.07); border-color: #555; }
+.lb-row:hover    { background: var(--bg-hover); border-color: var(--border-primary); }
+.lb-row.selected { background: var(--bg-card); border-color: var(--text-secondary); }
 
-.lb-pos  { font-family: var(--font-display); font-size: 1rem; color: #555; text-align: center; }
-.lb-code { font-family: monospace; font-weight: 700; font-size: 0.88rem; }
+.lb-pos  { font-family: var(--font-display); font-size: 1rem; color: var(--text-secondary); text-align: center; }
+.lb-code { font-family: monospace; font-weight: 700; font-size: 0.88rem; color: var(--text-primary); }
 .lb-tire { font-size: 0.95rem; text-align: center; }
 
 /* ── CENTER track area ── */
@@ -611,29 +571,28 @@ export default {
   overflow: hidden;
 }
 
-/* Canvas wrapper fills ALL remaining vertical space above controls */
 .canvas-wrapper {
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-/* Playback controls bar */
+/* Playback controls */
 .controls {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   padding: 0.45rem 0.75rem;
-  background: rgba(8,8,8,0.98);
-  border-top: 1px solid var(--color-border);
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-primary);
   flex-shrink: 0;
 }
 
 .control-btn {
   padding: 0.42rem 0.9rem;
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-fg);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -642,37 +601,36 @@ export default {
   white-space: nowrap;
 }
 .control-btn.primary {
-  background: var(--color-fg);
-  color: var(--color-bg);
-  border-color: var(--color-fg);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
   min-width: 44px;
   text-align: center;
 }
-.control-btn:hover:not(:disabled) { border-color: var(--color-fg); }
+.control-btn:hover:not(:disabled) { border-color: var(--text-primary); }
 .control-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .control-btn.restart  { margin-left: auto; }
 
 .speed-select {
   padding: 0.42rem 0.6rem;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-fg);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   font-size: 0.82rem;
   cursor: pointer;
   border-radius: 2px;
 }
-.speed-select option { background: #111; }
+.speed-select option { background: var(--bg-card); }
 
 /* ── RIGHT sidebar ── */
 .right-sidebar {
-  border-left: 1px solid var(--color-border);
-  background: rgba(10,10,10,0.97);
+  border-left: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* Pit stops — top portion, scrollable, up to 45% of sidebar */
 .pit-section {
   padding: 0.65rem;
   max-height: 42%;
@@ -689,7 +647,7 @@ export default {
 }
 
 .pits-empty {
-  color: #3a3a3a;
+  color: var(--text-muted);
   font-size: 0.78rem;
   text-align: center;
   padding: 1.5rem 0;
@@ -699,20 +657,20 @@ export default {
   padding: 0.5rem 0.4rem;
   margin-bottom: 4px;
   border-radius: 3px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid #181818;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-primary);
 }
 .pit-meta { display: flex; justify-content: space-between; margin-bottom: 0.15rem; }
-.pit-lap  { font-size: 0.67rem; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+.pit-lap  { font-size: 0.67rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
 .pit-driver-name {
   font-family: monospace;
   font-weight: 700;
   font-size: 0.9rem;
-  color: #ddd;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
-/* Tyre pills */
+/* Tyre pills — brand colours kept intentionally */
 .tyre-pill {
   display: inline-block;
   padding: 0.1rem 0.4rem;
@@ -720,21 +678,19 @@ export default {
   font-size: 0.72rem;
   font-weight: 700;
 }
-.tyre-pill.soft         { background: rgba(200,0,0,0.3);     color: #ff7777; }
-.tyre-pill.medium       { background: rgba(200,200,0,0.25);  color: #ffff77; }
-.tyre-pill.hard         { background: rgba(220,220,220,0.18); color: #ddd;   }
-.tyre-pill.intermediate { background: rgba(0,180,0,0.25);   color: #77ff77; }
-.tyre-pill.wet          { background: rgba(0,100,255,0.25); color: #77aaff; }
-.tyre-pill.unknown      { background: rgba(100,100,100,0.2); color: #777;   }
+.tyre-pill.soft         { background: rgba(200,0,0,0.3);      color: #ff7777; }
+.tyre-pill.medium       { background: rgba(200,200,0,0.25);   color: #ffff77; }
+.tyre-pill.hard         { background: rgba(220,220,220,0.18); color: #ddd; }
+.tyre-pill.intermediate { background: rgba(0,180,0,0.25);    color: #77ff77; }
+.tyre-pill.wet          { background: rgba(0,100,255,0.25);  color: #77aaff; }
+.tyre-pill.unknown      { background: rgba(100,100,100,0.2); color: #777; }
 
-/* Divider between pit stops and telemetry */
 .sidebar-divider {
   height: 1px;
-  background: #1a1a1a;
+  background: var(--border-primary);
   flex-shrink: 0;
 }
 
-/* Telemetry — bottom portion, fills remaining space */
 .telemetry-section {
   flex: 1;
   overflow-y: auto;
@@ -759,7 +715,6 @@ export default {
   .race-info { overflow: hidden !important; }
   .race-name { white-space: normal !important; line-height: 1.2 !important; }
   .year-tabs { gap: 6px !important; }
-  .year-tab { padding: 6px 14px !important; font-size: 13px !important; }
+  .year-tab  { padding: 6px 14px !important; font-size: 13px !important; }
 }
-
 </style>

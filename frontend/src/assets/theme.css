@@ -1,39 +1,45 @@
 /* ============================================================
    PITLANE LIVE — THEME SYSTEM
-   Place this file at: frontend/src/assets/theme.css
-   Import it in main.js: import './assets/theme.css'
+   frontend/src/assets/theme.css
+   Import in main.js: import './assets/theme.css'
    ============================================================ */
 
 /* ── Dark theme (default) ───────────────────────────────────── */
 :root,
 [data-theme="dark"] {
   --bg-primary:       #080808;
-  --bg-secondary:     #111111;
-  --bg-card:          #161616;
-  --bg-hover:         #1e1e1e;
+  --bg-secondary:     #0d0d0d;
+  --bg-card:          #111111;
+  --bg-hover:         #161616;
   --bg-input:         #1a1a1a;
 
-  --border-primary:   #2a2a2a;
+  --border-primary:   #1e1e1e;
+  --border-secondary: #2a2a2a;
   --border-accent:    #e10600;
 
-  --text-primary:     #ffffff;
-  --text-secondary:   #a0a0a0;
-  --text-muted:       #555555;
+  --text-primary:     #f5f5f5;
+  --text-secondary:   #888888;
+  --text-muted:       #444444;
+  --text-faint:       #2a2a2a;
   --text-inverse:     #080808;
 
   --accent:           #e10600;
-  --accent-hover:     #ff1a16;
+  --accent-hover:     #ff1a0d;
   --accent-dim:       rgba(225, 6, 0, 0.12);
 
   --nav-bg:           rgba(8, 8, 8, 0.95);
   --nav-border:       #1e1e1e;
 
-  --shadow-card:      0 2px 16px rgba(0, 0, 0, 0.6);
-  --shadow-hover:     0 4px 24px rgba(225, 6, 0, 0.15);
-
-  --toggle-bg:        #1e1e1e;
+  --toggle-bg:        #1a1a1a;
   --toggle-border:    #2a2a2a;
-  --toggle-icon:      #a0a0a0;
+  --toggle-icon:      #888888;
+
+  /* Legacy aliases used by Replay.vue */
+  --color-bg:         #080808;
+  --color-fg:         #f5f5f5;
+  --color-border:     #1e1e1e;
+  --color-muted:      #888888;
+  --font-display:     'Bebas Neue', sans-serif;
 }
 
 /* ── Light theme ─────────────────────────────────────────────── */
@@ -41,15 +47,17 @@
   --bg-primary:       #f4f4f4;
   --bg-secondary:     #ebebeb;
   --bg-card:          #ffffff;
-  --bg-hover:         #f0f0f0;
+  --bg-hover:         #e4e4e4;
   --bg-input:         #f9f9f9;
 
-  --border-primary:   #e0e0e0;
+  --border-primary:   #d8d8d8;
+  --border-secondary: #c4c4c4;
   --border-accent:    #e10600;
 
   --text-primary:     #0a0a0a;
   --text-secondary:   #555555;
-  --text-muted:       #999999;
+  --text-muted:       #888888;
+  --text-faint:       #bbbbbb;
   --text-inverse:     #ffffff;
 
   --accent:           #e10600;
@@ -57,17 +65,21 @@
   --accent-dim:       rgba(225, 6, 0, 0.08);
 
   --nav-bg:           rgba(244, 244, 244, 0.95);
-  --nav-border:       #e0e0e0;
+  --nav-border:       #d8d8d8;
 
-  --shadow-card:      0 2px 12px rgba(0, 0, 0, 0.08);
-  --shadow-hover:     0 4px 20px rgba(225, 6, 0, 0.12);
-
-  --toggle-bg:        #e8e8e8;
-  --toggle-border:    #d0d0d0;
+  --toggle-bg:        #e4e4e4;
+  --toggle-border:    #cccccc;
   --toggle-icon:      #555555;
+
+  /* Legacy aliases used by Replay.vue */
+  --color-bg:         #f4f4f4;
+  --color-fg:         #0a0a0a;
+  --color-border:     #d8d8d8;
+  --color-muted:      #555555;
+  --font-display:     'Bebas Neue', sans-serif;
 }
 
-/* ── Base resets using variables ─────────────────────────────── */
+/* ── Base resets ─────────────────────────────────────────────── */
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);

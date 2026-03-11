@@ -1,7 +1,6 @@
 <template>
   <div class="standings">
 
-    <!-- Header -->
     <div class="page-header">
       <div class="header-inner">
         <div class="header-label">SEASON</div>
@@ -10,13 +9,11 @@
       </div>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="loading-pip"></div>
       <p>Loading standings…</p>
     </div>
 
-    <!-- Empty -->
     <div v-else-if="leaders.length === 0" class="empty-state">
       <div class="empty-icon">🏁</div>
       <h2>No standings yet</h2>
@@ -24,7 +21,6 @@
       <router-link to="/register" class="cta-btn">JOIN THE GRID →</router-link>
     </div>
 
-    <!-- Table -->
     <div v-else class="standings-wrap">
 
       <!-- Top 3 podium -->
@@ -128,12 +124,12 @@ export default {
 <style scoped>
 .standings {
   min-height: 100vh;
-  background: #080808;
+  background: var(--bg-primary);
   font-family: 'Work Sans', sans-serif;
 }
 
 .page-header {
-  border-bottom: 1px solid #161616;
+  border-bottom: 1px solid var(--bg-hover);
   padding: 3rem 5rem 2rem;
   position: relative;
 }
@@ -142,12 +138,12 @@ export default {
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 3px;
-  background: linear-gradient(to bottom, #e10600, transparent);
+  background: linear-gradient(to bottom, var(--accent), transparent);
 }
 .header-label {
   font-size: 0.62rem;
   letter-spacing: 0.18em;
-  color: #e10600;
+  color: var(--accent);
   font-weight: 700;
   margin-bottom: 0.4rem;
 }
@@ -155,12 +151,12 @@ export default {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 4rem;
   letter-spacing: 0.05em;
-  color: #f5f5f5;
+  color: var(--text-primary);
   margin: 0 0 0.4rem;
 }
 .page-sub {
   font-size: 0.82rem;
-  color: #333;
+  color: var(--text-muted);
 }
 
 /* Loading */
@@ -171,11 +167,11 @@ export default {
   justify-content: center;
   gap: 1rem;
   padding: 6rem;
-  color: #444;
+  color: var(--text-muted);
 }
 .loading-pip {
   width: 10px; height: 10px;
-  background: #e10600;
+  background: var(--accent);
   border-radius: 50%;
   animation: pulse 1s ease infinite;
 }
@@ -193,15 +189,15 @@ export default {
 .empty-state h2 {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 2.5rem;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
-.empty-state p { color: #444; margin-bottom: 2rem; }
+.empty-state p { color: var(--text-muted); margin-bottom: 2rem; }
 .cta-btn {
   display: inline-block;
   padding: 0.7rem 1.8rem;
-  background: #e10600;
-  color: #fff;
+  background: var(--accent);
+  color: var(--text-inverse);
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 700;
@@ -229,12 +225,12 @@ export default {
   align-items: center;
   gap: 0.4rem;
   padding: 1.5rem 1.2rem 1.2rem;
-  border: 1px solid #1a1a1a;
+  border: 1px solid var(--border-primary);
   min-width: 160px;
   position: relative;
   transition: border-color 0.2s;
 }
-.podium-card:hover { border-color: #333; }
+.podium-card:hover { border-color: var(--border-secondary); }
 .podium-card.p1 {
   border-color: rgba(255,215,0,0.2);
   background: rgba(255,215,0,0.03);
@@ -243,15 +239,12 @@ export default {
 .podium-card.p2 { margin-bottom: 20px; }
 .podium-card.p3 { margin-bottom: 20px; }
 
-.podium-crown {
-  position: absolute;
-  top: -16px;
-  font-size: 1.4rem;
-}
+.podium-crown { position: absolute; top: -16px; font-size: 1.4rem; }
+
 .podium-pos {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--text-muted);
   letter-spacing: 0.1em;
 }
 .podium-card.p1 .podium-pos { color: #ffd700; }
@@ -260,14 +253,14 @@ export default {
 
 .podium-avatar {
   width: 44px; height: 44px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #888;
+  color: var(--text-secondary);
 }
 .podium-avatar.gold {
   background: rgba(255,215,0,0.1);
@@ -275,39 +268,29 @@ export default {
   color: #ffd700;
 }
 
-.podium-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #ddd;
-}
+.podium-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
 .podium-pts {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: 0.05em;
 }
-.podium-pts span {
-  font-size: 0.8rem;
-  color: #555;
-  letter-spacing: 0.1em;
-}
-.podium-acc { font-size: 0.72rem; color: #444; }
+.podium-pts span { font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 0.1em; }
+.podium-acc { font-size: 0.72rem; color: var(--text-muted); }
 
 /* Table */
-.table-wrap {
-  border: 1px solid #111;
-}
+.table-wrap { border: 1px solid var(--bg-card); }
 .table-header {
   display: grid;
   grid-template-columns: 60px 1fr 120px 180px 120px;
   padding: 0.6rem 1.5rem;
-  background: #0a0a0a;
-  border-bottom: 1px solid #111;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--bg-card);
 }
 .table-header span {
   font-size: 0.62rem;
   letter-spacing: 0.12em;
-  color: #333;
+  color: var(--text-muted);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -316,7 +299,7 @@ export default {
   grid-template-columns: 60px 1fr 120px 180px 120px;
   align-items: center;
   padding: 0.9rem 1.5rem;
-  border-bottom: 1px solid #0e0e0e;
+  border-bottom: 1px solid var(--bg-secondary);
   transition: background 0.12s;
   position: relative;
 }
@@ -329,13 +312,13 @@ export default {
 .table-row.is-p1::before { background: #ffd700; }
 .table-row.is-p2::before { background: #c0c0c0; }
 .table-row.is-p3::before { background: #cd7f32; }
-.table-row.is-me { background: rgba(225,6,0,0.04); }
-.table-row:hover { background: rgba(255,255,255,0.02); }
+.table-row.is-me  { background: var(--accent-dim); }
+.table-row:hover  { background: var(--bg-secondary); }
 
 .col-pos .pos-num {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.2rem;
-  color: #2a2a2a;
+  color: var(--border-secondary);
 }
 .is-p1 .pos-num { color: #ffd700; }
 .is-p2 .pos-num { color: #c0c0c0; }
@@ -348,32 +331,28 @@ export default {
 }
 .driver-avatar {
   width: 30px; height: 30px;
-  background: #111;
-  border: 1px solid #1e1e1e;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #555;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 .is-me .driver-avatar {
-  background: rgba(225,6,0,0.15);
+  background: var(--accent-dim);
   border-color: rgba(225,6,0,0.3);
-  color: #e10600;
+  color: var(--accent);
 }
-.driver-name {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #ccc;
-}
+.driver-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
 .you-tag {
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.1em;
-  color: #e10600;
-  background: rgba(225,6,0,0.1);
+  color: var(--accent);
+  background: var(--accent-dim);
   border: 1px solid rgba(225,6,0,0.2);
   padding: 0.1rem 0.35rem;
 }
@@ -381,35 +360,19 @@ export default {
 .col-pts {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: 0.03em;
 }
 
-.col-acc {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+.col-acc { display: flex; align-items: center; gap: 0.75rem; }
 .acc-bar {
   width: 80px; height: 3px;
-  background: #1a1a1a;
+  background: var(--border-primary);
   border-radius: 2px;
   overflow: hidden;
 }
-.acc-fill {
-  height: 100%;
-  background: #e10600;
-  border-radius: 2px;
-}
-.acc-text {
-  font-size: 0.8rem;
-  color: #555;
-  font-family: monospace;
-}
+.acc-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+.acc-text { font-size: 0.8rem; color: var(--text-secondary); font-family: monospace; }
 
-.col-preds {
-  font-size: 0.85rem;
-  color: #333;
-  font-family: monospace;
-}
+.col-preds { font-size: 0.85rem; color: var(--text-muted); font-family: monospace; }
 </style>
