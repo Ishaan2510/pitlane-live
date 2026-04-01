@@ -27,12 +27,14 @@ const routes = [
   {
     path: '/replay',
     name: 'Replay',
-    component: () => import('@/views/RaceReplay.vue')
+    component: () => import('@/views/RaceReplay.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/replay/:year/:round',
     name: 'RaceReplay',
-    component: () => import('@/views/RaceReplay.vue')
+    component: () => import('@/views/RaceReplay.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/standings',
@@ -53,7 +55,8 @@ const routes = [
   {
     path: '/the-grid', 
     name: 'TheGrid',
-    component: () => import('@/views/TheGrid.vue')
+    component: () => import('@/views/TheGrid.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

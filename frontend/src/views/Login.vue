@@ -17,7 +17,9 @@
         <div class="form-header">
           <span class="form-round">AUTH</span>
           <h1 class="form-title">SIGN IN</h1>
-          <p class="form-sub">Enter your credentials to access the grid</p>
+          <p class="form-sub">
+            {{ $route.query.redirect ? 'Sign in to continue' : 'Enter your credentials to access the grid' }}
+          </p>
         </div>
 
         <form @submit.prevent="submit" class="form" novalidate>

@@ -183,7 +183,7 @@ export default {
 
   data() {
     return {
-      selectedYear:   2025,
+      selectedYear:   2026,
       availableYears: [2024, 2025, 2026],
       loadingRaces:   true,
       availableRaces: [],
