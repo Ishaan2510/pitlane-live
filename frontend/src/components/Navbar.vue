@@ -45,8 +45,10 @@ const initials = computed(() => {
 })
 
 function handleLogout() {
-  auth.logout()
-  router.push('/')
+  if (confirm('Are you sure you want to sign out?')) {
+    auth.logout()
+    router.push('/')
+  }
 }
 </script>
 

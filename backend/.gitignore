@@ -1,5 +1,10 @@
 # FastF1 cache files
-fastf1_cache/
+# FastF1 cache — ignore raw session downloads, keep processed outputs
+fastf1_cache/*.pkl
+fastf1_cache/**/*.ff1pkl
+fastf1_cache/[0-9]*/
+fastf1_cache/http/
+fastf1_cache/tmp/
 
 # Python
 __pycache__/
