@@ -11,13 +11,12 @@ bp = Blueprint('news', __name__, url_prefix='/api')
 _cache = {'data': [], 'ts': 0}
 CACHE_TTL = 600  # seconds
 
-AUTOSPORT_RSS = 'https://www.autosport.com/rss/f1/news/'
+BBC_F1_RSS = 'https://feeds.bbci.co.uk/sport/formula1/rss.xml'
 
 
 def _time_ago(pub_date_str: str) -> str:
     """Convert RSS pubDate to '2h ago' style string."""
     try:
-        # RSS date format: "Mon, 08 Mar 2026 10:30:00 +0000"
         dt = datetime.strptime(pub_date_str.strip(), '%a, %d %b %Y %H:%M:%S %z')
         now = datetime.now(timezone.utc)
         diff = int((now - dt).total_seconds())
@@ -56,10 +55,10 @@ def _category_from_title(title: str) -> str:
 
 
 def _fetch_news():
-    """Fetch and parse Autosport RSS, return list of article dicts."""
+    """Fetch and parse BBC Sport F1 RSS, return list of article dicts."""
     try:
-        resp = requests.get(AUTOSPORT_RSS, timeout=8, headers={
-            'User-Agent': 'Mozilla/5.0 (PitLane Live/1.0)'
+        resp = requests.get(BBC_F1_RSS, timeout=8, headers={
+            'User-Agent': 'Mozilla/5.0 (compatible; PitLaneLive/1.0)'
         })
         resp.raise_for_status()
         root = ET.fromstring(resp.content)
@@ -95,7 +94,7 @@ def _fetch_news():
 @bp.route('/news', methods=['GET'])
 def get_news():
     """
-    Return latest F1 news from Autosport RSS.
+    Return latest F1 news from BBC Sport RSS.
     Cached for 10 minutes to avoid hammering the RSS feed.
     """
     global _cache
