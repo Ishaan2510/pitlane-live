@@ -287,6 +287,7 @@
 <script>
 import TrackCanvas from '../components/TrackCanvas.vue'
 import api from '../services/api.js'
+import { apiUrl } from '@/services/apiBase'
 
 const TEAM_COLORS = {
   'Red Bull Racing': '#3671C6', 'Ferrari': '#E8002D', 'Mercedes': '#27F4D2',
@@ -414,7 +415,7 @@ export default {
 
     connectSSE() {
       try {
-        this.eventSource = new EventSource(`/api/replay/live/stream`)
+        this.eventSource = new EventSource(apiUrl('/replay/live/stream'))
         this.eventSource.onmessage = (e) => {
           try {
             const state = JSON.parse(e.data)
@@ -448,7 +449,7 @@ export default {
     },
 
     async fetchState() {
-      const res = await fetch(`/api/replay/live/state`)
+      const res = await fetch(apiUrl('/replay/live/state'))
       return await res.json()
     },
 
@@ -484,7 +485,7 @@ export default {
     async loadSimulatableRaces() {
       this.loadingSimRaces = true
       try {
-        const res = await fetch('/api/replay/simulate/races')
+        const res = await fetch(apiUrl('/replay/simulate/races'))
         this.simulatableRaces = await res.json()
       } catch {
         this.simulatableRaces = []
@@ -507,7 +508,7 @@ export default {
 
       // Load real circuit layout for TrackCanvas
       try {
-        const res = await fetch(`/api/replay/circuit/${this.simYear}/${this.simRound}`)
+        const res = await fetch(apiUrl(`/replay/circuit/${this.simYear}/${this.simRound}`))
         if (res.ok) this.circuitData = await res.json()
       } catch { /* TrackCanvas falls back to oval if null */ }
 
@@ -561,7 +562,7 @@ export default {
     async fetchSimState() {
       try {
         const res = await fetch(
-          `/api/replay/simulate/state?year=${this.simYear}&round=${this.simRound}&lap=${this.simLap}`
+          apiUrl(`/replay/simulate/state?year=${this.simYear}&round=${this.simRound}&lap=${this.simLap}`)
         )
         const state = await res.json()
         if (!state.error) {

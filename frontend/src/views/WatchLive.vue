@@ -190,6 +190,8 @@
 </template>
 
 <script>
+import { apiUrl } from '@/services/apiBase'
+
 export default {
   name: 'WatchLive',
 
@@ -237,7 +239,7 @@ export default {
   methods: {
     async loadRace() {
       try {
-        const res  = await fetch('/api/schedule')
+        const res  = await fetch(apiUrl('/schedule'))
         const data = await res.json()
         // Use is_next flag — do NOT use status === 'live' as that triggers on race day
         this.nextRace = data.find(r => r.is_next) || null

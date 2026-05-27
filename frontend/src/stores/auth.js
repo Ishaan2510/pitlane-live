@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-
-const API = `/api`
+import { apiUrl } from '@/services/apiBase'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('pitlane_token') || null)
@@ -23,25 +22,36 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('pitlane_user')
   }
 
+  async function readJson(res) {
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      const text = await res.text()
+      throw new Error(
+        `Server returned non-JSON (${res.status}). Check API URL or backend logs.`
+      )
+    }
+    return res.json()
+  }
+
   async function register(username, email, password) {
-    const res  = await fetch(`${API}/auth/register`, {
+    const res  = await fetch(apiUrl('/auth/register'), {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ username, email, password })
     })
-    const data = await res.json()
+    const data = await readJson(res)
     if (!res.ok) throw new Error(data.error || 'Registration failed')
     _persist(data.token, data.user)
     return data.user
   }
 
   async function login(identifier, password) {
-    const res  = await fetch(`${API}/auth/login`, {
+    const res  = await fetch(apiUrl('/auth/login'), {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ identifier, password })
     })
-    const data = await res.json()
+    const data = await readJson(res)
     if (!res.ok) throw new Error(data.error || 'Login failed')
     _persist(data.token, data.user)
     return data.user
@@ -49,7 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchMe() {
     if (!token.value) return
-    const res = await fetch(`${API}/auth/me`, {
+    const res = await fetch(apiUrl('/auth/me'), {
       headers: { Authorization: `Bearer ${token.value}` }
     })
     if (!res.ok) { logout(); return }

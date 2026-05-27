@@ -1,0 +1,38 @@
+# Node
+node_modules/
+dist/
+.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+ENV/
+.venv/
+.env
+.env.production
+
+# FastF1 cache files (backend)
+backend/fastf1_cache/*.pkl
+backend/fastf1_cache/**/*.ff1pkl
+backend/fastf1_cache/[0-9]*/
+backend/fastf1_cache/http/
+backend/fastf1_cache/tmp/
+
+# Backend-specific
+backend/app/routes/__pycache__/
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

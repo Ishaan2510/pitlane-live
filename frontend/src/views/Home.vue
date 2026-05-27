@@ -140,6 +140,8 @@
 </template>
 
 <script>
+import { apiUrl } from '@/services/apiBase'
+
 const CURRENT_YEAR = new Date().getFullYear()
 
 export default {
@@ -188,7 +190,7 @@ export default {
     async loadSchedule() {
       this.loading = true
       try {
-        const res  = await fetch(`/api/schedule?year=${this.selectedYear}`)
+        const res  = await fetch(apiUrl(`/schedule?year=${this.selectedYear}`))
         this.races = await res.json()
       } catch (e) {
         console.error('Failed to load schedule:', e)

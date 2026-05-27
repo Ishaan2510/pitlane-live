@@ -126,6 +126,8 @@
 </template>
 
 <script>
+import { apiUrl } from '@/services/apiBase'
+
 const TEAM_COLORS = {
   'Alpine':          '#FF87BC',
   'Aston Martin':    '#229971',
@@ -214,7 +216,7 @@ export default {
       this.newsLoading = true
       this.newsError   = false
       try {
-        const res  = await fetch('/api/news')
+        const res  = await fetch(apiUrl('/news'))
         const data = await res.json()
         if (data.error) throw new Error(data.error)
         this.news = data

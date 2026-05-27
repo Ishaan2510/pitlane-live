@@ -166,6 +166,7 @@
 <script>
 import api              from '../services/api.js'
 import { useToast }     from '../composables/useToast.js'
+import { apiUrl } from '@/services/apiBase'
 import ToastNotification from '../components/ToastNotification.vue'
 import TrackCanvas      from '../components/TrackCanvas.vue'
 import WeatherPanel     from '../components/WeatherPanel.vue'
@@ -234,8 +235,8 @@ export default {
     async loadAvailableRaces() {
       try {
         const [scheduleRes, cachedRes] = await Promise.all([
-          fetch(`/api/schedule?year=${this.selectedYear}`),
-          fetch(`/api/replay/available?year=${this.selectedYear}`)
+          fetch(apiUrl(`/schedule?year=${this.selectedYear}`)),
+          fetch(apiUrl(`/replay/available?year=${this.selectedYear}`))
         ])
         const schedule = await scheduleRes.json()
         const cached = await cachedRes.json()

@@ -1,16 +1,15 @@
 import axios from 'axios'
-
-const API_BASE = '/api'
+import { API_ROOT } from '@/services/apiBase'
 
 class APIService {
   // ── Existing endpoints ──────────────────────────────────────────────────────
   async getRaces() {
-    const response = await axios.get(`${API_BASE}/races`)
+    const response = await axios.get(`${API_ROOT}/races`)
     return response.data
   }
 
   async getLiveRace(id) {
-    const response = await axios.get(`${API_BASE}/races/${id}`)
+    const response = await axios.get(`${API_ROOT}/races/${id}`)
     return {
       id:          response.data.id,
       name:        response.data.name,
@@ -24,41 +23,41 @@ class APIService {
   }
 
   async getLeaderboard() {
-    const response = await axios.get(`${API_BASE}/leaderboard`)
+    const response = await axios.get(`${API_ROOT}/leaderboard`)
     return response.data
   }
 
   async submitPrediction(prediction) {
     const token = localStorage.getItem('pitlane_token')
-    const response = await axios.post(`${API_BASE}/predictions`, prediction, {
+    const response = await axios.post(`${API_ROOT}/predictions`, prediction, {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
     return response.data
   }
 
   async getRacePredictions(raceId) {
-    const response = await axios.get(`${API_BASE}/predictions/race/${raceId}`)
+    const response = await axios.get(`${API_ROOT}/predictions/race/${raceId}`)
     return response.data
   }
 
   // ── Race Replay endpoints ───────────────────────────────────────────────────
   async getAvailableReplays(year = 2024) {
-    const response = await axios.get(`${API_BASE}/replay/available?year=${year}`)
+    const response = await axios.get(`${API_ROOT}/replay/available?year=${year}`)
     return response.data
   }
 
   async getReplayRaceData(year, round) {
-    const response = await axios.get(`${API_BASE}/replay/race/${year}/${round}`)
+    const response = await axios.get(`${API_ROOT}/replay/race/${year}/${round}`)
     return response.data
   }
 
   async getReplayLapData(year, round, lap) {
-    const response = await axios.get(`${API_BASE}/replay/lap/${year}/${round}/${lap}`)
+    const response = await axios.get(`${API_ROOT}/replay/lap/${year}/${round}/${lap}`)
     return response.data
   }
 
   async getReplaySummary(year, round) {
-    const response = await axios.get(`${API_BASE}/replay/summary/${year}/${round}`)
+    const response = await axios.get(`${API_ROOT}/replay/summary/${year}/${round}`)
     return response.data
   }
 
@@ -66,7 +65,7 @@ class APIService {
   // the replay. The track canvas falls back to the generic oval when null.
   async getCircuitData(year, round) {
     try {
-      const response = await axios.get(`${API_BASE}/replay/circuit/${year}/${round}`)
+      const response = await axios.get(`${API_ROOT}/replay/circuit/${year}/${round}`)
       return response.data
     } catch (e) {
       // 404 = circuit not cached yet (needs telemetry=True load)
@@ -78,7 +77,7 @@ class APIService {
 
   async getWeatherData(year, round) {
     try {
-      const response = await axios.get(`${API_BASE}/replay/weather/${year}/${round}`)
+      const response = await axios.get(`${API_ROOT}/replay/weather/${year}/${round}`)
       return response.data
     } catch (e) {
       return null
@@ -88,7 +87,7 @@ class APIService {
   async getDriverTelemetry(year, round, driver, lap) {
     try {
       const response = await axios.get(
-        `${API_BASE}/replay/telemetry/${year}/${round}/${driver}/${lap}`
+        `${API_ROOT}/replay/telemetry/${year}/${round}/${driver}/${lap}`
       )
       return response.data
     } catch (e) {

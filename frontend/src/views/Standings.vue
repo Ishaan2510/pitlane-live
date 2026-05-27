@@ -94,6 +94,7 @@
 
 <script>
 import { useAuthStore } from '@/stores/auth'
+import { apiUrl } from '@/services/apiBase'
 
 export default {
   name: 'Standings',
@@ -110,7 +111,7 @@ export default {
   },
   async mounted() {
     try {
-      const res = await fetch('/api/leaderboard')
+      const res = await fetch(apiUrl('/leaderboard'))
       this.leaders = await res.json()
     } catch (e) {
       console.error(e)

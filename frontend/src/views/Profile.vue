@@ -88,6 +88,7 @@
 
 <script>
 import { useAuthStore } from '@/stores/auth'
+import { apiUrl } from '@/services/apiBase'
 export default {
   name: 'Profile',
   data() {
@@ -107,13 +108,15 @@ export default {
     async loadPredictions() {
       try {
         const token = localStorage.getItem('pitlane_token')
-        const res = await fetch('/api/predictions/mine', { headers: { Authorization: `Bearer ${token}` } })
+        const res = await fetch(apiUrl('/predictions/mine'), {
+          headers: { Authorization: `Bearer ${token}` }
+        })
         this.predictions = await res.json()
       } catch(e) { console.error(e) }
     },
     async loadRank() {
       try {
-        const res = await fetch('/api/leaderboard')
+        const res = await fetch(apiUrl('/leaderboard'))
         const board = await res.json()
         const me = board.find(u => u.username === this.user?.username)
         if (me) this.rank = me.rank
