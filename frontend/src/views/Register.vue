@@ -169,14 +169,14 @@ async function submit() {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: #0a0a0a;
-  color: #e8e8e8;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   font-family: 'DM Mono', monospace;
 }
 
 .panel-left {
-  background: #0e0e0e;
-  border-right: 1px solid #1e1e1e;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-primary);
   padding: 64px 56px;
   display: flex;
   flex-direction: column;
@@ -193,8 +193,8 @@ async function submit() {
     0deg,
     transparent,
     transparent 39px,
-    #161616 39px,
-    #161616 40px
+    var(--border-primary) 39px,
+    var(--border-primary) 40px
   );
   pointer-events: none;
 }
@@ -203,7 +203,7 @@ async function submit() {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 180px;
   line-height: 1;
-  color: #141414;
+  color: var(--text-faint);
   letter-spacing: -4px;
   margin-top: -20px;
   position: relative;
@@ -214,7 +214,7 @@ async function submit() {
   font-size: 52px;
   line-height: 1.05;
   letter-spacing: 2px;
-  color: #e8202a;
+  color: var(--accent);
   position: relative;
 }
 
@@ -230,13 +230,13 @@ async function submit() {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 36px;
   line-height: 1;
-  color: #e8e8e8;
+  color: var(--text-primary);
 }
 
 .stat-label {
   font-size: 9px;
   letter-spacing: 2px;
-  color: #444;
+  color: var(--text-muted);
 }
 
 .panel-right {
@@ -248,12 +248,12 @@ async function submit() {
 .back-link {
   font-size: 11px;
   letter-spacing: 2px;
-  color: #555;
+  color: var(--text-muted);
   text-decoration: none;
   transition: color 0.2s;
   align-self: flex-start;
 }
-.back-link:hover { color: #e8e8e8; }
+.back-link:hover { color: var(--text-primary); }
 
 .form-wrap {
   margin: auto 0;
@@ -265,7 +265,7 @@ async function submit() {
 .form-round {
   font-size: 11px;
   letter-spacing: 4px;
-  color: #e8202a;
+  color: var(--accent);
   display: block;
   margin-bottom: 12px;
 }
@@ -275,12 +275,12 @@ async function submit() {
   font-size: 64px;
   margin: 0 0 8px;
   letter-spacing: 2px;
-  color: #f0f0f0;
+  color: var(--text-primary);
 }
 
 .form-sub {
   font-size: 12px;
-  color: #555;
+  color: var(--text-muted);
   margin: 0;
   letter-spacing: 0.5px;
 }
@@ -291,15 +291,15 @@ async function submit() {
   display: block;
   font-size: 10px;
   letter-spacing: 2px;
-  color: #555;
+  color: var(--text-muted);
   margin-bottom: 8px;
 }
 
 .field input {
   width: 100%;
-  background: #111;
-  border: 1px solid #222;
-  color: #e8e8e8;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   padding: 12px 14px;
   font-family: 'DM Mono', monospace;
   font-size: 14px;
@@ -308,7 +308,7 @@ async function submit() {
   transition: border-color 0.2s;
 }
 
-.field input:focus { border-color: #e8202a; }
+.field input:focus { border-color: var(--accent); }
 .field.error input  { border-color: #c0392b; }
 
 .field-error {
@@ -331,14 +331,14 @@ async function submit() {
   padding: 0 14px;
   background: none;
   border: none;
-  color: #555;
+  color: var(--text-muted);
   font-family: 'DM Mono', monospace;
   font-size: 10px;
   letter-spacing: 1px;
   cursor: pointer;
   transition: color 0.2s;
 }
-.toggle-pwd:hover { color: #e8e8e8; }
+.toggle-pwd:hover { color: var(--text-primary); }
 
 /* Password strength bar */
 .strength-bar {
@@ -350,7 +350,7 @@ async function submit() {
 .strength-seg {
   flex: 1;
   height: 3px;
-  background: #222;
+  background: var(--border-secondary);
   transition: background 0.3s;
 }
 
@@ -363,26 +363,26 @@ async function submit() {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #1a0a0a;
-  border: 1px solid #c0392b;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
   padding: 12px 14px;
   font-size: 12px;
-  color: #e55;
+  color: var(--accent);
   margin-bottom: 24px;
 }
 
 .err-pip {
   width: 6px;
   height: 6px;
-  background: #e8202a;
+  background: var(--accent);
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .btn-submit {
   width: 100%;
-  background: #e8202a;
-  color: #fff;
+  background: var(--accent);
+  color: var(--text-inverse);
   border: none;
   padding: 14px;
   font-family: 'Bebas Neue', sans-serif;
@@ -396,7 +396,7 @@ async function submit() {
   height: 50px;
 }
 
-.btn-submit:hover:not(:disabled) { background: #c0181f; }
+.btn-submit:hover:not(:disabled) { background: var(--accent-hover); }
 .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .spinner {
@@ -413,11 +413,11 @@ async function submit() {
 .form-footer {
   margin-top: 28px;
   font-size: 12px;
-  color: #444;
+  color: var(--text-muted);
 }
 
 .form-footer a {
-  color: #e8202a;
+  color: var(--accent);
   text-decoration: none;
   letter-spacing: 1px;
 }

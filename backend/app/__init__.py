@@ -7,8 +7,17 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
-    # Enable CORS for frontend
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Enable CORS for frontend (allowlist via CORS_ORIGINS)
+    cors_origins = app.config.get('CORS_ORIGINS') or []
+    CORS(
+        app,
+        resources={r"/api/*": {
+            "origins": cors_origins or [],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Admin-Key"],
+        }},
+        supports_credentials=False
+    )
     
     # Initialize database
     db.init_app(app)

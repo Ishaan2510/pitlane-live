@@ -11,7 +11,12 @@ bp = Blueprint('news', __name__, url_prefix='/api')
 _cache = {'data': [], 'ts': 0}
 CACHE_TTL = 600  # seconds
 
-BBC_F1_RSS = 'https://feeds.bbci.co.uk/sport/formula1/rss.xml'
+RSS_SOURCES = [
+    # BBC is reliable and usually allows server-side fetches
+    'https://feeds.bbci.co.uk/sport/formula1/rss.xml',
+    # Autosport is often blocked (405) on server-side fetches; keep as fallback
+    'https://www.autosport.com/rss/f1/news/',
+]
 
 
 def _time_ago(pub_date_str: str) -> str:
@@ -55,36 +60,52 @@ def _category_from_title(title: str) -> str:
 
 
 def _fetch_news():
-    """Fetch and parse BBC Sport F1 RSS, return list of article dicts."""
+    """Fetch and parse RSS, return list of article dicts."""
     try:
-        resp = requests.get(BBC_F1_RSS, timeout=8, headers={
-            'User-Agent': 'Mozilla/5.0 (compatible; PitLaneLive/1.0)'
-        })
-        resp.raise_for_status()
-        root = ET.fromstring(resp.content)
-        channel = root.find('channel')
-        items = []
+        last_error = None
+        for url in RSS_SOURCES:
+            try:
+                resp = requests.get(
+                    url,
+                    timeout=8,
+                    headers={
+                        'User-Agent': 'Mozilla/5.0 (compatible; PitLaneLive/1.0)'
+                    },
+                    allow_redirects=True
+                )
+                resp.raise_for_status()
+                root = ET.fromstring(resp.content)
+                channel = root.find('channel')
+                items = []
 
-        for item in (channel.findall('item') if channel else [])[:12]:
-            title   = _strip_html(item.findtext('title', ''))
-            link    = item.findtext('link', '')
-            pub     = item.findtext('pubDate', '')
-            desc    = _strip_html(item.findtext('description', ''))
+                for item in (channel.findall('item') if channel else [])[:12]:
+                    title   = _strip_html(item.findtext('title', ''))
+                    link    = item.findtext('link', '')
+                    pub     = item.findtext('pubDate', '')
+                    desc    = _strip_html(item.findtext('description', ''))
 
-            # Truncate summary to ~180 chars at a word boundary
-            if len(desc) > 180:
-                desc = desc[:177].rsplit(' ', 1)[0] + '…'
+                    # Truncate summary to ~180 chars at a word boundary
+                    if len(desc) > 180:
+                        desc = desc[:177].rsplit(' ', 1)[0] + '…'
 
-            if title and link:
-                items.append({
-                    'title':    title,
-                    'link':     link,
-                    'time':     _time_ago(pub),
-                    'summary':  desc,
-                    'category': _category_from_title(title),
-                })
+                    if title and link:
+                        items.append({
+                            'title':    title,
+                            'link':     link,
+                            'time':     _time_ago(pub),
+                            'summary':  desc,
+                            'category': _category_from_title(title),
+                        })
 
-        return items
+                if items:
+                    return items
+            except Exception as e:
+                last_error = e
+                print(f'[news] RSS fetch error: {url} -> {e}')
+
+        if last_error:
+            print(f'[news] RSS fetch failed for all sources: {last_error}')
+        return []
 
     except Exception as e:
         print(f'[news] RSS fetch error: {e}')
