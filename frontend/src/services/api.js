@@ -94,6 +94,31 @@ class APIService {
       return null  // telemetry is optional, don't crash
     }
   }
+
+  // ── Race Prediction endpoints ───────────────────────────────────────────────
+  async getPredictionWindow(year, round) {
+    const res = await axios.get(`${API_ROOT}/race-predictions/window/${year}/${round}`)
+    return res.data
+  }
+
+  async getMyRacePrediction(year, round) {
+    const token = localStorage.getItem('pitlane_token')
+    const res = await axios.get(
+      `${API_ROOT}/race-predictions/mine/${year}/${round}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    return res.data.prediction
+  }
+
+  async submitRacePrediction(year, round, payload) {
+    const token = localStorage.getItem('pitlane_token')
+    const res = await axios.post(
+      `${API_ROOT}/race-predictions/${year}/${round}`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    return res.data
+  }
 }
 
 export default new APIService()

@@ -45,6 +45,14 @@
         <!-- Right: quick nav -->
         <div class="hero-actions">
           <router-link to="/live" class="hero-btn primary">Watch Live</router-link>
+          <router-link
+            v-if="predictCta.show"
+            :to="predictCta.to"
+            class="hero-btn"
+            :class="predictCta.cls"
+          >
+            {{ predictCta.label }}
+          </router-link>
           <router-link to="/replay" class="hero-btn secondary">Replays</router-link>
           <router-link to="/standings" class="hero-btn ghost">Standings</router-link>
         </div>
@@ -157,6 +165,7 @@ export default {
       countdownTimer: null,
       flipStates:     { days: false, hours: false, minutes: false, seconds: false },
       prevCountdown:  { days: -1, hours: -1, minutes: -1, seconds: -1 },
+      predictionWindow: null,
     }
   },
 
@@ -174,11 +183,34 @@ export default {
         { label: 'MIN',  digits: String(this.countdown.minutes).padStart(2, '0').split(''), flipping: this.flipStates.minutes },
         { label: 'SEC',  digits: String(this.countdown.seconds).padStart(2, '0').split(''), flipping: true },
       ]
-    }
+    },
+    predictCta() {
+      // Show CTA only if we have a next race AND we've loaded its window state
+      if (!this.nextRace || !this.predictionWindow) {
+        return { show: false }
+      }
+      const to = `/predict/${this.nextRace.year}/${this.nextRace.round}`
+      const state = this.predictionWindow.state
+
+      if (state === 'window_open') {
+        return { show: true, to, label: 'Predict Now', cls: 'predict-open' }
+      }
+      if (state === 'pre_quali') {
+        return { show: true, to, label: 'Predictions Soon', cls: 'predict-soon' }
+      }
+      if (state === 'locked') {
+        return { show: true, to, label: 'View Your Pick', cls: 'predict-locked' }
+      }
+      if (state === 'race_finished') {
+        return { show: true, to, label: 'View Results', cls: 'predict-finished' }
+      }
+      return { show: false }
+    },
   },
 
   async mounted() {
     await this.loadSchedule()
+    await this.loadPredictionWindow()
     this.startCountdown()
   },
 
@@ -200,11 +232,24 @@ export default {
       }
     },
 
+    async loadPredictionWindow() {
+      if (!this.nextRace) return
+      try {
+        const res  = await fetch(apiUrl(`/race-predictions/window/${this.nextRace.year}/${this.nextRace.round}`))
+        const data = await res.json()
+        if (!data.error) this.predictionWindow = data
+      } catch (e) {
+        // Silent — CTA just won't appear
+      }
+    },
+
     async switchYear(year) {
       if (year === this.selectedYear) return
       this.selectedYear = year
+      this.predictionWindow = null
       clearInterval(this.countdownTimer)
       await this.loadSchedule()
+      await this.loadPredictionWindow()
       this.startCountdown()
     },
 
@@ -469,6 +514,17 @@ export default {
 .hero-btn.secondary:hover { border-color: var(--text-primary); transform: translateX(2px); }
 .hero-btn.ghost     { background: transparent; color: var(--text-muted); border: 1px solid var(--border-primary); }
 .hero-btn.ghost:hover { color: var(--text-secondary); border-color: var(--border-secondary); }
+
+.hero-btn.predict-open    { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+.hero-btn.predict-open:hover { background: var(--accent); color: var(--text-inverse); transform: translateX(2px); }
+
+.hero-btn.predict-soon    { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-primary); }
+.hero-btn.predict-soon:hover { border-color: var(--accent); color: var(--accent); }
+
+.hero-btn.predict-locked,
+.hero-btn.predict-finished { background: transparent; color: var(--text-muted); border: 1px solid var(--border-primary); }
+.hero-btn.predict-locked:hover,
+.hero-btn.predict-finished:hover { border-color: var(--text-secondary); color: var(--text-secondary); }
 
 /* Ticker */
 .ticker {

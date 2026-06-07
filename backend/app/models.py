@@ -135,3 +135,51 @@ class UserScore(db.Model):
             'accuracy': round(self.accuracy, 1),
             'rank':     self.rank
         }
+    
+class RacePrediction(db.Model):
+    __tablename__ = 'race_predictions'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    year        = db.Column(db.Integer, nullable=False)
+    round_num   = db.Column(db.Integer, nullable=False)
+
+    # Top-10 finishing order: ["VER", "NOR", "LEC", ...] length up to 10
+    predicted_order = db.Column(db.JSON, nullable=False)
+
+    # Tyre strategies keyed by driver code:
+    # { "VER": ["SOFT", "MEDIUM"], "NOR": ["MEDIUM", "HARD"], ... }
+    # First element = starting compound, subsequent = post-pit compounds
+    tyre_strategies = db.Column(db.JSON, nullable=False, default=dict)
+
+    # Scoring
+    status         = db.Column(db.String(20), default='pending')   # pending|scored
+    position_points = db.Column(db.Integer, default=0)
+    tyre_points    = db.Column(db.Integer, default=0)
+    total_points   = db.Column(db.Integer, default=0)
+
+    # Audit
+    submitted_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at     = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref='race_predictions')
+
+    # One prediction per user per race (they can UPDATE during window, not duplicate)
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'year', 'round_num', name='uq_user_race_prediction'),
+    )
+
+    def to_dict(self):
+        return {
+            'id':              self.id,
+            'year':            self.year,
+            'round':           self.round_num,
+            'predicted_order': self.predicted_order,
+            'tyre_strategies': self.tyre_strategies,
+            'status':          self.status,
+            'position_points': self.position_points,
+            'tyre_points':     self.tyre_points,
+            'total_points':    self.total_points,
+            'submitted_at':    self.submitted_at.isoformat(),
+            'updated_at':      self.updated_at.isoformat(),
+        }

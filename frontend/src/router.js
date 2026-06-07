@@ -57,6 +57,12 @@ const routes = [
     name: 'TheGrid',
     component: () => import('@/views/TheGrid.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/predict/:year/:round',
+    name: 'PredictRace',
+    component: () => import('@/views/PredictRace.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

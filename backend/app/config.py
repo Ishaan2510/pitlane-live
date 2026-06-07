@@ -10,5 +10,4 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True}
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
-    # Comma-separated list of allowed origins, e.g. "https://pitlane-live-f1.vercel.app,http://localhost:5173"
     CORS_ORIGINS = [o.strip() for o in os.getenv('CORS_ORIGINS', '').split(',') if o.strip()]

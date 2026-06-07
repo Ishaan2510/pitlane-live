@@ -16,7 +16,7 @@ def _secret():
 
 def create_token(user_id: int) -> str:
     payload = {
-        'sub': user_id,
+        'sub': str(user_id),
         'iat': datetime.utcnow(),
         'exp': datetime.utcnow() + timedelta(days=30)
     }
@@ -34,7 +34,7 @@ def token_required(f):
             return jsonify({'error': 'Missing token'}), 401
         try:
             payload = decode_token(auth.split(' ')[1])
-            user    = User.query.get(payload['sub'])
+            user    = User.query.get(int(payload['sub']))
             if not user:
                 return jsonify({'error': 'User not found'}), 401
         except jwt.ExpiredSignatureError:
@@ -53,7 +53,7 @@ def optional_token(f):
         if auth.startswith('Bearer '):
             try:
                 payload = decode_token(auth.split(' ')[1])
-                user    = User.query.get(payload['sub'])
+                user    = User.query.get(int(payload['sub']))
             except Exception:
                 pass
         return f(current_user=user, *args, **kwargs)
