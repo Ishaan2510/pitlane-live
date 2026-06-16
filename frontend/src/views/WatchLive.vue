@@ -215,7 +215,7 @@ export default {
     },
 
     isRaceDay() {
-      return this.daysUntilRace === 0
+      return this.nextRace?.status === 'live' || this.daysUntilRace === 0
     },
 
     sessions() {
@@ -241,8 +241,10 @@ export default {
       try {
         const res  = await fetch(apiUrl('/schedule'))
         const data = await res.json()
-        // Use is_next flag — do NOT use status === 'live' as that triggers on race day
-        this.nextRace = data.find(r => r.is_next) || null
+        // Prefer a race that's currently live; fall back to next upcoming.
+        this.nextRace = data.find(r => r.status === 'live')
+                     || data.find(r => r.is_next)
+                     || null
       } catch { /* silent */ }
     },
 
