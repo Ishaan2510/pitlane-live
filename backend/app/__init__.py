@@ -40,4 +40,8 @@ def create_app():
     def health():
         return {'status': 'ok'}
     
+    @app.route('/api/health')
+    def api_health():
+        return {'status': 'ok'}
+    
     return app

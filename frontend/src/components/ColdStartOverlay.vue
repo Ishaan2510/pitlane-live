@@ -83,7 +83,7 @@ export default {
   methods: {
     async checkBackend() {
       try {
-        const res = await fetch(apiUrl('/schedule'), {
+        const res = await fetch(apiUrl('/health'), {
           signal: AbortSignal.timeout(5000),
         })
         if (res.ok) {
