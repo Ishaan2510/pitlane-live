@@ -34,4 +34,10 @@ def create_app():
     app.register_blueprint(news.bp)
     app.register_blueprint(drivers.bp)
     app.register_blueprint(race_predictions.bp)
+    
+    # Health check for uptime monitoring
+    @app.route('/health')
+    def health():
+        return {'status': 'ok'}
+    
     return app
