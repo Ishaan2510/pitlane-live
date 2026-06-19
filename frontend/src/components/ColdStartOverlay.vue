@@ -83,7 +83,7 @@ export default {
   methods: {
     async checkBackend() {
       try {
-        const res = await fetch(apiUrl('/health'))
+        const res = await fetch('https://pitlane-live-tmzh.onrender.com/health')
         if (res.ok) {
           this.dismiss()
         }

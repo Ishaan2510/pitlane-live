@@ -38,7 +38,10 @@ def create_app():
     # Health check for uptime monitoring
     @app.route('/health')
     def health():
-        return {'status': 'ok'}
+        from flask import jsonify
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
     
     @app.route('/api/health')
     def api_health():
