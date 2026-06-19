@@ -83,7 +83,7 @@ export default {
   methods: {
     async checkBackend() {
       try {
-        const res = await fetch(apiUrl('/api/health'))
+        const res = await fetch(apiUrl('/health'))
         if (res.ok) {
           this.dismiss()
         }
