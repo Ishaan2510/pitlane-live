@@ -126,21 +126,9 @@
 </template>
 
 <script>
+import { TEAM_COLORS } from '@/data/drivers'
 import { apiUrl } from '@/services/apiBase'
 
-const TEAM_COLORS = {
-  'Alpine':          '#FF87BC',
-  'Aston Martin':    '#229971',
-  'Audi':            '#ffffff',
-  'Cadillac':        '#CC0000',
-  'Ferrari':         '#E8002D',
-  'Haas':            '#B6BABD',
-  'McLaren':         '#FF8000',
-  'Mercedes':        '#27F4D2',
-  'Racing Bulls':    '#6692FF',
-  'Red Bull Racing': '#3671C6',
-  'Williams':        '#64C4FF',
-}
 
 const DRIVERS = [
   // Alpine
@@ -194,7 +182,7 @@ export default {
 
   computed: {
     filters() {
-      return ['ALL', ...Object.keys(TEAM_COLORS)]
+      return ['ALL', ...new Set(DRIVERS.map(d => d.team))]
     },
     filteredDrivers() {
       if (this.activeFilter === 'ALL') return this.drivers

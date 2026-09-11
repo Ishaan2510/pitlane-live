@@ -59,10 +59,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchMe() {
     if (!token.value) return
-    const res = await fetch(apiUrl('/auth/me'), {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
-    if (!res.ok) { logout(); return }
+    let res
+    try {
+      res = await fetch(apiUrl('/auth/me'), {
+        headers: { Authorization: `Bearer ${token.value}` }
+      })
+    } catch { return }                        // network down / cold start: keep session
+    if (res.status === 401) { logout(); return } // only a rejected token logs out
+    if (!res.ok) return
     user.value = await res.json()
     localStorage.setItem('pitlane_user', JSON.stringify(user.value))
   }

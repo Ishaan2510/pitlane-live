@@ -30,6 +30,9 @@ import argparse
 import datetime
 from pathlib import Path
 
+# Windows consoles default to cp1252 and choke on the unicode glyphs below
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 # Make sure Flask app context is available
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -43,10 +46,12 @@ def warm_race(year: int, race_round: int, race_name: str, force: bool = False) -
     """
     cache_file = fastf1_service.processed_cache_dir / f"{year}_R{race_round}_processed.json"
 
-    if cache_file.exists() and not force:
-        size_kb = cache_file.stat().st_size // 1024
-        print(f"  ✓ Already cached ({size_kb} KB) — skipping. Use --force to reprocess.")
-        return False
+    if cache_file.exists():
+        if not force:
+            size_kb = cache_file.stat().st_size // 1024
+            print(f"  ✓ Already cached ({size_kb} KB) — skipping. Use --force to reprocess.")
+            return False
+        cache_file.unlink()   # process_race_telemetry short-circuits on an existing file
 
     print(f"  Processing...", flush=True)
     t0 = time.time()
@@ -170,8 +175,8 @@ def main():
         for race_round, race_name in races_to_process:
             print(f"  Round {race_round:2d}: {race_name}")
 
-            # Warm circuit data first (fast, needed for track rendering)
-            warm_circuit(year, race_round, force=args.force)
+            # Circuit outline never changes and needs a full telemetry load, so never force it
+            warm_circuit(year, race_round)
 
             # Warm full race telemetry
             success = warm_race(year, race_round, race_name, force=args.force)

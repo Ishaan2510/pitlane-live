@@ -13,6 +13,11 @@ export const TEAM_COLORS = {
   'Racing Bulls':    '#6692FF',
   'Red Bull Racing': '#3671C6',
   'Williams':        '#64C4FF',
+  // 2024/2025 names as FastF1 emits them
+  'Haas F1 Team':    '#B6BABD',
+  'RB':              '#6692FF',
+  'Kick Sauber':     '#52E252',
+  'Sauber':          '#52E252',
 }
 
 export const DRIVERS_2026 = [

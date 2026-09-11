@@ -4,14 +4,26 @@ from app.routes.users import token_required, optional_token
 
 bp = Blueprint('predictions', __name__, url_prefix='/api')
 
+VALID_ACTIONS = {'pit_soft', 'pit_medium', 'pit_hard', 'stay_out'}
+
 @bp.route('/predictions', methods=['POST'])
 @optional_token
 def create_prediction(current_user):
-    data = request.json
-
     # Must be logged in to predict
     if not current_user:
         return jsonify({'error': 'Login required to make predictions'}), 401
+
+    data = request.get_json(silent=True) or {}
+    driver = (data.get('driver') or '').strip().upper()
+    action = data.get('action')
+    try:
+        confidence = int(data.get('confidence'))
+        lap        = int(data.get('lap') or 0)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'confidence and lap must be integers'}), 400
+
+    if not driver or action not in VALID_ACTIONS or not (1 <= confidence <= 100) or lap < 0:
+        return jsonify({'error': 'driver, a valid action and confidence 1-100 are required'}), 400
 
     race_id = data.get('raceId')
     race = Race.query.get(race_id) if race_id else None
@@ -19,17 +31,17 @@ def create_prediction(current_user):
     prediction = Prediction(
         user_id=current_user.id,
         race_id=race.id if race else None,
-        driver_name=data['driver'],
-        action=data['action'],
-        predicted_lap=data.get('lap', 0),
-        confidence=data['confidence'],
+        driver_name=driver,
+        action=action,
+        predicted_lap=lap,
+        confidence=confidence,
         status='pending'
     )
 
     db.session.add(prediction)
     db.session.commit()
 
-    potential_points = int(data['confidence'] * 1.5)
+    potential_points = int(confidence * 1.5)
 
     return jsonify({
         'success': True,

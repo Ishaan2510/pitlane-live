@@ -159,7 +159,7 @@ def get_all_predictions(year, round_num):
 
 import os
 
-ADMIN_KEY = os.getenv('ADMIN_KEY', 'pitlane-admin-2026')
+ADMIN_KEY = os.getenv('ADMIN_KEY')
 
 
 @bp.route('/score/<int:year>/<int:round_num>', methods=['POST'])
@@ -168,7 +168,7 @@ def score_race(year, round_num):
     Admin — score all pending race predictions for a completed race.
     Requires X-Admin-Key header.
     """
-    if request.headers.get('X-Admin-Key', '') != ADMIN_KEY:
+    if not ADMIN_KEY or request.headers.get('X-Admin-Key', '') != ADMIN_KEY:
         return jsonify({'error': 'Unauthorized — X-Admin-Key required'}), 401
 
     from app.services.race_prediction_scoring import score_race_predictions

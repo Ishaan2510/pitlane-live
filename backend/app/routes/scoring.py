@@ -15,12 +15,12 @@ import json
 
 bp = Blueprint('scoring', __name__, url_prefix='/api/scoring')
 
-ADMIN_KEY = os.getenv('ADMIN_KEY', 'pitlane-admin-2026')
+ADMIN_KEY = os.getenv('ADMIN_KEY')
 
 
 def _check_admin(req):
-    """Return True if the request carries the correct admin key."""
-    return req.headers.get('X-Admin-Key', '') == ADMIN_KEY
+    """Return True if the request carries the correct admin key. Always False if ADMIN_KEY is unset."""
+    return bool(ADMIN_KEY) and req.headers.get('X-Admin-Key', '') == ADMIN_KEY
 
 
 # ── Score a race ──────────────────────────────────────────────────────────────

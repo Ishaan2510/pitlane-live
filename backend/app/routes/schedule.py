@@ -76,6 +76,9 @@ def get_schedule():
                         race_time_utc = val.isoformat()
                     else:
                         race_time_utc = str(val)
+                    # FastF1 gives naive UTC; without a 'Z' JS parses it as local time
+                    if not race_time_utc.endswith(('Z', '+00:00')):
+                        race_time_utc += 'Z'
                     break
                 except Exception:
                     continue

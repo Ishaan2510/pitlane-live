@@ -6,6 +6,7 @@ from datetime import datetime
 import numpy as np
 import threading
 import requests
+import os
 
 
 # Setup FastF1 cache
@@ -14,6 +15,10 @@ CACHE_DIR.mkdir(exist_ok=True)
 fastf1.Cache.enable_cache(str(CACHE_DIR))
 
 OPENF1_BASE = 'https://api.openf1.org/v1'
+
+# Render sets RENDER=true. FastF1 session loads need 1-2GB RAM, the free tier has 512MB,
+# so in prod we only ever serve the pre-built JSONs and never touch FastF1 on demand.
+PREBUILT_ONLY = bool(os.environ.get('FASTF1_PREBUILT_ONLY') or os.environ.get('RENDER'))
 
 class FastF1Service:
     """Service to fetch and process F1 race data from FastF1"""
@@ -99,6 +104,10 @@ class FastF1Service:
         if key in self._session_cache:
             return self._session_cache[key]
         
+        if PREBUILT_ONLY:
+            print(f"[prebuilt-only] refusing to load {key} from FastF1")
+            return None
+
         lock = self._get_race_lock(f"session_{key}")
         with lock:
             if key in self._session_cache:
@@ -124,6 +133,9 @@ class FastF1Service:
         if cache_file.exists():
             with open(cache_file, 'r') as f:
                 return json.load(f)
+
+        if PREBUILT_ONLY:
+            return None
 
         lock = self._get_race_lock(f"circuit_{year}_R{race_round}")
         with lock:
@@ -175,11 +187,20 @@ class FastF1Service:
                 return None
 
     def get_weather_data(self, year, race_round):
-        """Get weather information — reuses already-loaded session"""
+        """Weather at the end of the race. Embedded in the processed JSON; falls back to the session."""
+        cache_file = self.processed_cache_dir / f"{year}_R{race_round}_processed.json"
+        if cache_file.exists():
+            with open(cache_file, 'r') as f:
+                weather = json.load(f).get('weather')
+            if weather:
+                return weather
+
         session = self.load_race_session(year, race_round)
         if not session:
             return None
-        
+        return self._weather_from_session(session)
+
+    def _weather_from_session(self, session):
         try:
             weather = session.weather_data
             if weather.empty:
@@ -222,27 +243,33 @@ class FastF1Service:
                 return None
             
             print(f"Processing telemetry for {year} R{race_round}...")
-            
+
+            laps = session.laps.copy()
+            # FastF1 reports total_laps=0 for shortened races (e.g. 2026 Belgian GP),
+            # so fall back to the last lap actually completed.
+            total_laps = int(getattr(session, 'total_laps', 0) or 0)
+            if not total_laps and not laps.empty and laps['LapNumber'].notna().any():
+                total_laps = int(laps['LapNumber'].max())
+            if not total_laps:
+                print(f"No lap data for {year} R{race_round} — not caching")
+                return None
+
             race_data = {
                 'year':       year,
                 'round':      race_round,
                 'name':       session.event['EventName'],
                 'circuit':    session.event['Location'],
                 'date':       session.event['EventDate'].isoformat(),
-                'total_laps': int(session.total_laps) if hasattr(session, 'total_laps') else 0,
-                'laps':       []
+                'total_laps': total_laps,
+                'weather':    self._weather_from_session(session),
+                'laps':       [self._build_lap(laps, n) for n in range(1, total_laps + 1)]
             }
             
-            laps = session.laps.copy()
-            for lap_number in range(1, race_data['total_laps'] + 1):
-                lap_data = self._build_lap(laps, lap_number)
-                race_data['laps'].append(lap_data)
-            
-            # Write to a temp file first, then rename — prevents corrupt reads
+            # Write to a temp file first, then atomically replace — prevents corrupt reads
             tmp_file = cache_file.with_suffix('.tmp')
             with open(tmp_file, 'w') as f:
                 json.dump(race_data, f, indent=2)
-            tmp_file.rename(cache_file)
+            os.replace(tmp_file, cache_file)
             
             print(f"✅ Processed {len(race_data['laps'])} laps → {cache_file.name}")
             return race_data
@@ -263,7 +290,9 @@ class FastF1Service:
 
         drivers = []
         for idx, lap in lap_laps.iterrows():
-            if pd.isna(lap['LapTime']):
+            # LapTime is NaN on lap 1 (no Ergast start time) and on SC/red-flag laps;
+            # the driver still has a position, so keep them and leave lap_time None.
+            if pd.isna(lap['Position']) and pd.isna(lap['Time']):
                 continue
 
             driver_data = {
@@ -329,6 +358,9 @@ class FastF1Service:
         if cache_key.exists():
             with open(cache_key) as f:
                 return json.load(f)
+
+        if PREBUILT_ONLY:
+            return None
 
         try:
             session = fastf1.get_session(year, race_round, 'Race')

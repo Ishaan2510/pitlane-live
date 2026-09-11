@@ -259,6 +259,7 @@ export default {
     },
 
     tickCountdown() {
+      if (!this.nextRace) return
       let raceDate
       if (this.nextRace.race_time_utc) {
         const utcStr = this.nextRace.race_time_utc.endsWith('Z')

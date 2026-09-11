@@ -155,7 +155,8 @@ Run within 30 to 60 minutes of the chequered flag.
 
 **Step 1 — Process FastF1 data locally:**
 ```bash
-python warm_cache.py --year 2026 --round N
+python warm_cache.py --year 2026            # processes every completed race not yet cached
+python test_processed_data.py               # sanity check: no 0-lap races, circuit matches race
 ```
 
 **Step 2 — Commit and push processed JSONs:**
