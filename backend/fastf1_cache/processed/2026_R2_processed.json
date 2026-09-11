@@ -5,10 +5,271 @@
   "circuit": "Shanghai",
   "date": "2026-03-15T00:00:00",
   "total_laps": 56,
+  "weather": {
+    "track_temp": 19.9,
+    "air_temp": 14.9,
+    "humidity": 57.8,
+    "wind_speed": 3.3,
+    "wind_direction": 79,
+    "rainfall": false
+  },
   "laps": [
     {
       "lap_number": 1,
-      "drivers": []
+      "drivers": [
+        {
+          "driver": "HAM",
+          "team": "Ferrari",
+          "position": 1,
+          "lap_time": "0 days 00:01:39.448000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 277.8,
+          "max_speed": 309.0,
+          "gap": "LEADER"
+        },
+        {
+          "driver": "ANT",
+          "team": "Mercedes",
+          "position": 2,
+          "lap_time": "0 days 00:01:40.137000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 289.2,
+          "max_speed": 325.0,
+          "gap": "+0.689s"
+        },
+        {
+          "driver": "LEC",
+          "team": "Ferrari",
+          "position": 3,
+          "lap_time": "0 days 00:01:41.064000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 284.8,
+          "max_speed": 320.0,
+          "gap": "+1.616s"
+        },
+        {
+          "driver": "RUS",
+          "team": "Mercedes",
+          "position": 4,
+          "lap_time": "0 days 00:01:41.815000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 287.0,
+          "max_speed": 320.0,
+          "gap": "+2.367s"
+        },
+        {
+          "driver": "GAS",
+          "team": "Alpine",
+          "position": 5,
+          "lap_time": "0 days 00:01:42.591000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 289.2,
+          "max_speed": 337.0,
+          "gap": "+3.143s"
+        },
+        {
+          "driver": "COL",
+          "team": "Alpine",
+          "position": 6,
+          "lap_time": "0 days 00:01:45.498000",
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 281.8,
+          "max_speed": 319.0,
+          "gap": "+6.050s"
+        },
+        {
+          "driver": "LAW",
+          "team": "Racing Bulls",
+          "position": 7,
+          "lap_time": "0 days 00:01:46.084000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 289.8,
+          "max_speed": 345.0,
+          "gap": "+6.636s"
+        },
+        {
+          "driver": "LIN",
+          "team": "Racing Bulls",
+          "position": 8,
+          "lap_time": "0 days 00:01:46.513000",
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 291.0,
+          "max_speed": 336.0,
+          "gap": "+7.065s"
+        },
+        {
+          "driver": "OCO",
+          "team": "Haas F1 Team",
+          "position": 9,
+          "lap_time": "0 days 00:01:46.693000",
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 285.2,
+          "max_speed": 333.0,
+          "gap": "+7.245s"
+        },
+        {
+          "driver": "ALO",
+          "team": "Aston Martin",
+          "position": 10,
+          "lap_time": "0 days 00:01:47.230000",
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 284.5,
+          "max_speed": 323.0,
+          "gap": "+7.782s"
+        },
+        {
+          "driver": "SAI",
+          "team": "Williams",
+          "position": 11,
+          "lap_time": "0 days 00:01:47.507000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 288.8,
+          "max_speed": 345.0,
+          "gap": "+8.059s"
+        },
+        {
+          "driver": "BEA",
+          "team": "Haas F1 Team",
+          "position": 12,
+          "lap_time": "0 days 00:01:47.851000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 285.8,
+          "max_speed": 340.0,
+          "gap": "+8.403s"
+        },
+        {
+          "driver": "VER",
+          "team": "Red Bull Racing",
+          "position": 13,
+          "lap_time": "0 days 00:01:47.910000",
+          "compound": "SOFT",
+          "tire_life": 4,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 292.5,
+          "max_speed": 341.0,
+          "gap": "+8.471s"
+        },
+        {
+          "driver": "BOT",
+          "team": "Cadillac",
+          "position": 14,
+          "lap_time": "0 days 00:01:48.335000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 284.5,
+          "max_speed": 335.0,
+          "gap": "+8.887s"
+        },
+        {
+          "driver": "HUL",
+          "team": "Audi",
+          "position": 15,
+          "lap_time": "0 days 00:01:48.719000",
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 284.8,
+          "max_speed": 336.0,
+          "gap": "+9.271s"
+        },
+        {
+          "driver": "STR",
+          "team": "Aston Martin",
+          "position": 16,
+          "lap_time": "0 days 00:01:49.471000",
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 281.5,
+          "max_speed": 321.0,
+          "gap": "+10.023s"
+        },
+        {
+          "driver": "PER",
+          "team": "Cadillac",
+          "position": 17,
+          "lap_time": "0 days 00:01:55.089000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 274.0,
+          "max_speed": 323.0,
+          "gap": "+15.641s"
+        },
+        {
+          "driver": "HAD",
+          "team": "Red Bull Racing",
+          "position": 18,
+          "lap_time": "0 days 00:02:03.643000",
+          "compound": "SOFT",
+          "tire_life": 4,
+          "pit_out": false,
+          "pit_in": true,
+          "distance": 0,
+          "avg_speed": 279.3,
+          "max_speed": 284.0,
+          "gap": "+24.195s"
+        }
+      ]
     },
     {
       "lap_number": 2,
@@ -350,7 +611,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 278.7,
+          "avg_speed": 277.0,
           "max_speed": 314.0,
           "gap": "+7.276s"
         },
@@ -565,7 +826,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.7,
+          "avg_speed": 278.0,
           "max_speed": 317.0,
           "gap": "+1.981s"
         },
@@ -607,7 +868,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.0,
+          "avg_speed": 278.8,
           "max_speed": 315.0,
           "gap": "+8.747s"
         },
@@ -677,7 +938,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 289.7,
+          "avg_speed": 286.0,
           "max_speed": 333.0,
           "gap": "+13.376s"
         },
@@ -906,7 +1167,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.7,
+          "avg_speed": 279.2,
           "max_speed": 316.0,
           "gap": "+14.179s"
         },
@@ -1004,7 +1265,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 272.7,
+          "avg_speed": 268.2,
           "max_speed": 305.0,
           "gap": "+24.561s"
         },
@@ -1051,7 +1312,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 277.3,
+          "avg_speed": 275.5,
           "max_speed": 307.0,
           "gap": "LEADER"
         },
@@ -1107,7 +1368,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.3,
+          "avg_speed": 279.8,
           "max_speed": 314.0,
           "gap": "+7.364s"
         },
@@ -1261,7 +1522,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 272.0,
+          "avg_speed": 267.8,
           "max_speed": 302.0,
           "gap": "+28.360s"
         },
@@ -1275,7 +1536,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 277.3,
+          "avg_speed": 275.8,
           "max_speed": 308.0,
           "gap": "+31.292s"
         },
@@ -1364,7 +1625,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.7,
+          "avg_speed": 277.8,
           "max_speed": 313.0,
           "gap": "+8.587s"
         },
@@ -1378,7 +1639,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.0,
+          "avg_speed": 279.5,
           "max_speed": 313.0,
           "gap": "+13.077s"
         },
@@ -1518,7 +1779,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 272.7,
+          "avg_speed": 268.2,
           "max_speed": 307.0,
           "gap": "+31.904s"
         },
@@ -1565,7 +1826,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 276.7,
+          "avg_speed": 275.2,
           "max_speed": 307.0,
           "gap": "LEADER"
         },
@@ -1579,7 +1840,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.7,
+          "avg_speed": 278.2,
           "max_speed": 316.0,
           "gap": "+1.304s"
         },
@@ -1621,7 +1882,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.0,
+          "avg_speed": 277.2,
           "max_speed": 312.0,
           "gap": "+9.692s"
         },
@@ -1649,7 +1910,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 274.3,
+          "avg_speed": 271.2,
           "max_speed": 307.0,
           "gap": "+17.028s"
         },
@@ -1878,7 +2139,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 278.7,
+          "avg_speed": 277.0,
           "max_speed": 311.0,
           "gap": "+10.945s"
         },
@@ -1892,7 +2153,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.3,
+          "avg_speed": 279.5,
           "max_speed": 314.0,
           "gap": "+16.394s"
         },
@@ -1948,7 +2209,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 285.7,
+          "avg_speed": 282.2,
           "max_speed": 323.0,
           "gap": "+24.751s"
         },
@@ -1976,7 +2237,7 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 293.0,
+          "avg_speed": 286.0,
           "max_speed": 323.0,
           "gap": "+29.120s"
         },
@@ -2004,7 +2265,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 276.3,
+          "avg_speed": 272.8,
           "max_speed": 310.0,
           "gap": "+37.179s"
         },
@@ -2163,7 +2424,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 259.0,
+          "avg_speed": 259.5,
           "max_speed": 263.0,
           "gap": "+24.394s"
         },
@@ -2219,8 +2480,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 197.3,
-          "max_speed": 226.0,
+          "avg_speed": 211.8,
+          "max_speed": 255.0,
           "gap": "+51.963s"
         },
         {
@@ -2306,12 +2567,40 @@
           "avg_speed": 245.3,
           "max_speed": 265.0,
           "gap": "+75.328s"
+        },
+        {
+          "driver": "STR",
+          "team": "Aston Martin",
+          "position": null,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 10,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": null,
+          "max_speed": null,
+          "gap": "+82.612s"
         }
       ]
     },
     {
       "lap_number": 11,
       "drivers": [
+        {
+          "driver": "ANT",
+          "team": "Mercedes",
+          "position": 1,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 186.5,
+          "max_speed": 210.0,
+          "gap": "LEADER"
+        },
         {
           "driver": "COL",
           "team": "Alpine",
@@ -2324,7 +2613,7 @@
           "distance": 0,
           "avg_speed": 177.0,
           "max_speed": 214.0,
-          "gap": "LEADER"
+          "gap": "+0.647s"
         },
         {
           "driver": "OCO",
@@ -2338,7 +2627,35 @@
           "distance": 0,
           "avg_speed": 154.2,
           "max_speed": 186.0,
-          "gap": "+0.802s"
+          "gap": "+1.449s"
+        },
+        {
+          "driver": "RUS",
+          "team": "Mercedes",
+          "position": 4,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 197.0,
+          "max_speed": 232.0,
+          "gap": "+2.904s"
+        },
+        {
+          "driver": "HAM",
+          "team": "Ferrari",
+          "position": 5,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 208.8,
+          "max_speed": 218.0,
+          "gap": "+3.728s"
         },
         {
           "driver": "LIN",
@@ -2352,7 +2669,21 @@
           "distance": 0,
           "avg_speed": 199.2,
           "max_speed": 225.0,
-          "gap": "+4.474s"
+          "gap": "+5.121s"
+        },
+        {
+          "driver": "LEC",
+          "team": "Ferrari",
+          "position": 7,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 231.0,
+          "max_speed": 252.0,
+          "gap": "+6.207s"
         },
         {
           "driver": "HUL",
@@ -2366,7 +2697,35 @@
           "distance": 0,
           "avg_speed": 237.5,
           "max_speed": 245.0,
-          "gap": "+6.051s"
+          "gap": "+6.698s"
+        },
+        {
+          "driver": "GAS",
+          "team": "Alpine",
+          "position": 9,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 229.8,
+          "max_speed": 257.0,
+          "gap": "+8.833s"
+        },
+        {
+          "driver": "BEA",
+          "team": "Haas F1 Team",
+          "position": 10,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 208.2,
+          "max_speed": 225.0,
+          "gap": "+19.408s"
         },
         {
           "driver": "ALO",
@@ -2380,7 +2739,7 @@
           "distance": 0,
           "avg_speed": 213.5,
           "max_speed": 250.0,
-          "gap": "+19.520s"
+          "gap": "+20.167s"
         },
         {
           "driver": "PER",
@@ -2394,7 +2753,7 @@
           "distance": 0,
           "avg_speed": 216.3,
           "max_speed": 243.0,
-          "gap": "+28.833s"
+          "gap": "+29.480s"
         },
         {
           "driver": "LAW",
@@ -2408,7 +2767,7 @@
           "distance": 0,
           "avg_speed": 209.5,
           "max_speed": 220.0,
-          "gap": "+31.428s"
+          "gap": "+32.075s"
         },
         {
           "driver": "VER",
@@ -2422,7 +2781,7 @@
           "distance": 0,
           "avg_speed": 230.8,
           "max_speed": 253.0,
-          "gap": "+32.833s"
+          "gap": "+33.480s"
         },
         {
           "driver": "SAI",
@@ -2436,7 +2795,35 @@
           "distance": 0,
           "avg_speed": 232.8,
           "max_speed": 271.0,
-          "gap": "+36.051s"
+          "gap": "+36.698s"
+        },
+        {
+          "driver": "BOT",
+          "team": "Cadillac",
+          "position": 16,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 215.5,
+          "max_speed": 227.0,
+          "gap": "+45.232s"
+        },
+        {
+          "driver": "HAD",
+          "team": "Red Bull Racing",
+          "position": 17,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 167.5,
+          "max_speed": 225.0,
+          "gap": "+62.820s"
         }
       ]
     },
@@ -2500,6 +2887,20 @@
           "gap": "+2.661s"
         },
         {
+          "driver": "HAM",
+          "team": "Ferrari",
+          "position": 5,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 2,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 166.5,
+          "max_speed": 200.0,
+          "gap": "+3.787s"
+        },
+        {
           "driver": "LIN",
           "team": "Racing Bulls",
           "position": 6,
@@ -2512,6 +2913,48 @@
           "avg_speed": 171.5,
           "max_speed": 182.0,
           "gap": "+5.035s"
+        },
+        {
+          "driver": "LEC",
+          "team": "Ferrari",
+          "position": 7,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 2,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 166.0,
+          "max_speed": 193.0,
+          "gap": "+6.402s"
+        },
+        {
+          "driver": "HUL",
+          "team": "Audi",
+          "position": 8,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 12,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 166.5,
+          "max_speed": 181.0,
+          "gap": "+7.706s"
+        },
+        {
+          "driver": "GAS",
+          "team": "Alpine",
+          "position": 9,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 2,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 179.5,
+          "max_speed": 207.0,
+          "gap": "+8.906s"
         },
         {
           "driver": "BEA",
@@ -2631,6 +3074,34 @@
       "lap_number": 13,
       "drivers": [
         {
+          "driver": "ANT",
+          "team": "Mercedes",
+          "position": 1,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 3,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 184.5,
+          "max_speed": 264.0,
+          "gap": "LEADER"
+        },
+        {
+          "driver": "COL",
+          "team": "Alpine",
+          "position": 2,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 13,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 189.0,
+          "max_speed": 263.0,
+          "gap": "+0.749s"
+        },
+        {
           "driver": "OCO",
           "team": "Haas F1 Team",
           "position": 3,
@@ -2642,7 +3113,7 @@
           "distance": 0,
           "avg_speed": 182.5,
           "max_speed": 270.0,
-          "gap": "LEADER"
+          "gap": "+0.845s"
         },
         {
           "driver": "RUS",
@@ -2656,7 +3127,7 @@
           "distance": 0,
           "avg_speed": 177.0,
           "max_speed": 268.0,
-          "gap": "+0.578s"
+          "gap": "+1.423s"
         },
         {
           "driver": "HAM",
@@ -2670,7 +3141,7 @@
           "distance": 0,
           "avg_speed": 194.8,
           "max_speed": 268.0,
-          "gap": "+0.819s"
+          "gap": "+1.664s"
         },
         {
           "driver": "LIN",
@@ -2684,7 +3155,7 @@
           "distance": 0,
           "avg_speed": 201.0,
           "max_speed": 269.0,
-          "gap": "+1.243s"
+          "gap": "+2.088s"
         },
         {
           "driver": "LEC",
@@ -2698,7 +3169,7 @@
           "distance": 0,
           "avg_speed": 208.8,
           "max_speed": 271.0,
-          "gap": "+1.525s"
+          "gap": "+2.370s"
         },
         {
           "driver": "HUL",
@@ -2712,7 +3183,7 @@
           "distance": 0,
           "avg_speed": 197.8,
           "max_speed": 270.0,
-          "gap": "+1.951s"
+          "gap": "+2.796s"
         },
         {
           "driver": "GAS",
@@ -2724,9 +3195,9 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 205.7,
+          "avg_speed": 206.0,
           "max_speed": 250.0,
-          "gap": "+3.102s"
+          "gap": "+3.947s"
         },
         {
           "driver": "BEA",
@@ -2740,7 +3211,7 @@
           "distance": 0,
           "avg_speed": 200.8,
           "max_speed": 270.0,
-          "gap": "+3.150s"
+          "gap": "+3.995s"
         },
         {
           "driver": "ALO",
@@ -2754,7 +3225,7 @@
           "distance": 0,
           "avg_speed": 215.0,
           "max_speed": 262.0,
-          "gap": "+3.638s"
+          "gap": "+4.483s"
         },
         {
           "driver": "LAW",
@@ -2768,7 +3239,7 @@
           "distance": 0,
           "avg_speed": 224.0,
           "max_speed": 274.0,
-          "gap": "+3.803s"
+          "gap": "+4.648s"
         },
         {
           "driver": "VER",
@@ -2782,7 +3253,7 @@
           "distance": 0,
           "avg_speed": 226.0,
           "max_speed": 270.0,
-          "gap": "+4.223s"
+          "gap": "+5.068s"
         },
         {
           "driver": "SAI",
@@ -2796,7 +3267,7 @@
           "distance": 0,
           "avg_speed": 227.5,
           "max_speed": 271.0,
-          "gap": "+4.526s"
+          "gap": "+5.371s"
         },
         {
           "driver": "BOT",
@@ -2810,7 +3281,7 @@
           "distance": 0,
           "avg_speed": 215.2,
           "max_speed": 271.0,
-          "gap": "+5.226s"
+          "gap": "+6.071s"
         },
         {
           "driver": "PER",
@@ -2824,7 +3295,7 @@
           "distance": 0,
           "avg_speed": 207.2,
           "max_speed": 268.0,
-          "gap": "+5.808s"
+          "gap": "+6.653s"
         },
         {
           "driver": "HAD",
@@ -2838,7 +3309,7 @@
           "distance": 0,
           "avg_speed": 202.8,
           "max_speed": 274.0,
-          "gap": "+6.181s"
+          "gap": "+7.026s"
         }
       ]
     },
@@ -3383,7 +3854,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.3,
+          "avg_speed": 288.8,
           "max_speed": 328.0,
           "gap": "+4.670s"
         },
@@ -3668,7 +4139,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.0,
+          "avg_speed": 278.8,
           "max_speed": 315.0,
           "gap": "+8.798s"
         },
@@ -3710,7 +4181,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 290.0,
+          "avg_speed": 286.0,
           "max_speed": 328.0,
           "gap": "+10.591s"
         },
@@ -3827,7 +4298,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.3,
+          "avg_speed": 277.8,
           "max_speed": 309.0,
           "gap": "LEADER"
         },
@@ -4238,7 +4709,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 293.3,
+          "avg_speed": 290.8,
           "max_speed": 339.0,
           "gap": "+17.000s"
         },
@@ -4425,7 +4896,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 290.3,
+          "avg_speed": 287.8,
           "max_speed": 332.0,
           "gap": "+15.567s"
         },
@@ -4612,7 +5083,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.3,
+          "avg_speed": 279.0,
           "max_speed": 315.0,
           "gap": "+15.582s"
         },
@@ -4710,7 +5181,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.0,
+          "avg_speed": 282.0,
           "max_speed": 315.0,
           "gap": "+20.835s"
         },
@@ -4780,7 +5251,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 274.3,
+          "avg_speed": 269.8,
           "max_speed": 306.0,
           "gap": "+33.548s"
         }
@@ -4799,7 +5270,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.0,
+          "avg_speed": 277.5,
           "max_speed": 308.0,
           "gap": "LEADER"
         },
@@ -4995,7 +5466,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 277.7,
+          "avg_speed": 277.2,
           "max_speed": 307.0,
           "gap": "+32.921s"
         },
@@ -5266,7 +5737,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 274.3,
+          "avg_speed": 270.0,
           "max_speed": 305.0,
           "gap": "+39.869s"
         }
@@ -5285,7 +5756,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.0,
+          "avg_speed": 277.2,
           "max_speed": 308.0,
           "gap": "LEADER"
         },
@@ -5313,7 +5784,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 275.3,
+          "avg_speed": 272.5,
           "max_speed": 302.0,
           "gap": "+3.881s"
         },
@@ -5425,7 +5896,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.7,
+          "avg_speed": 282.0,
           "max_speed": 318.0,
           "gap": "+26.232s"
         },
@@ -5528,7 +5999,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.0,
+          "avg_speed": 277.2,
           "max_speed": 307.0,
           "gap": "LEADER"
         },
@@ -5771,7 +6242,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.7,
+          "avg_speed": 277.8,
           "max_speed": 308.0,
           "gap": "LEADER"
         },
@@ -5841,7 +6312,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.0,
+          "avg_speed": 280.2,
           "max_speed": 312.0,
           "gap": "+22.991s"
         },
@@ -5855,7 +6326,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.3,
+          "avg_speed": 281.5,
           "max_speed": 315.0,
           "gap": "+25.962s"
         },
@@ -5883,7 +6354,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 292.3,
+          "avg_speed": 289.2,
           "max_speed": 333.0,
           "gap": "+26.979s"
         },
@@ -5897,7 +6368,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 285.3,
+          "avg_speed": 283.2,
           "max_speed": 312.0,
           "gap": "+28.818s"
         },
@@ -5911,7 +6382,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 285.7,
+          "avg_speed": 283.5,
           "max_speed": 319.0,
           "gap": "+30.174s"
         },
@@ -6014,7 +6485,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.0,
+          "avg_speed": 278.0,
           "max_speed": 309.0,
           "gap": "LEADER"
         },
@@ -6196,7 +6667,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 278.7,
+          "avg_speed": 278.0,
           "max_speed": 313.0,
           "gap": "+46.771s"
         },
@@ -6257,7 +6728,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.7,
+          "avg_speed": 277.8,
           "max_speed": 308.0,
           "gap": "LEADER"
         },
@@ -6481,7 +6952,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 276.0,
+          "avg_speed": 271.2,
           "max_speed": 308.0,
           "gap": "+56.305s"
         }
@@ -6556,7 +7027,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 277.7,
+          "avg_speed": 274.5,
           "max_speed": 301.0,
           "gap": "+24.130s"
         },
@@ -6570,7 +7041,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.7,
+          "avg_speed": 279.8,
           "max_speed": 313.0,
           "gap": "+26.116s"
         },
@@ -6743,7 +7214,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.3,
+          "avg_speed": 279.2,
           "max_speed": 311.0,
           "gap": "LEADER"
         },
@@ -6911,7 +7382,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.0,
+          "avg_speed": 278.2,
           "max_speed": 308.0,
           "gap": "+54.641s"
         },
@@ -7014,7 +7485,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.0,
+          "avg_speed": 276.8,
           "max_speed": 319.0,
           "gap": "+9.085s"
         },
@@ -7056,7 +7527,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.7,
+          "avg_speed": 279.5,
           "max_speed": 313.0,
           "gap": "+28.947s"
         },
@@ -7313,7 +7784,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.0,
+          "avg_speed": 279.8,
           "max_speed": 313.0,
           "gap": "+36.135s"
         },
@@ -7341,7 +7812,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 286.0,
+          "avg_speed": 284.0,
           "max_speed": 318.0,
           "gap": "+41.349s"
         },
@@ -7355,7 +7826,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 288.3,
+          "avg_speed": 284.2,
           "max_speed": 323.0,
           "gap": "+42.697s"
         },
@@ -7369,7 +7840,7 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 289.5,
+          "avg_speed": 285.0,
           "max_speed": 321.0,
           "gap": "+43.312s"
         },
@@ -7397,7 +7868,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.0,
+          "avg_speed": 279.5,
           "max_speed": 310.0,
           "gap": "+59.480s"
         },
@@ -7542,7 +8013,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.0,
+          "avg_speed": 279.5,
           "max_speed": 312.0,
           "gap": "+31.662s"
         },
@@ -7556,7 +8027,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.7,
+          "avg_speed": 279.5,
           "max_speed": 313.0,
           "gap": "+36.815s"
         },
@@ -7612,7 +8083,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.0,
+          "avg_speed": 281.8,
           "max_speed": 318.0,
           "gap": "+51.293s"
         },
@@ -7771,7 +8242,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.7,
+          "avg_speed": 279.2,
           "max_speed": 313.0,
           "gap": "+33.051s"
         },
@@ -7785,7 +8256,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.7,
+          "avg_speed": 278.8,
           "max_speed": 313.0,
           "gap": "+37.987s"
         },
@@ -7944,7 +8415,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.0,
+          "avg_speed": 278.2,
           "max_speed": 309.0,
           "gap": "+7.672s"
         },
@@ -8000,7 +8471,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.0,
+          "avg_speed": 279.5,
           "max_speed": 310.0,
           "gap": "+34.504s"
         },
@@ -8056,7 +8527,7 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 289.5,
+          "avg_speed": 283.7,
           "max_speed": 318.0,
           "gap": "+53.206s"
         },
@@ -8098,7 +8569,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.3,
+          "avg_speed": 279.2,
           "max_speed": 310.0,
           "gap": "+72.944s"
         },
@@ -8173,7 +8644,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.0,
+          "avg_speed": 279.8,
           "max_speed": 311.0,
           "gap": "+7.572s"
         },
@@ -8215,7 +8686,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 278.3,
+          "avg_speed": 276.2,
           "max_speed": 301.0,
           "gap": "+33.275s"
         },
@@ -8299,7 +8770,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.0,
+          "avg_speed": 280.8,
           "max_speed": 310.0,
           "gap": "+68.032s"
         },
@@ -8313,7 +8784,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.7,
+          "avg_speed": 280.2,
           "max_speed": 312.0,
           "gap": "+73.953s"
         },
@@ -8355,7 +8826,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.7,
+          "avg_speed": 278.0,
           "max_speed": 311.0,
           "gap": "+84.940s"
         },
@@ -8388,7 +8859,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.0,
+          "avg_speed": 280.0,
           "max_speed": 312.0,
           "gap": "LEADER"
         },
@@ -8402,7 +8873,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.0,
+          "avg_speed": 280.5,
           "max_speed": 313.0,
           "gap": "+6.944s"
         },
@@ -8617,7 +9088,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.7,
+          "avg_speed": 280.5,
           "max_speed": 314.0,
           "gap": "LEADER"
         },
@@ -8631,7 +9102,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.7,
+          "avg_speed": 280.2,
           "max_speed": 312.0,
           "gap": "+6.947s"
         },
@@ -8645,7 +9116,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 277.0,
+          "avg_speed": 273.8,
           "max_speed": 300.0,
           "gap": "+15.536s"
         },
@@ -8659,7 +9130,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.7,
+          "avg_speed": 280.2,
           "max_speed": 316.0,
           "gap": "+16.089s"
         },
@@ -8701,7 +9172,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.7,
+          "avg_speed": 280.5,
           "max_speed": 313.0,
           "gap": "+42.071s"
         },
@@ -8729,7 +9200,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 289.3,
+          "avg_speed": 286.5,
           "max_speed": 322.0,
           "gap": "+53.470s"
         },
@@ -8757,7 +9228,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.0,
+          "avg_speed": 280.2,
           "max_speed": 308.0,
           "gap": "+72.384s"
         },
@@ -8785,7 +9256,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 275.0,
+          "avg_speed": 272.5,
           "max_speed": 299.0,
           "gap": "+86.120s"
         },
@@ -8916,7 +9387,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.3,
+          "avg_speed": 280.0,
           "max_speed": 312.0,
           "gap": "+39.799s"
         },
@@ -8958,7 +9429,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 290.0,
+          "avg_speed": 287.0,
           "max_speed": 323.0,
           "gap": "+55.629s"
         },
@@ -8986,7 +9457,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.7,
+          "avg_speed": 280.0,
           "max_speed": 310.0,
           "gap": "+74.921s"
         },
@@ -9159,7 +9630,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.7,
+          "avg_speed": 280.8,
           "max_speed": 314.0,
           "gap": "+44.046s"
         },
@@ -9215,7 +9686,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.7,
+          "avg_speed": 280.0,
           "max_speed": 308.0,
           "gap": "+76.808s"
         },
@@ -9257,7 +9728,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.0,
+          "avg_speed": 278.5,
           "max_speed": 306.0,
           "gap": "+92.862s"
         },
@@ -9430,7 +9901,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.0,
+          "avg_speed": 280.2,
           "max_speed": 312.0,
           "gap": "+73.067s"
         },
@@ -9575,7 +10046,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.3,
+          "avg_speed": 277.8,
           "max_speed": 304.0,
           "gap": "+22.056s"
         },
@@ -9659,7 +10130,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.3,
+          "avg_speed": 281.2,
           "max_speed": 311.0,
           "gap": "+75.409s"
         },
@@ -10075,7 +10546,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.7,
+          "avg_speed": 282.5,
           "max_speed": 315.0,
           "gap": "+49.386s"
         },
@@ -10234,7 +10705,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 288.0,
+          "avg_speed": 285.0,
           "max_speed": 325.0,
           "gap": "+7.532s"
         },
@@ -10346,7 +10817,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.7,
+          "avg_speed": 282.2,
           "max_speed": 313.0,
           "gap": "+87.250s"
         },
@@ -10377,6 +10848,20 @@
           "avg_speed": 278.8,
           "max_speed": 313.0,
           "gap": "+105.157s"
+        },
+        {
+          "driver": "VER",
+          "team": "Red Bull Racing",
+          "position": 13,
+          "lap_time": null,
+          "compound": "HARD",
+          "tire_life": 36,
+          "pit_out": false,
+          "pit_in": true,
+          "distance": 0,
+          "avg_speed": 183.0,
+          "max_speed": 277.0,
+          "gap": "+106.773s"
         },
         {
           "driver": "LIN",
@@ -10561,7 +11046,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.7,
+          "avg_speed": 282.2,
           "max_speed": 315.0,
           "gap": "+89.107s"
         },
@@ -10575,7 +11060,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.7,
+          "avg_speed": 278.2,
           "max_speed": 302.0,
           "gap": "+102.326s"
         },
@@ -10589,7 +11074,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.3,
+          "avg_speed": 281.5,
           "max_speed": 311.0,
           "gap": "+112.724s"
         },
@@ -10748,7 +11233,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 290.0,
+          "avg_speed": 286.5,
           "max_speed": 326.0,
           "gap": "+71.976s"
         },
@@ -10776,7 +11261,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.3,
+          "avg_speed": 282.8,
           "max_speed": 315.0,
           "gap": "+91.110s"
         },
@@ -10790,7 +11275,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 277.0,
+          "avg_speed": 276.2,
           "max_speed": 291.0,
           "gap": "+105.588s"
         },
@@ -10879,7 +11364,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.3,
+          "avg_speed": 282.0,
           "max_speed": 315.0,
           "gap": "+9.213s"
         },
@@ -10991,7 +11476,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.3,
+          "avg_speed": 282.8,
           "max_speed": 315.0,
           "gap": "+93.002s"
         },
@@ -11080,7 +11565,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.7,
+          "avg_speed": 279.8,
           "max_speed": 309.0,
           "gap": "LEADER"
         },
@@ -11094,7 +11579,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.3,
+          "avg_speed": 279.0,
           "max_speed": 308.0,
           "gap": "+9.560s"
         },
@@ -11108,7 +11593,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 278.0,
+          "avg_speed": 276.5,
           "max_speed": 301.0,
           "gap": "+25.745s"
         },
@@ -11178,7 +11663,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 285.7,
+          "avg_speed": 282.8,
           "max_speed": 315.0,
           "gap": "+76.583s"
         },
@@ -11248,7 +11733,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.0,
+          "avg_speed": 277.8,
           "max_speed": 304.0,
           "gap": "+134.651s"
         },
@@ -11309,7 +11794,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 281.3,
+          "avg_speed": 279.8,
           "max_speed": 309.0,
           "gap": "+9.582s"
         },
@@ -11337,7 +11822,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.0,
+          "avg_speed": 277.0,
           "max_speed": 303.0,
           "gap": "+29.467s"
         },
@@ -11435,7 +11920,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.7,
+          "avg_speed": 278.8,
           "max_speed": 303.0,
           "gap": "+111.236s"
         },
@@ -11463,7 +11948,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 278.0,
+          "avg_speed": 277.0,
           "max_speed": 301.0,
           "gap": "+138.319s"
         },
@@ -11552,7 +12037,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 278.0,
+          "avg_speed": 276.2,
           "max_speed": 303.0,
           "gap": "+30.200s"
         },
@@ -11594,7 +12079,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 283.3,
+          "avg_speed": 282.8,
           "max_speed": 310.0,
           "gap": "+76.774s"
         },
@@ -11664,7 +12149,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 284.3,
+          "avg_speed": 282.2,
           "max_speed": 311.0,
           "gap": "+116.062s"
         },
@@ -11739,7 +12224,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 282.3,
+          "avg_speed": 280.8,
           "max_speed": 312.0,
           "gap": "+9.374s"
         },
@@ -11865,7 +12350,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.0,
+          "avg_speed": 278.0,
           "max_speed": 300.0,
           "gap": "+115.069s"
         },
@@ -11879,7 +12364,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 285.7,
+          "avg_speed": 283.2,
           "max_speed": 311.0,
           "gap": "+117.732s"
         },
@@ -11921,7 +12406,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.7,
+          "avg_speed": 278.8,
           "max_speed": 307.0,
           "gap": "+164.757s"
         }
@@ -12010,7 +12495,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 285.3,
+          "avg_speed": 283.5,
           "max_speed": 316.0,
           "gap": "+59.300s"
         },
@@ -12122,7 +12607,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.0,
+          "avg_speed": 277.0,
           "max_speed": 302.0,
           "gap": "+163.530s"
         },
@@ -12197,7 +12682,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.0,
+          "avg_speed": 277.8,
           "max_speed": 304.0,
           "gap": "+30.076s"
         },
@@ -12295,7 +12780,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.7,
+          "avg_speed": 278.2,
           "max_speed": 301.0,
           "gap": "+116.942s"
         },
@@ -12370,7 +12855,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 279.7,
+          "avg_speed": 278.2,
           "max_speed": 308.0,
           "gap": "LEADER"
         },
@@ -12426,7 +12911,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.7,
+          "avg_speed": 278.2,
           "max_speed": 306.0,
           "gap": "+57.793s"
         },
@@ -12510,7 +12995,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 278.3,
+          "avg_speed": 277.2,
           "max_speed": 307.0,
           "gap": "+118.135s"
         },
@@ -12585,7 +13070,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 260.7,
+          "avg_speed": 264.0,
           "max_speed": 306.0,
           "gap": "LEADER"
         },
@@ -12599,7 +13084,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.0,
+          "avg_speed": 278.5,
           "max_speed": 323.0,
           "gap": "+5.604s"
         },
@@ -12627,7 +13112,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 280.0,
+          "avg_speed": 278.2,
           "max_speed": 303.0,
           "gap": "+28.914s"
         },

@@ -5,10 +5,285 @@
   "circuit": "Monza",
   "date": "2025-09-07T00:00:00",
   "total_laps": 53,
+  "weather": {
+    "track_temp": 42.4,
+    "air_temp": 26.9,
+    "humidity": 44.0,
+    "wind_speed": 1.0,
+    "wind_direction": 166,
+    "rainfall": false
+  },
   "laps": [
     {
       "lap_number": 1,
-      "drivers": []
+      "drivers": [
+        {
+          "driver": "VER",
+          "team": "Red Bull Racing",
+          "position": 1,
+          "lap_time": "0 days 00:01:27.159000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 304.8,
+          "max_speed": 321.0,
+          "gap": "LEADER"
+        },
+        {
+          "driver": "NOR",
+          "team": "McLaren",
+          "position": 2,
+          "lap_time": "0 days 00:01:27.430000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 305.8,
+          "max_speed": 330.0,
+          "gap": "+0.271s"
+        },
+        {
+          "driver": "PIA",
+          "team": "McLaren",
+          "position": 3,
+          "lap_time": "0 days 00:01:27.992000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 309.0,
+          "max_speed": 322.0,
+          "gap": "+0.833s"
+        },
+        {
+          "driver": "LEC",
+          "team": "Ferrari",
+          "position": 4,
+          "lap_time": "0 days 00:01:28.280000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 316.5,
+          "max_speed": 339.0,
+          "gap": "+1.121s"
+        },
+        {
+          "driver": "RUS",
+          "team": "Mercedes",
+          "position": 5,
+          "lap_time": "0 days 00:01:28.907000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 310.8,
+          "max_speed": 328.0,
+          "gap": "+1.748s"
+        },
+        {
+          "driver": "ALO",
+          "team": "Aston Martin",
+          "position": 6,
+          "lap_time": "0 days 00:01:29.645000",
+          "compound": "MEDIUM",
+          "tire_life": 2,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 316.0,
+          "max_speed": 340.0,
+          "gap": "+2.486s"
+        },
+        {
+          "driver": "BOR",
+          "team": "Kick Sauber",
+          "position": 7,
+          "lap_time": "0 days 00:01:30.149000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 317.5,
+          "max_speed": 340.0,
+          "gap": "+2.990s"
+        },
+        {
+          "driver": "HAM",
+          "team": "Ferrari",
+          "position": 8,
+          "lap_time": "0 days 00:01:30.490000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 316.8,
+          "max_speed": 339.0,
+          "gap": "+3.331s"
+        },
+        {
+          "driver": "TSU",
+          "team": "Red Bull Racing",
+          "position": 9,
+          "lap_time": "0 days 00:01:31.278000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 307.8,
+          "max_speed": 337.0,
+          "gap": "+4.119s"
+        },
+        {
+          "driver": "ANT",
+          "team": "Mercedes",
+          "position": 10,
+          "lap_time": "0 days 00:01:31.686000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 306.2,
+          "max_speed": 333.0,
+          "gap": "+4.527s"
+        },
+        {
+          "driver": "BEA",
+          "team": "Haas F1 Team",
+          "position": 11,
+          "lap_time": "0 days 00:01:31.914000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 307.5,
+          "max_speed": 324.0,
+          "gap": "+4.755s"
+        },
+        {
+          "driver": "SAI",
+          "team": "Williams",
+          "position": 12,
+          "lap_time": "0 days 00:01:32.424000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 309.0,
+          "max_speed": 331.0,
+          "gap": "+5.265s"
+        },
+        {
+          "driver": "ALB",
+          "team": "Williams",
+          "position": 13,
+          "lap_time": "0 days 00:01:32.851000",
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 309.2,
+          "max_speed": 330.0,
+          "gap": "+5.692s"
+        },
+        {
+          "driver": "OCO",
+          "team": "Haas F1 Team",
+          "position": 14,
+          "lap_time": "0 days 00:01:33.184000",
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 308.5,
+          "max_speed": 334.0,
+          "gap": "+6.025s"
+        },
+        {
+          "driver": "LAW",
+          "team": "Racing Bulls",
+          "position": 15,
+          "lap_time": "0 days 00:01:33.554000",
+          "compound": "SOFT",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 319.8,
+          "max_speed": 342.0,
+          "gap": "+6.395s"
+        },
+        {
+          "driver": "STR",
+          "team": "Aston Martin",
+          "position": 16,
+          "lap_time": "0 days 00:01:33.936000",
+          "compound": "HARD",
+          "tire_life": 2,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 299.8,
+          "max_speed": 316.0,
+          "gap": "+6.777s"
+        },
+        {
+          "driver": "COL",
+          "team": "Alpine",
+          "position": 17,
+          "lap_time": "0 days 00:01:34.322000",
+          "compound": "MEDIUM",
+          "tire_life": 1,
+          "pit_out": false,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 307.8,
+          "max_speed": 321.0,
+          "gap": "+7.163s"
+        },
+        {
+          "driver": "HAD",
+          "team": "Racing Bulls",
+          "position": 18,
+          "lap_time": "0 days 00:01:34.878000",
+          "compound": "HARD",
+          "tire_life": 2,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 312.0,
+          "max_speed": 328.0,
+          "gap": "+7.719s"
+        },
+        {
+          "driver": "GAS",
+          "team": "Alpine",
+          "position": 19,
+          "lap_time": "0 days 00:01:35.676000",
+          "compound": "HARD",
+          "tire_life": 1,
+          "pit_out": true,
+          "pit_in": false,
+          "distance": 0,
+          "avg_speed": 305.0,
+          "max_speed": 328.0,
+          "gap": "+8.517s"
+        }
+      ]
     },
     {
       "lap_number": 2,
@@ -163,7 +438,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.0,
+          "avg_speed": 325.2,
           "max_speed": 342.0,
           "gap": "+6.266s"
         },
@@ -663,7 +938,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 330.7,
+          "avg_speed": 329.2,
           "max_speed": 337.0,
           "gap": "+7.430s"
         },
@@ -677,7 +952,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.0,
+          "avg_speed": 324.2,
           "max_speed": 338.0,
           "gap": "+8.232s"
         },
@@ -761,8 +1036,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 322.3,
-          "max_speed": 340.0,
+          "avg_speed": 327.5,
+          "max_speed": 343.0,
           "gap": "+11.359s"
         },
         {
@@ -789,8 +1064,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.3,
-          "max_speed": 329.0,
+          "avg_speed": 322.8,
+          "max_speed": 339.0,
           "gap": "+12.691s"
         },
         {
@@ -1177,7 +1452,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.0,
+          "avg_speed": 324.8,
           "max_speed": 334.0,
           "gap": "+8.045s"
         },
@@ -1205,7 +1480,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.0,
+          "avg_speed": 324.5,
           "max_speed": 335.0,
           "gap": "+9.204s"
         },
@@ -1331,7 +1606,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 322.0,
+          "avg_speed": 319.0,
           "max_speed": 336.0,
           "gap": "+15.416s"
         },
@@ -1359,7 +1634,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.3,
+          "avg_speed": 317.0,
           "max_speed": 326.0,
           "gap": "+18.087s"
         }
@@ -1378,8 +1653,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.5,
-          "max_speed": 313.0,
+          "avg_speed": 314.0,
+          "max_speed": 320.0,
           "gap": "LEADER"
         },
         {
@@ -1574,7 +1849,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 326.0,
+          "avg_speed": 324.2,
           "max_speed": 339.0,
           "gap": "+15.219s"
         },
@@ -1602,8 +1877,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.0,
-          "max_speed": 319.0,
+          "avg_speed": 318.8,
+          "max_speed": 336.0,
           "gap": "+16.992s"
         },
         {
@@ -1649,8 +1924,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 311.3,
-          "max_speed": 312.0,
+          "avg_speed": 313.5,
+          "max_speed": 320.0,
           "gap": "LEADER"
         },
         {
@@ -1705,7 +1980,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 323.0,
+          "avg_speed": 320.8,
           "max_speed": 330.0,
           "gap": "+8.291s"
         },
@@ -1775,7 +2050,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.7,
+          "avg_speed": 324.8,
           "max_speed": 338.0,
           "gap": "+13.665s"
         },
@@ -1934,7 +2209,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.3,
+          "avg_speed": 314.5,
           "max_speed": 326.0,
           "gap": "+2.964s"
         },
@@ -1948,7 +2223,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.3,
+          "avg_speed": 313.5,
           "max_speed": 324.0,
           "gap": "+7.338s"
         },
@@ -1990,8 +2265,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.0,
-          "max_speed": 320.0,
+          "avg_speed": 318.0,
+          "max_speed": 321.0,
           "gap": "+11.430s"
         },
         {
@@ -2102,7 +2377,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 329.7,
+          "avg_speed": 326.0,
           "max_speed": 342.0,
           "gap": "+17.615s"
         },
@@ -2247,8 +2522,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.7,
-          "max_speed": 326.0,
+          "avg_speed": 324.8,
+          "max_speed": 340.0,
           "gap": "+10.517s"
         },
         {
@@ -2303,7 +2578,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.0,
+          "avg_speed": 318.8,
           "max_speed": 326.0,
           "gap": "+16.009s"
         },
@@ -2415,7 +2690,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 329.7,
+          "avg_speed": 326.8,
           "max_speed": 342.0,
           "gap": "+22.877s"
         },
@@ -2490,8 +2765,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 310.0,
-          "max_speed": 311.0,
+          "avg_speed": 313.2,
+          "max_speed": 323.0,
           "gap": "+8.542s"
         },
         {
@@ -2504,7 +2779,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.7,
+          "avg_speed": 318.2,
           "max_speed": 330.0,
           "gap": "+10.830s"
         },
@@ -2532,7 +2807,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.7,
+          "avg_speed": 320.0,
           "max_speed": 326.0,
           "gap": "+12.976s"
         },
@@ -2546,7 +2821,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.3,
+          "avg_speed": 318.2,
           "max_speed": 326.0,
           "gap": "+15.608s"
         },
@@ -2560,8 +2835,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.3,
-          "max_speed": 326.0,
+          "avg_speed": 322.2,
+          "max_speed": 337.0,
           "gap": "+16.298s"
         },
         {
@@ -2574,7 +2849,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.7,
+          "avg_speed": 318.5,
           "max_speed": 324.0,
           "gap": "+17.357s"
         },
@@ -2672,7 +2947,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
+          "avg_speed": 314.0,
           "max_speed": 324.0,
           "gap": "+24.014s"
         },
@@ -2761,8 +3036,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 311.0,
-          "max_speed": 312.0,
+          "avg_speed": 314.0,
+          "max_speed": 323.0,
           "gap": "+9.014s"
         },
         {
@@ -2845,8 +3120,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.7,
-          "max_speed": 322.0,
+          "avg_speed": 319.2,
+          "max_speed": 324.0,
           "gap": "+18.826s"
         },
         {
@@ -2985,7 +3260,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.0,
+          "avg_speed": 312.5,
           "max_speed": 314.0,
           "gap": "+46.601s"
         }
@@ -3004,8 +3279,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.3,
-          "max_speed": 314.0,
+          "avg_speed": 315.5,
+          "max_speed": 322.0,
           "gap": "LEADER"
         },
         {
@@ -3032,7 +3307,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
+          "avg_speed": 314.5,
           "max_speed": 324.0,
           "gap": "+9.358s"
         },
@@ -3088,7 +3363,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
+          "avg_speed": 317.0,
           "max_speed": 323.0,
           "gap": "+18.507s"
         },
@@ -3186,7 +3461,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 328.0,
+          "avg_speed": 324.8,
           "max_speed": 338.0,
           "gap": "+23.131s"
         },
@@ -3242,7 +3517,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.0,
+          "avg_speed": 314.0,
           "max_speed": 321.0,
           "gap": "+29.787s"
         },
@@ -3275,8 +3550,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.5,
-          "max_speed": 314.0,
+          "avg_speed": 315.8,
+          "max_speed": 322.0,
           "gap": "LEADER"
         },
         {
@@ -3289,8 +3564,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 310.0,
-          "max_speed": 312.0,
+          "avg_speed": 313.5,
+          "max_speed": 324.0,
           "gap": "+4.296s"
         },
         {
@@ -3303,7 +3578,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
+          "avg_speed": 314.5,
           "max_speed": 325.0,
           "gap": "+9.902s"
         },
@@ -3317,7 +3592,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 323.3,
+          "avg_speed": 321.8,
           "max_speed": 337.0,
           "gap": "+12.657s"
         },
@@ -3359,7 +3634,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.0,
+          "avg_speed": 318.5,
           "max_speed": 325.0,
           "gap": "+19.716s"
         },
@@ -3415,7 +3690,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 331.3,
+          "avg_speed": 328.0,
           "max_speed": 343.0,
           "gap": "+22.531s"
         },
@@ -3471,7 +3746,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 328.3,
+          "avg_speed": 326.0,
           "max_speed": 337.0,
           "gap": "+25.104s"
         },
@@ -3513,7 +3788,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.7,
+          "avg_speed": 314.5,
           "max_speed": 322.0,
           "gap": "+31.783s"
         },
@@ -3527,7 +3802,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.3,
+          "avg_speed": 314.5,
           "max_speed": 318.0,
           "gap": "+48.028s"
         }
@@ -3588,7 +3863,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.7,
+          "avg_speed": 319.0,
           "max_speed": 325.0,
           "gap": "+13.215s"
         },
@@ -3672,8 +3947,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 322.0,
-          "max_speed": 330.0,
+          "avg_speed": 325.8,
+          "max_speed": 341.0,
           "gap": "+23.414s"
         },
         {
@@ -3686,7 +3961,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 330.3,
+          "avg_speed": 327.2,
           "max_speed": 341.0,
           "gap": "+23.968s"
         },
@@ -3770,8 +4045,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 311.0,
-          "max_speed": 313.0,
+          "avg_speed": 314.5,
+          "max_speed": 325.0,
           "gap": "+31.795s"
         },
         {
@@ -3798,7 +4073,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.3,
+          "avg_speed": 314.5,
           "max_speed": 317.0,
           "gap": "+48.900s"
         }
@@ -3831,8 +4106,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.5,
-          "max_speed": 313.0,
+          "avg_speed": 315.5,
+          "max_speed": 325.0,
           "gap": "+4.366s"
         },
         {
@@ -3845,7 +4120,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.7,
+          "avg_speed": 315.5,
           "max_speed": 325.0,
           "gap": "+10.346s"
         },
@@ -3887,7 +4162,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.3,
+          "avg_speed": 320.2,
           "max_speed": 326.0,
           "gap": "+17.601s"
         },
@@ -3901,8 +4176,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.5,
-          "max_speed": 319.0,
+          "avg_speed": 318.0,
+          "max_speed": 324.0,
           "gap": "+22.150s"
         },
         {
@@ -3971,7 +4246,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 332.3,
+          "avg_speed": 329.0,
           "max_speed": 348.0,
           "gap": "+26.027s"
         },
@@ -4055,7 +4330,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
+          "avg_speed": 315.0,
           "max_speed": 322.0,
           "gap": "+35.677s"
         },
@@ -4088,7 +4363,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
+          "avg_speed": 317.0,
           "max_speed": 325.0,
           "gap": "LEADER"
         },
@@ -4130,8 +4405,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.7,
-          "max_speed": 317.0,
+          "avg_speed": 318.2,
+          "max_speed": 326.0,
           "gap": "+14.589s"
         },
         {
@@ -4158,8 +4433,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
-          "max_speed": 320.0,
+          "avg_speed": 320.0,
+          "max_speed": 326.0,
           "gap": "+18.400s"
         },
         {
@@ -4186,7 +4461,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 324.7,
+          "avg_speed": 322.5,
           "max_speed": 337.0,
           "gap": "+24.247s"
         },
@@ -4270,8 +4545,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 325.0,
-          "max_speed": 336.0,
+          "avg_speed": 327.0,
+          "max_speed": 342.0,
           "gap": "+28.617s"
         },
         {
@@ -4284,7 +4559,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 329.3,
+          "avg_speed": 326.5,
           "max_speed": 338.0,
           "gap": "+29.335s"
         },
@@ -4298,8 +4573,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.3,
-          "max_speed": 325.0,
+          "avg_speed": 321.2,
+          "max_speed": 330.0,
           "gap": "+31.734s"
         },
         {
@@ -4373,7 +4648,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.7,
+          "avg_speed": 315.0,
           "max_speed": 325.0,
           "gap": "+5.170s"
         },
@@ -4387,7 +4662,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.0,
+          "avg_speed": 315.2,
           "max_speed": 327.0,
           "gap": "+11.324s"
         },
@@ -4443,7 +4718,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
+          "avg_speed": 317.0,
           "max_speed": 323.0,
           "gap": "+24.976s"
         },
@@ -4457,7 +4732,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 325.0,
+          "avg_speed": 322.8,
           "max_speed": 336.0,
           "gap": "+25.666s"
         },
@@ -4555,7 +4830,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 324.3,
+          "avg_speed": 322.5,
           "max_speed": 332.0,
           "gap": "+33.039s"
         },
@@ -4583,8 +4858,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 310.7,
-          "max_speed": 313.0,
+          "avg_speed": 313.0,
+          "max_speed": 320.0,
           "gap": "+37.044s"
         },
         {
@@ -4597,8 +4872,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 311.0,
-          "max_speed": 312.0,
+          "avg_speed": 313.5,
+          "max_speed": 321.0,
           "gap": "+39.274s"
         },
         {
@@ -4672,8 +4947,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.3,
-          "max_speed": 317.0,
+          "avg_speed": 318.5,
+          "max_speed": 325.0,
           "gap": "+15.964s"
         },
         {
@@ -4728,8 +5003,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.7,
-          "max_speed": 325.0,
+          "avg_speed": 321.5,
+          "max_speed": 336.0,
           "gap": "+27.013s"
         },
         {
@@ -4826,8 +5101,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.3,
-          "max_speed": 328.0,
+          "avg_speed": 323.2,
+          "max_speed": 332.0,
           "gap": "+34.443s"
         },
         {
@@ -4929,8 +5204,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 311.7,
-          "max_speed": 313.0,
+          "avg_speed": 315.2,
+          "max_speed": 326.0,
           "gap": "+12.213s"
         },
         {
@@ -4957,8 +5232,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.3,
-          "max_speed": 316.0,
+          "avg_speed": 317.2,
+          "max_speed": 329.0,
           "gap": "+18.629s"
         },
         {
@@ -5013,8 +5288,8 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 316.0,
-          "max_speed": 319.0,
+          "avg_speed": 318.0,
+          "max_speed": 322.0,
           "gap": "+32.272s"
         },
         {
@@ -5027,8 +5302,8 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 321.0,
-          "max_speed": 327.0,
+          "avg_speed": 326.0,
+          "max_speed": 336.0,
           "gap": "+32.622s"
         },
         {
@@ -5111,8 +5386,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 310.7,
-          "max_speed": 313.0,
+          "avg_speed": 313.0,
+          "max_speed": 320.0,
           "gap": "+42.122s"
         },
         {
@@ -5125,7 +5400,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.0,
+          "avg_speed": 315.8,
           "max_speed": 321.0,
           "gap": "+53.846s"
         },
@@ -5172,8 +5447,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.3,
-          "max_speed": 317.0,
+          "avg_speed": 316.2,
+          "max_speed": 322.0,
           "gap": "LEADER"
         },
         {
@@ -5186,7 +5461,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.3,
+          "avg_speed": 314.8,
           "max_speed": 323.0,
           "gap": "+5.892s"
         },
@@ -5214,8 +5489,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
-          "max_speed": 317.0,
+          "avg_speed": 318.0,
+          "max_speed": 324.0,
           "gap": "+17.172s"
         },
         {
@@ -5298,7 +5573,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 325.7,
+          "avg_speed": 322.8,
           "max_speed": 335.0,
           "gap": "+34.556s"
         },
@@ -5312,7 +5587,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 328.7,
+          "avg_speed": 326.0,
           "max_speed": 339.0,
           "gap": "+35.444s"
         },
@@ -5354,8 +5629,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.7,
-          "max_speed": 314.0,
+          "avg_speed": 314.5,
+          "max_speed": 320.0,
           "gap": "+43.328s"
         },
         {
@@ -5443,8 +5718,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.3,
-          "max_speed": 317.0,
+          "avg_speed": 317.0,
+          "max_speed": 322.0,
           "gap": "LEADER"
         },
         {
@@ -5457,8 +5732,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.0,
-          "max_speed": 313.0,
+          "avg_speed": 315.5,
+          "max_speed": 323.0,
           "gap": "+6.124s"
         },
         {
@@ -5485,8 +5760,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.7,
-          "max_speed": 318.0,
+          "avg_speed": 318.5,
+          "max_speed": 324.0,
           "gap": "+17.752s"
         },
         {
@@ -5499,7 +5774,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.7,
+          "avg_speed": 318.8,
           "max_speed": 330.0,
           "gap": "+19.888s"
         },
@@ -5583,7 +5858,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.0,
+          "avg_speed": 324.8,
           "max_speed": 337.0,
           "gap": "+36.638s"
         },
@@ -5611,8 +5886,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 310.7,
-          "max_speed": 312.0,
+          "avg_speed": 312.8,
+          "max_speed": 319.0,
           "gap": "+42.926s"
         },
         {
@@ -5625,8 +5900,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.3,
-          "max_speed": 313.0,
+          "avg_speed": 314.2,
+          "max_speed": 320.0,
           "gap": "+44.698s"
         },
         {
@@ -5667,7 +5942,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 329.7,
+          "avg_speed": 325.8,
           "max_speed": 344.0,
           "gap": "+58.129s"
         },
@@ -5695,7 +5970,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 328.3,
+          "avg_speed": 325.8,
           "max_speed": 338.0,
           "gap": "+59.022s"
         }
@@ -5742,8 +6017,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.0,
-          "max_speed": 313.0,
+          "avg_speed": 315.5,
+          "max_speed": 326.0,
           "gap": "+12.575s"
         },
         {
@@ -5798,8 +6073,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.0,
-          "max_speed": 313.0,
+          "avg_speed": 315.8,
+          "max_speed": 327.0,
           "gap": "+31.729s"
         },
         {
@@ -5896,8 +6171,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.0,
-          "max_speed": 313.0,
+          "avg_speed": 314.0,
+          "max_speed": 320.0,
           "gap": "+46.335s"
         },
         {
@@ -5952,7 +6227,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 328.7,
+          "avg_speed": 327.0,
           "max_speed": 342.0,
           "gap": "+59.990s"
         },
@@ -5966,7 +6241,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 328.3,
+          "avg_speed": 325.8,
           "max_speed": 334.0,
           "gap": "+60.496s"
         }
@@ -6013,8 +6288,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.0,
-          "max_speed": 314.0,
+          "avg_speed": 316.2,
+          "max_speed": 326.0,
           "gap": "+12.502s"
         },
         {
@@ -6027,7 +6302,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.7,
+          "avg_speed": 318.0,
           "max_speed": 324.0,
           "gap": "+18.568s"
         },
@@ -6041,8 +6316,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.5,
-          "max_speed": 316.0,
+          "avg_speed": 317.5,
+          "max_speed": 328.0,
           "gap": "+21.568s"
         },
         {
@@ -6097,8 +6372,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.0,
-          "max_speed": 327.0,
+          "avg_speed": 323.8,
+          "max_speed": 338.0,
           "gap": "+36.800s"
         },
         {
@@ -6111,8 +6386,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.3,
-          "max_speed": 327.0,
+          "avg_speed": 321.2,
+          "max_speed": 333.0,
           "gap": "+37.725s"
         },
         {
@@ -6153,8 +6428,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 308.7,
-          "max_speed": 310.0,
+          "avg_speed": 311.0,
+          "max_speed": 318.0,
           "gap": "+46.119s"
         },
         {
@@ -6195,8 +6470,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
-          "max_speed": 320.0,
+          "avg_speed": 320.5,
+          "max_speed": 334.0,
           "gap": "+60.880s"
         },
         {
@@ -6256,8 +6531,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.7,
-          "max_speed": 316.0,
+          "avg_speed": 316.2,
+          "max_speed": 324.0,
           "gap": "LEADER"
         },
         {
@@ -6298,8 +6573,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.5,
-          "max_speed": 318.0,
+          "avg_speed": 317.8,
+          "max_speed": 324.0,
           "gap": "+18.709s"
         },
         {
@@ -6326,8 +6601,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.3,
-          "max_speed": 322.0,
+          "avg_speed": 321.8,
+          "max_speed": 329.0,
           "gap": "+23.897s"
         },
         {
@@ -6396,8 +6671,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.7,
-          "max_speed": 333.0,
+          "avg_speed": 324.8,
+          "max_speed": 334.0,
           "gap": "+39.809s"
         },
         {
@@ -6410,7 +6685,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.0,
+          "avg_speed": 324.8,
           "max_speed": 335.0,
           "gap": "+41.127s"
         },
@@ -6424,8 +6699,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 309.7,
-          "max_speed": 312.0,
+          "avg_speed": 311.8,
+          "max_speed": 318.0,
           "gap": "+47.317s"
         },
         {
@@ -6452,8 +6727,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.3,
-          "max_speed": 315.0,
+          "avg_speed": 314.0,
+          "max_speed": 319.0,
           "gap": "+60.444s"
         },
         {
@@ -6513,8 +6788,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.0,
-          "max_speed": 317.0,
+          "avg_speed": 317.2,
+          "max_speed": 324.0,
           "gap": "LEADER"
         },
         {
@@ -6527,8 +6802,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.0,
-          "max_speed": 314.0,
+          "avg_speed": 316.0,
+          "max_speed": 325.0,
           "gap": "+6.400s"
         },
         {
@@ -6541,8 +6816,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.7,
-          "max_speed": 313.0,
+          "avg_speed": 316.5,
+          "max_speed": 328.0,
           "gap": "+12.912s"
         },
         {
@@ -6597,8 +6872,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.7,
-          "max_speed": 317.0,
+          "avg_speed": 317.8,
+          "max_speed": 327.0,
           "gap": "+34.668s"
         },
         {
@@ -6653,7 +6928,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 328.7,
+          "avg_speed": 326.0,
           "max_speed": 342.0,
           "gap": "+41.059s"
         },
@@ -6667,8 +6942,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.7,
-          "max_speed": 328.0,
+          "avg_speed": 324.2,
+          "max_speed": 335.0,
           "gap": "+42.216s"
         },
         {
@@ -6681,8 +6956,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 309.7,
-          "max_speed": 311.0,
+          "avg_speed": 311.8,
+          "max_speed": 318.0,
           "gap": "+48.595s"
         },
         {
@@ -6737,8 +7012,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.0,
-          "max_speed": 322.0,
+          "avg_speed": 320.8,
+          "max_speed": 332.0,
           "gap": "+64.507s"
         },
         {
@@ -6751,7 +7026,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 329.0,
+          "avg_speed": 326.8,
           "max_speed": 337.0,
           "gap": "+65.116s"
         }
@@ -6770,7 +7045,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.7,
+          "avg_speed": 316.0,
           "max_speed": 321.0,
           "gap": "LEADER"
         },
@@ -6798,7 +7073,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
+          "avg_speed": 316.5,
           "max_speed": 327.0,
           "gap": "+12.693s"
         },
@@ -6854,7 +7129,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.7,
+          "avg_speed": 317.5,
           "max_speed": 326.0,
           "gap": "+35.353s"
         },
@@ -6896,7 +7171,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 322.7,
+          "avg_speed": 320.2,
           "max_speed": 330.0,
           "gap": "+40.971s"
         },
@@ -6910,7 +7185,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 329.7,
+          "avg_speed": 326.8,
           "max_speed": 343.0,
           "gap": "+41.812s"
         },
@@ -6938,8 +7213,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 310.7,
-          "max_speed": 312.0,
+          "avg_speed": 312.5,
+          "max_speed": 318.0,
           "gap": "+49.529s"
         },
         {
@@ -7027,7 +7302,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.3,
+          "avg_speed": 316.5,
           "max_speed": 322.0,
           "gap": "LEADER"
         },
@@ -7041,8 +7316,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.7,
-          "max_speed": 313.0,
+          "avg_speed": 315.5,
+          "max_speed": 324.0,
           "gap": "+6.261s"
         },
         {
@@ -7153,7 +7428,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.0,
+          "avg_speed": 324.8,
           "max_speed": 337.0,
           "gap": "+42.642s"
         },
@@ -7284,8 +7559,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.0,
-          "max_speed": 317.0,
+          "avg_speed": 316.5,
+          "max_speed": 322.0,
           "gap": "LEADER"
         },
         {
@@ -7326,7 +7601,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.7,
+          "avg_speed": 318.2,
           "max_speed": 324.0,
           "gap": "+19.098s"
         },
@@ -7396,7 +7671,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.3,
+          "avg_speed": 325.0,
           "max_speed": 338.0,
           "gap": "+43.504s"
         },
@@ -7508,7 +7783,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.3,
+          "avg_speed": 315.2,
           "max_speed": 318.0,
           "gap": "+70.583s"
         },
@@ -7611,8 +7886,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.7,
-          "max_speed": 316.0,
+          "avg_speed": 316.0,
+          "max_speed": 323.0,
           "gap": "+39.510s"
         },
         {
@@ -7709,7 +7984,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.7,
+          "avg_speed": 314.8,
           "max_speed": 324.0,
           "gap": "+55.149s"
         },
@@ -7737,7 +8012,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.3,
+          "avg_speed": 320.0,
           "max_speed": 325.0,
           "gap": "+62.928s"
         },
@@ -7751,7 +8026,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
+          "avg_speed": 316.8,
           "max_speed": 322.0,
           "gap": "+64.866s"
         },
@@ -7779,7 +8054,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 322.0,
+          "avg_speed": 320.2,
           "max_speed": 331.0,
           "gap": "+72.299s"
         }
@@ -7812,8 +8087,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.0,
-          "max_speed": 313.0,
+          "avg_speed": 314.8,
+          "max_speed": 322.0,
           "gap": "+6.166s"
         },
         {
@@ -7854,8 +8129,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
-          "max_speed": 318.0,
+          "avg_speed": 317.5,
+          "max_speed": 322.0,
           "gap": "+27.148s"
         },
         {
@@ -7994,8 +8269,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.3,
-          "max_speed": 318.0,
+          "avg_speed": 317.0,
+          "max_speed": 322.0,
           "gap": "+65.107s"
         },
         {
@@ -8022,8 +8297,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.7,
-          "max_speed": 318.0,
+          "avg_speed": 315.8,
+          "max_speed": 319.0,
           "gap": "+72.178s"
         },
         {
@@ -8036,7 +8311,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.3,
+          "avg_speed": 321.2,
           "max_speed": 332.0,
           "gap": "+73.010s"
         }
@@ -8055,8 +8330,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
-          "max_speed": 318.0,
+          "avg_speed": 317.5,
+          "max_speed": 322.0,
           "gap": "LEADER"
         },
         {
@@ -8069,8 +8344,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.3,
-          "max_speed": 314.0,
+          "avg_speed": 315.5,
+          "max_speed": 322.0,
           "gap": "+6.052s"
         },
         {
@@ -8097,7 +8372,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.3,
+          "avg_speed": 318.2,
           "max_speed": 322.0,
           "gap": "+19.143s"
         },
@@ -8195,8 +8470,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 310.3,
-          "max_speed": 311.0,
+          "avg_speed": 311.5,
+          "max_speed": 315.0,
           "gap": "+55.968s"
         },
         {
@@ -8209,7 +8484,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.0,
+          "avg_speed": 313.0,
           "max_speed": 319.0,
           "gap": "+57.853s"
         },
@@ -8237,7 +8512,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.3,
+          "avg_speed": 320.5,
           "max_speed": 325.0,
           "gap": "+63.145s"
         },
@@ -8251,7 +8526,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.0,
+          "avg_speed": 316.5,
           "max_speed": 321.0,
           "gap": "+65.399s"
         },
@@ -8265,7 +8540,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.0,
+          "avg_speed": 318.2,
           "max_speed": 325.0,
           "gap": "+67.253s"
         },
@@ -8279,8 +8554,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.7,
-          "max_speed": 317.0,
+          "avg_speed": 315.8,
+          "max_speed": 319.0,
           "gap": "+72.970s"
         },
         {
@@ -8312,8 +8587,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
-          "max_speed": 318.0,
+          "avg_speed": 317.5,
+          "max_speed": 322.0,
           "gap": "LEADER"
         },
         {
@@ -8326,7 +8601,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.3,
+          "avg_speed": 316.2,
           "max_speed": 324.0,
           "gap": "+5.764s"
         },
@@ -8452,7 +8727,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.3,
+          "avg_speed": 319.8,
           "max_speed": 328.0,
           "gap": "+60.499s"
         },
@@ -8569,7 +8844,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.7,
+          "avg_speed": 318.0,
           "max_speed": 324.0,
           "gap": "LEADER"
         },
@@ -8583,7 +8858,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.0,
+          "avg_speed": 316.0,
           "max_speed": 325.0,
           "gap": "+5.523s"
         },
@@ -8611,8 +8886,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.3,
-          "max_speed": 318.0,
+          "avg_speed": 318.2,
+          "max_speed": 324.0,
           "gap": "+28.029s"
         },
         {
@@ -8695,8 +8970,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 310.5,
-          "max_speed": 312.0,
+          "avg_speed": 311.2,
+          "max_speed": 316.0,
           "gap": "+58.339s"
         },
         {
@@ -8709,8 +8984,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.7,
-          "max_speed": 320.0,
+          "avg_speed": 319.5,
+          "max_speed": 328.0,
           "gap": "+60.353s"
         },
         {
@@ -8723,8 +8998,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.5,
-          "max_speed": 321.0,
+          "avg_speed": 319.2,
+          "max_speed": 324.0,
           "gap": "+63.469s"
         },
         {
@@ -8826,7 +9101,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
+          "avg_speed": 317.5,
           "max_speed": 322.0,
           "gap": "LEADER"
         },
@@ -8854,8 +9129,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.0,
-          "max_speed": 313.0,
+          "avg_speed": 315.5,
+          "max_speed": 326.0,
           "gap": "+12.088s"
         },
         {
@@ -8910,7 +9185,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.7,
+          "avg_speed": 312.8,
           "max_speed": 316.0,
           "gap": "+47.478s"
         },
@@ -8952,8 +9227,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 310.3,
-          "max_speed": 311.0,
+          "avg_speed": 311.8,
+          "max_speed": 316.0,
           "gap": "+59.008s"
         },
         {
@@ -8980,8 +9255,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.5,
-          "max_speed": 321.0,
+          "avg_speed": 319.2,
+          "max_speed": 324.0,
           "gap": "+63.696s"
         },
         {
@@ -9022,7 +9297,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.7,
+          "avg_speed": 319.8,
           "max_speed": 326.0,
           "gap": "+70.875s"
         },
@@ -9083,7 +9358,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.7,
+          "avg_speed": 318.0,
           "max_speed": 323.0,
           "gap": "LEADER"
         },
@@ -9111,8 +9386,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.0,
-          "max_speed": 317.0,
+          "avg_speed": 317.8,
+          "max_speed": 326.0,
           "gap": "+11.621s"
         },
         {
@@ -9139,8 +9414,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.0,
-          "max_speed": 317.0,
+          "avg_speed": 317.2,
+          "max_speed": 324.0,
           "gap": "+39.752s"
         },
         {
@@ -9209,7 +9484,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.7,
+          "avg_speed": 311.8,
           "max_speed": 314.0,
           "gap": "+59.502s"
         },
@@ -9251,7 +9526,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
+          "avg_speed": 317.2,
           "max_speed": 321.0,
           "gap": "+65.858s"
         },
@@ -9293,7 +9568,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.0,
+          "avg_speed": 316.5,
           "max_speed": 319.0,
           "gap": "+76.154s"
         },
@@ -9307,7 +9582,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 327.0,
+          "avg_speed": 324.8,
           "max_speed": 334.0,
           "gap": "+76.949s"
         },
@@ -9321,8 +9596,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 311.7,
-          "max_speed": 313.0,
+          "avg_speed": 313.0,
+          "max_speed": 317.0,
           "gap": "+86.071s"
         }
       ]
@@ -9382,7 +9657,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.3,
+          "avg_speed": 318.2,
           "max_speed": 322.0,
           "gap": "+24.107s"
         },
@@ -9410,8 +9685,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
-          "max_speed": 320.0,
+          "avg_speed": 318.8,
+          "max_speed": 322.0,
           "gap": "+37.520s"
         },
         {
@@ -9467,7 +9742,7 @@
           "pit_in": false,
           "distance": 0,
           "avg_speed": 311.5,
-          "max_speed": 312.0,
+          "max_speed": 314.0,
           "gap": "+55.464s"
         },
         {
@@ -9480,7 +9755,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 324.7,
+          "avg_speed": 323.2,
           "max_speed": 330.0,
           "gap": "+56.159s"
         },
@@ -9536,8 +9811,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
-          "max_speed": 323.0,
+          "avg_speed": 319.8,
+          "max_speed": 325.0,
           "gap": "+66.444s"
         },
         {
@@ -9723,7 +9998,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.0,
+          "avg_speed": 316.5,
           "max_speed": 333.0,
           "gap": "+55.315s"
         },
@@ -9751,7 +10026,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 323.3,
+          "avg_speed": 322.0,
           "max_speed": 327.0,
           "gap": "+58.092s"
         },
@@ -9765,8 +10040,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.5,
-          "max_speed": 321.0,
+          "avg_speed": 317.8,
+          "max_speed": 322.0,
           "gap": "+60.495s"
         },
         {
@@ -9793,7 +10068,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.3,
+          "avg_speed": 320.2,
           "max_speed": 326.0,
           "gap": "+66.211s"
         },
@@ -9835,7 +10110,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.0,
+          "avg_speed": 311.5,
           "max_speed": 316.0,
           "gap": "+81.276s"
         }
@@ -9924,7 +10199,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.7,
+          "avg_speed": 317.0,
           "max_speed": 325.0,
           "gap": "+41.178s"
         },
@@ -10008,7 +10283,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 325.7,
+          "avg_speed": 326.0,
           "max_speed": 338.0,
           "gap": "+58.339s"
         },
@@ -10022,7 +10297,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.0,
+          "avg_speed": 318.5,
           "max_speed": 323.0,
           "gap": "+60.990s"
         },
@@ -10050,8 +10325,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.7,
-          "max_speed": 325.0,
+          "avg_speed": 321.2,
+          "max_speed": 326.0,
           "gap": "+66.265s"
         },
         {
@@ -10064,7 +10339,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.0,
+          "avg_speed": 316.8,
           "max_speed": 320.0,
           "gap": "+73.252s"
         },
@@ -10078,7 +10353,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 325.7,
+          "avg_speed": 323.8,
           "max_speed": 333.0,
           "gap": "+74.046s"
         },
@@ -10092,7 +10367,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.0,
+          "avg_speed": 316.2,
           "max_speed": 329.0,
           "gap": "+83.632s"
         }
@@ -10140,7 +10415,7 @@
           "pit_in": false,
           "distance": 0,
           "avg_speed": 317.0,
-          "max_speed": 317.0,
+          "max_speed": 320.0,
           "gap": "+16.749s"
         },
         {
@@ -10181,8 +10456,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.3,
-          "max_speed": 318.0,
+          "avg_speed": 317.8,
+          "max_speed": 325.0,
           "gap": "+40.669s"
         },
         {
@@ -10209,8 +10484,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
-          "max_speed": 319.0,
+          "avg_speed": 319.0,
+          "max_speed": 328.0,
           "gap": "+47.259s"
         },
         {
@@ -10279,8 +10554,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.5,
-          "max_speed": 322.0,
+          "avg_speed": 320.2,
+          "max_speed": 326.0,
           "gap": "+67.396s"
         },
         {
@@ -10321,7 +10596,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.0,
+          "avg_speed": 314.5,
           "max_speed": 322.0,
           "gap": "+75.279s"
         },
@@ -10382,7 +10657,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.7,
+          "avg_speed": 319.8,
           "max_speed": 330.0,
           "gap": "+4.413s"
         },
@@ -10410,8 +10685,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.0,
-          "max_speed": 322.0,
+          "avg_speed": 320.8,
+          "max_speed": 326.0,
           "gap": "+34.570s"
         },
         {
@@ -10424,7 +10699,7 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 326.0,
+          "avg_speed": 322.3,
           "max_speed": 328.0,
           "gap": "+37.206s"
         },
@@ -10452,8 +10727,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.5,
-          "max_speed": 313.0,
+          "avg_speed": 312.0,
+          "max_speed": 315.0,
           "gap": "+46.029s"
         },
         {
@@ -10639,7 +10914,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 322.3,
+          "avg_speed": 320.2,
           "max_speed": 332.0,
           "gap": "+4.242s"
         },
@@ -10737,7 +11012,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.0,
+          "avg_speed": 320.0,
           "max_speed": 328.0,
           "gap": "+56.522s"
         },
@@ -10765,7 +11040,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 326.3,
+          "avg_speed": 323.8,
           "max_speed": 340.0,
           "gap": "+59.264s"
         },
@@ -10835,7 +11110,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.3,
+          "avg_speed": 318.2,
           "max_speed": 321.0,
           "gap": "+75.777s"
         },
@@ -10849,7 +11124,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 326.3,
+          "avg_speed": 324.2,
           "max_speed": 334.0,
           "gap": "+76.711s"
         },
@@ -10863,7 +11138,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
+          "avg_speed": 314.8,
           "max_speed": 320.0,
           "gap": "+84.413s"
         }
@@ -10980,7 +11255,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.7,
+          "avg_speed": 320.8,
           "max_speed": 332.0,
           "gap": "+49.083s"
         },
@@ -10994,8 +11269,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.3,
-          "max_speed": 318.0,
+          "avg_speed": 318.5,
+          "max_speed": 328.0,
           "gap": "+55.940s"
         },
         {
@@ -11050,7 +11325,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.0,
+          "avg_speed": 320.0,
           "max_speed": 325.0,
           "gap": "+66.021s"
         },
@@ -11064,7 +11339,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.0,
+          "avg_speed": 320.0,
           "max_speed": 327.0,
           "gap": "+67.281s"
         },
@@ -11120,8 +11395,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.7,
-          "max_speed": 315.0,
+          "avg_speed": 314.5,
+          "max_speed": 320.0,
           "gap": "+84.131s"
         }
       ]
@@ -11153,8 +11428,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
-          "max_speed": 320.0,
+          "avg_speed": 320.5,
+          "max_speed": 330.0,
           "gap": "+3.723s"
         },
         {
@@ -11167,8 +11442,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.3,
-          "max_speed": 321.0,
+          "avg_speed": 319.2,
+          "max_speed": 325.0,
           "gap": "+10.830s"
         },
         {
@@ -11195,8 +11470,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.0,
-          "max_speed": 316.0,
+          "avg_speed": 317.2,
+          "max_speed": 327.0,
           "gap": "+37.290s"
         },
         {
@@ -11209,8 +11484,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.0,
-          "max_speed": 318.0,
+          "avg_speed": 318.2,
+          "max_speed": 323.0,
           "gap": "+44.459s"
         },
         {
@@ -11335,8 +11610,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.3,
-          "max_speed": 317.0,
+          "avg_speed": 315.8,
+          "max_speed": 320.0,
           "gap": "+71.525s"
         },
         {
@@ -11349,7 +11624,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.5,
+          "avg_speed": 317.0,
           "max_speed": 321.0,
           "gap": "+76.624s"
         },
@@ -11377,8 +11652,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.0,
-          "max_speed": 315.0,
+          "avg_speed": 314.5,
+          "max_speed": 320.0,
           "gap": "+84.383s"
         }
       ]
@@ -11396,8 +11671,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.0,
-          "max_speed": 316.0,
+          "avg_speed": 316.5,
+          "max_speed": 325.0,
           "gap": "LEADER"
         },
         {
@@ -11410,8 +11685,8 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 319.0,
-          "max_speed": 321.0,
+          "avg_speed": 322.7,
+          "max_speed": 330.0,
           "gap": "+7.551s"
         },
         {
@@ -11424,8 +11699,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.0,
-          "max_speed": 321.0,
+          "avg_speed": 319.5,
+          "max_speed": 325.0,
           "gap": "+9.402s"
         },
         {
@@ -11494,8 +11769,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.5,
-          "max_speed": 319.0,
+          "avg_speed": 319.2,
+          "max_speed": 327.0,
           "gap": "+50.338s"
         },
         {
@@ -11522,7 +11797,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.0,
+          "avg_speed": 319.8,
           "max_speed": 328.0,
           "gap": "+57.270s"
         },
@@ -11592,7 +11867,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.7,
+          "avg_speed": 315.5,
           "max_speed": 319.0,
           "gap": "+71.360s"
         },
@@ -11620,7 +11895,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 322.0,
+          "avg_speed": 323.8,
           "max_speed": 333.0,
           "gap": "+77.793s"
         },
@@ -11634,8 +11909,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.3,
-          "max_speed": 314.0,
+          "avg_speed": 314.2,
+          "max_speed": 320.0,
           "gap": "+84.175s"
         }
       ]
@@ -11667,8 +11942,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.3,
-          "max_speed": 321.0,
+          "avg_speed": 320.0,
+          "max_speed": 325.0,
           "gap": "+3.440s"
         },
         {
@@ -11723,8 +11998,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.0,
-          "max_speed": 319.0,
+          "avg_speed": 319.2,
+          "max_speed": 324.0,
           "gap": "+37.996s"
         },
         {
@@ -11737,8 +12012,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.5,
-          "max_speed": 314.0,
+          "avg_speed": 312.8,
+          "max_speed": 316.0,
           "gap": "+44.064s"
         },
         {
@@ -11779,7 +12054,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.0,
+          "avg_speed": 319.8,
           "max_speed": 329.0,
           "gap": "+52.349s"
         },
@@ -11793,8 +12068,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.0,
-          "max_speed": 323.0,
+          "avg_speed": 320.5,
+          "max_speed": 325.0,
           "gap": "+54.593s"
         },
         {
@@ -11821,7 +12096,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 322.7,
+          "avg_speed": 321.2,
           "max_speed": 327.0,
           "gap": "+60.455s"
         },
@@ -11835,7 +12110,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 323.0,
+          "avg_speed": 321.8,
           "max_speed": 329.0,
           "gap": "+61.772s"
         },
@@ -11877,7 +12152,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 325.0,
+          "avg_speed": 323.0,
           "max_speed": 333.0,
           "gap": "+73.695s"
         },
@@ -11952,8 +12227,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.3,
-          "max_speed": 320.0,
+          "avg_speed": 320.2,
+          "max_speed": 323.0,
           "gap": "+22.929s"
         },
         {
@@ -11966,8 +12241,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.7,
-          "max_speed": 317.0,
+          "avg_speed": 318.5,
+          "max_speed": 327.0,
           "gap": "+27.981s"
         },
         {
@@ -12008,7 +12283,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.3,
+          "avg_speed": 319.8,
           "max_speed": 328.0,
           "gap": "+44.444s"
         },
@@ -12106,8 +12381,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.0,
-          "max_speed": 319.0,
+          "avg_speed": 317.2,
+          "max_speed": 321.0,
           "gap": "+64.019s"
         },
         {
@@ -12167,8 +12442,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.3,
-          "max_speed": 322.0,
+          "avg_speed": 320.5,
+          "max_speed": 324.0,
           "gap": "LEADER"
         },
         {
@@ -12237,8 +12512,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.0,
-          "max_speed": 320.0,
+          "avg_speed": 319.8,
+          "max_speed": 323.0,
           "gap": "+35.173s"
         },
         {
@@ -12251,8 +12526,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 312.7,
-          "max_speed": 314.0,
+          "avg_speed": 313.2,
+          "max_speed": 315.0,
           "gap": "+43.985s"
         },
         {
@@ -12265,8 +12540,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.5,
-          "max_speed": 318.0,
+          "avg_speed": 319.8,
+          "max_speed": 328.0,
           "gap": "+46.251s"
         },
         {
@@ -12293,8 +12568,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.3,
-          "max_speed": 319.0,
+          "avg_speed": 320.0,
+          "max_speed": 328.0,
           "gap": "+50.785s"
         },
         {
@@ -12321,8 +12596,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.7,
-          "max_speed": 315.0,
+          "avg_speed": 314.5,
+          "max_speed": 317.0,
           "gap": "+56.897s"
         },
         {
@@ -12363,8 +12638,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.3,
-          "max_speed": 318.0,
+          "avg_speed": 316.8,
+          "max_speed": 321.0,
           "gap": "+65.081s"
         },
         {
@@ -12391,7 +12666,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 328.0,
+          "avg_speed": 325.5,
           "max_speed": 334.0,
           "gap": "+73.404s"
         },
@@ -12405,7 +12680,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.3,
+          "avg_speed": 313.0,
           "max_speed": 317.0,
           "gap": "+78.686s"
         }
@@ -12424,7 +12699,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 322.0,
+          "avg_speed": 321.0,
           "max_speed": 325.0,
           "gap": "LEADER"
         },
@@ -12480,7 +12755,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.0,
+          "avg_speed": 318.5,
           "max_speed": 324.0,
           "gap": "+29.798s"
         },
@@ -12494,8 +12769,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.5,
-          "max_speed": 319.0,
+          "avg_speed": 319.5,
+          "max_speed": 323.0,
           "gap": "+35.546s"
         },
         {
@@ -12536,8 +12811,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 317.5,
-          "max_speed": 319.0,
+          "avg_speed": 320.0,
+          "max_speed": 328.0,
           "gap": "+51.631s"
         },
         {
@@ -12550,8 +12825,8 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 322.0,
-          "max_speed": 327.0,
+          "avg_speed": 324.0,
+          "max_speed": 328.0,
           "gap": "+52.976s"
         },
         {
@@ -12578,7 +12853,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 323.7,
+          "avg_speed": 322.5,
           "max_speed": 329.0,
           "gap": "+59.752s"
         },
@@ -12606,8 +12881,8 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 312.0,
-          "max_speed": 313.0,
+          "avg_speed": 313.7,
+          "max_speed": 317.0,
           "gap": "+62.904s"
         },
         {
@@ -12634,8 +12909,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 315.7,
-          "max_speed": 318.0,
+          "avg_speed": 317.0,
+          "max_speed": 321.0,
           "gap": "+74.186s"
         },
         {
@@ -12681,7 +12956,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 323.3,
+          "avg_speed": 322.0,
           "max_speed": 327.0,
           "gap": "LEADER"
         },
@@ -12695,7 +12970,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.7,
+          "avg_speed": 314.5,
           "max_speed": 322.0,
           "gap": "+19.584s"
         },
@@ -12751,7 +13026,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.7,
+          "avg_speed": 320.0,
           "max_speed": 325.0,
           "gap": "+35.795s"
         },
@@ -12765,7 +13040,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 313.7,
+          "avg_speed": 312.5,
           "max_speed": 315.0,
           "gap": "+47.575s"
         },
@@ -12793,7 +13068,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 321.0,
+          "avg_speed": 320.0,
           "max_speed": 329.0,
           "gap": "+52.331s"
         },
@@ -12835,8 +13110,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.7,
-          "max_speed": 328.0,
+          "avg_speed": 325.2,
+          "max_speed": 339.0,
           "gap": "+61.693s"
         },
         {
@@ -12849,8 +13124,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 316.7,
-          "max_speed": 320.0,
+          "avg_speed": 318.2,
+          "max_speed": 323.0,
           "gap": "+67.033s"
         },
         {
@@ -12994,7 +13269,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 318.3,
+          "avg_speed": 317.2,
           "max_speed": 325.0,
           "gap": "+31.024s"
         },
@@ -13050,7 +13325,7 @@
           "pit_out": false,
           "pit_in": true,
           "distance": 0,
-          "avg_speed": 320.0,
+          "avg_speed": 314.7,
           "max_speed": 320.0,
           "gap": "+53.513s"
         },
@@ -13064,8 +13339,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 320.7,
-          "max_speed": 324.0,
+          "avg_speed": 322.0,
+          "max_speed": 326.0,
           "gap": "+55.648s"
         },
         {
@@ -13162,7 +13437,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 300.3,
+          "avg_speed": 303.2,
           "max_speed": 319.0,
           "gap": "+86.827s"
         },
@@ -13209,8 +13484,8 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 314.0,
-          "max_speed": 315.0,
+          "avg_speed": 314.8,
+          "max_speed": 321.0,
           "gap": "+19.406s"
         },
         {
@@ -13349,7 +13624,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.0,
+          "avg_speed": 318.0,
           "max_speed": 324.0,
           "gap": "+68.568s"
         },
@@ -13377,7 +13652,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 324.7,
+          "avg_speed": 322.5,
           "max_speed": 334.0,
           "gap": "+79.828s"
         },
@@ -13578,7 +13853,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 326.0,
+          "avg_speed": 323.8,
           "max_speed": 340.0,
           "gap": "+63.891s"
         },
@@ -13634,7 +13909,7 @@
           "pit_out": false,
           "pit_in": false,
           "distance": 0,
-          "avg_speed": 319.3,
+          "avg_speed": 318.5,
           "max_speed": 322.0,
           "gap": "+82.351s"
         }
