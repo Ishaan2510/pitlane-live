@@ -1,6 +1,8 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
+from flask_limiter import Limiter
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models import db, User
+import hmac
 import jwt
 import os
 from datetime import datetime, timedelta
@@ -9,10 +11,28 @@ from functools import wraps
 bp = Blueprint('users', __name__, url_prefix='/api')
 
 
+def _client_ip():
+    # Requests arrive through the Vercel proxy, so the client is the first X-Forwarded-For entry.
+    # ponytail: a client hitting Render directly can spoof this header; fine for a login throttle.
+    forwarded = request.headers.get('X-Forwarded-For', '')
+    return forwarded.split(',')[0].strip() or request.remote_addr or 'unknown'
+
+
+# In-memory storage is per process; prod runs one Gunicorn worker.
+limiter = Limiter(key_func=_client_ip, storage_uri='memory://')
+
+
+def is_admin(req) -> bool:
+    """True if the request carries the correct X-Admin-Key. Always False if ADMIN_KEY is unset."""
+    key = os.getenv('ADMIN_KEY')
+    given = req.headers.get('X-Admin-Key', '')
+    return bool(key) and hmac.compare_digest(given.encode(), key.encode())
+
+
 # ── JWT helpers ───────────────────────────────────────────────────────────────
 
 def _secret():
-    return os.getenv('SECRET_KEY', 'dev-secret-key')
+    return current_app.config['SECRET_KEY']
 
 def create_token(user_id: int) -> str:
     payload = {
@@ -63,12 +83,13 @@ def optional_token(f):
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @bp.route('/auth/register', methods=['POST'])
+@limiter.limit('10 per minute')
 def register():
     data = request.json or {}
 
     username = (data.get('username') or '').strip()
     email    = (data.get('email')    or '').strip().lower()
-    password = (data.get('password') or '').strip()
+    password = data.get('password') or ''
 
     if not username or not email or not password:
         return jsonify({'error': 'username, email and password are required'}), 400
@@ -96,16 +117,17 @@ def register():
     token = create_token(user.id)
     return jsonify({
         'token': token,
-        'user':  user.to_dict()
+        'user':  user.to_dict(private=True)
     }), 201
 
 
 @bp.route('/auth/login', methods=['POST'])
+@limiter.limit('10 per minute')
 def login():
     data = request.json or {}
 
     identifier = (data.get('identifier') or '').strip()   # username OR email
-    password   = (data.get('password')   or '').strip()
+    password   = data.get('password') or ''
 
     if not identifier or not password:
         return jsonify({'error': 'identifier and password are required'}), 400
@@ -116,13 +138,15 @@ def login():
         User.query.filter_by(email=identifier.lower()).first()
     )
 
-    if not user or not check_password_hash(user.password_hash, password):
+    # Accounts registered before passwords stopped being stripped hash the stripped value
+    if not user or not (check_password_hash(user.password_hash, password) or
+                        check_password_hash(user.password_hash, password.strip())):
         return jsonify({'error': 'Invalid credentials'}), 401
 
     token = create_token(user.id)
     return jsonify({
         'token': token,
-        'user':  user.to_dict()
+        'user':  user.to_dict(private=True)
     })
 
 
@@ -130,11 +154,4 @@ def login():
 @token_required
 def me(current_user):
     """Return the currently authenticated user."""
-    return jsonify(current_user.to_dict())
-
-
-# Legacy endpoint kept for compatibility
-@bp.route('/users/<int:user_id>', methods=['GET'])
-def get_user(user_id):
-    user = User.query.get_or_404(user_id)
-    return jsonify(user.to_dict())
+    return jsonify(current_user.to_dict(private=True))

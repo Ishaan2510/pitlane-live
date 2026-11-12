@@ -17,14 +17,16 @@ class User(db.Model):
     predictions = db.relationship('Prediction',  back_populates='user', lazy=True)
     scores      = db.relationship('UserScore',   back_populates='user', lazy=True)
 
-    def to_dict(self):
-        return {
+    def to_dict(self, private=False):
+        data = {
             'id':           self.id,
             'username':     self.username,
-            'email':        self.email,
             'total_score':  self.total_score,
             'accuracy_rate': round(self.accuracy_rate, 1)
         }
+        if private:   # only for the user themselves
+            data['email'] = self.email
+        return data
 
 
 class Race(db.Model):

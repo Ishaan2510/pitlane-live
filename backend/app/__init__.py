@@ -21,7 +21,15 @@ def create_app():
     
     # Initialize database
     db.init_app(app)
-    
+
+    from app.routes.users import limiter
+    limiter.init_app(app)
+
+    @app.errorhandler(429)
+    def rate_limited(e):
+        from flask import jsonify
+        return jsonify({'error': 'Too many attempts. Try again in a minute.'}), 429
+
     # Register blueprints
     from app.routes import races, predictions, leaderboard, users, replay, schedule, scoring, news, drivers, race_predictions
     app.register_blueprint(races.bp)

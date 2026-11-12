@@ -7,20 +7,13 @@ Endpoints:
     GET  /api/scoring/preview/<year>/<round>   Dry run — see what would be scored
 """
 
-import os
 from flask import Blueprint, jsonify, request
 from app.services.scoring_service import score_race as _score_race, build_pit_registry
 from app.models import Prediction
+from app.routes.users import is_admin as _check_admin
 import json
 
 bp = Blueprint('scoring', __name__, url_prefix='/api/scoring')
-
-ADMIN_KEY = os.getenv('ADMIN_KEY')
-
-
-def _check_admin(req):
-    """Return True if the request carries the correct admin key. Always False if ADMIN_KEY is unset."""
-    return bool(ADMIN_KEY) and req.headers.get('X-Admin-Key', '') == ADMIN_KEY
 
 
 # ── Score a race ──────────────────────────────────────────────────────────────
@@ -36,7 +29,7 @@ def score_race():
     Example curl:
         curl -X POST https://pitlane-live-three.vercel.app/api/scoring/score-race \\
              -H "Content-Type: application/json" \\
-             -H "X-Admin-Key: pitlane-admin-2026" \\
+             -H "X-Admin-Key: <ADMIN_KEY>" \\
              -d '{"year": 2026, "round": 1}'
     """
     if not _check_admin(request):
@@ -125,9 +118,9 @@ def score_sim_test():
     Header:    X-Admin-Key: <your key>
 
     Example curl:
-        curl -X POST http://20.198.85.246/api/scoring/score-sim-test \\
+        curl -X POST https://pitlane-live-f1.vercel.app/api/scoring/score-sim-test \\
              -H "Content-Type: application/json" \\
-             -H "X-Admin-Key: pitlane-admin-2026" \\
+             -H "X-Admin-Key: <ADMIN_KEY>" \\
              -d '{"year": 2025, "round": 1}'
     """
     if not _check_admin(request):
