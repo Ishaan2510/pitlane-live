@@ -228,13 +228,22 @@ def score_race(year: int, round_num: int) -> dict:
     race_drivers  = get_race_drivers(race_data)
     race_name     = race_data.get('name', f'{year} R{round_num}')
 
-    pending = Prediction.query.filter_by(status='pending').all()
+    # Only live calls made for THIS race. Sim calls are never scored here; legacy rows
+    # without year/round stay pending and are just reported.
+    pending = Prediction.query.filter_by(
+        status='pending', year=year, round_num=round_num, mode='live'
+    ).all()
+    legacy_unscored = Prediction.query.filter(
+        Prediction.status == 'pending',
+        (Prediction.year == None) | (Prediction.round_num == None),
+    ).count()
 
     if not pending:
         return {
-            'race':    race_name,
-            'message': 'No pending predictions found.',
-            'scored':  0,
+            'race':            race_name,
+            'message':         'No pending predictions found.',
+            'scored':          0,
+            'legacy_unscored': legacy_unscored,
         }
 
     tally = {'correct': 0, 'wrong': 0, 'skipped': 0}
@@ -270,5 +279,6 @@ def score_race(year: int, round_num: int) -> dict:
         'correct':       tally['correct'],
         'wrong':         tally['wrong'],
         'skipped':       tally['skipped'],
+        'legacy_unscored': legacy_unscored,
         'users_updated': users_updated,
     }

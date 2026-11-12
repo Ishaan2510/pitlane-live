@@ -91,6 +91,9 @@ class Prediction(db.Model):
     id            = db.Column(db.Integer, primary_key=True)
     user_id       = db.Column(db.Integer, db.ForeignKey('users.id'),  nullable=False)
     race_id       = db.Column(db.Integer, db.ForeignKey('races.id'),  nullable=True)
+    year          = db.Column(db.Integer,     nullable=True)
+    round_num     = db.Column(db.Integer,     nullable=True)
+    mode          = db.Column(db.String(10),  default='sim')   # 'sim' | 'live'; only live is scored
     driver_name   = db.Column(db.String(100), nullable=False)
     action        = db.Column(db.String(50),  nullable=False)
     predicted_lap = db.Column(db.Integer,     nullable=False)
@@ -106,6 +109,9 @@ class Prediction(db.Model):
         return {
             'id':         self.id,
             'race_id':    self.race_id,
+            'year':       self.year,
+            'round':      self.round_num,
+            'mode':       self.mode,
             'driver':     self.driver_name,
             'action':     self.action,
             'lap':        self.predicted_lap,

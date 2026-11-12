@@ -102,7 +102,9 @@ def preview_scoring(year, round_num):
         race_data = json.load(f)
 
     pit_registry = build_pit_registry(race_data)
-    pending_count = Prediction.query.filter_by(status='pending').count()
+    pending_count = Prediction.query.filter_by(
+        status='pending', year=year, round_num=round_num, mode='live'
+    ).count()
 
     return jsonify({
         'race':            race_data.get('name'),
@@ -116,7 +118,7 @@ def preview_scoring(year, round_num):
 @bp.route('/score-sim-test', methods=['POST'])
 def score_sim_test():
     """
-    Score all sim predictions (race_id IS NULL) against any cached race.
+    Dry run: score the sim predictions made on this race. Never writes to the DB.
     Used to verify the scoring engine is working before race day.
 
     Body JSON: { "year": 2025, "round": 1 }
@@ -149,8 +151,9 @@ def score_sim_test():
 
     pit_registry = build_pit_registry(race_data)
 
-    # All sim predictions have race_id = NULL
-    sim_preds = Prediction.query.filter(Prediction.race_id == None).all()
+    sim_preds = Prediction.query.filter_by(
+        mode='sim', year=int(year), round_num=int(round_num)
+    ).all()
     if not sim_preds:
         return jsonify({'message': 'No sim predictions found', 'scored': 0}), 200
 

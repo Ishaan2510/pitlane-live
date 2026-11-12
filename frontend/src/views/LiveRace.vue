@@ -335,10 +335,16 @@ export default {
       simPlayInterval:   null,
       simYear:           null,
       simRound:          null,
+
+      schedule:          [],     // /api/schedule rows for the current year
     }
   },
 
   computed: {
+    // The race weekend live calls are attached to (year/round for scoring)
+    liveRace() {
+      return this.schedule.find(r => r.status === 'live') || null
+    },
     selectedDriverData() {
       if (!this.selectedDriver || !this.liveState) return null
       return this.liveState.drivers.find(d => d.driver === this.selectedDriver) ?? null
@@ -378,6 +384,7 @@ export default {
   },
 
   async mounted() {
+    this.loadSchedule()
     await this.connect()
     this.loadSimulatableRaces()
   },
@@ -474,6 +481,13 @@ export default {
     async retryConnection() {
       this.disconnect()
       await this.connect()
+    },
+
+    async loadSchedule() {
+      try {
+        const res = await fetch(apiUrl('/schedule'))
+        if (res.ok) this.schedule = await res.json()
+      } catch { /* schedule is optional */ }
     },
 
     // ── Simulation ────────────────────────────────────────────────────────────
@@ -584,6 +598,9 @@ export default {
       try {
         await api.submitPrediction({
           raceId:     0,
+          year:       this.isSimulated ? this.simYear  : this.liveRace?.year,
+          round:      this.isSimulated ? this.simRound : this.liveRace?.round,
+          mode:       this.isSimulated ? 'sim' : 'live',
           driver:     this.selectedDriver,
           action:     this.prediction.action,
           lap:        this.isSimulated ? this.prediction.targetLap : 0,
