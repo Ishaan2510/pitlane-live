@@ -23,8 +23,9 @@ import os
 from pathlib import Path
 
 # These imports work when called inside a Flask app context
-from app.models import db, Prediction, User
+from app.models import db, Prediction
 from app.services.fastf1_service import fastf1_service
+from app.services.user_totals import recompute_user_totals
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -177,29 +178,6 @@ def calculate_points(confidence: int, lap_diff) -> int:
     return int(base * multiplier)
 
 
-# ─── User score aggregation ───────────────────────────────────────────────────
-
-def update_user_scores():
-    """
-    Recompute total_score and accuracy_rate for every user from their predictions.
-    Called after all predictions have been marked correct/wrong.
-    """
-    users = User.query.all()
-    for user in users:
-        all_preds    = user.predictions
-        scored       = [p for p in all_preds if p.status in ('correct', 'wrong')]
-        correct      = [p for p in scored    if p.status == 'correct']
-
-        user.total_score   = sum(p.points_earned for p in all_preds)
-        user.accuracy_rate = (
-            round(len(correct) / len(scored) * 100, 1)
-            if scored else 0.0
-        )
-
-    db.session.commit()
-    return len(users)
-
-
 # ─── Main entry point ─────────────────────────────────────────────────────────
 
 def score_race(year: int, round_num: int) -> dict:
@@ -270,7 +248,7 @@ def score_race(year: int, round_num: int) -> dict:
 
     db.session.commit()
 
-    users_updated = update_user_scores()
+    users_updated = recompute_user_totals()
 
     return {
         'race':          race_name,

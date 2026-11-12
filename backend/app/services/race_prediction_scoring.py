@@ -25,6 +25,7 @@ Tyre scoring (segment-by-segment):
 import json
 from app.models import db, RacePrediction
 from app.services.fastf1_service import fastf1_service
+from app.services.user_totals import recompute_user_totals
 
 # Position scoring constants
 SLOT_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
@@ -170,40 +171,6 @@ def score_tyres(predicted_strategies: dict[str, list[str]],
     return total
 
 
-# ── Aggregate user scoring (mirrors existing pattern) ─────────────────────────
-
-def update_user_aggregate_scores():
-    """
-    Recomputes User.total_score and User.accuracy_rate to include
-    BOTH the in-race pit-call predictions AND the race predictions.
-
-    accuracy_rate stays based on the in-race game only — race predictions
-    are graded on partial credit so a binary correct/wrong doesn't fit.
-    Race-prediction totals are simply added to total_score.
-    """
-    from app.models import User, Prediction
-
-    users = User.query.all()
-    for user in users:
-        # In-race game (unchanged logic from existing scoring_service.py)
-        in_race_preds = [p for p in user.predictions]
-        scored        = [p for p in in_race_preds if p.status in ('correct', 'wrong')]
-        correct       = [p for p in scored if p.status == 'correct']
-
-        in_race_points = sum(p.points_earned for p in in_race_preds)
-        accuracy       = round(len(correct) / len(scored) * 100, 1) if scored else 0.0
-
-        # Race predictions (new)
-        race_preds   = RacePrediction.query.filter_by(user_id=user.id, status='scored').all()
-        race_points  = sum(p.total_points for p in race_preds)
-
-        user.total_score   = in_race_points + race_points
-        user.accuracy_rate = accuracy
-
-    db.session.commit()
-    return len(users)
-
-
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def score_race_predictions(year: int, round_num: int) -> dict:
@@ -247,7 +214,7 @@ def score_race_predictions(year: int, round_num: int) -> dict:
         pred.status          = 'scored'
 
     db.session.commit()
-    users_updated = update_user_aggregate_scores()
+    users_updated = recompute_user_totals()
 
     return {
         'race':           race_data.get('name'),
