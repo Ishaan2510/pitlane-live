@@ -26,7 +26,7 @@ def score_race():
     Header:    X-Admin-Key: <value of ADMIN_KEY in .env>
 
     Example curl:
-        curl -X POST https://pitlane-live-three.vercel.app/api/scoring/score-race \\
+        curl -X POST https://pitlane-live-f1.vercel.app/api/scoring/score-race \\
              -H "Content-Type: application/json" \\
              -H "X-Admin-Key: <ADMIN_KEY>" \\
              -d '{"year": 2026, "round": 1}'

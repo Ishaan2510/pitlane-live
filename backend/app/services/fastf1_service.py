@@ -365,7 +365,7 @@ class FastF1Service:
             # Write to a temp file first, then atomically replace — prevents corrupt reads
             tmp_file = cache_file.with_suffix('.tmp')
             with open(tmp_file, 'w') as f:
-                json.dump(race_data, f, indent=2)
+                json.dump(race_data, f, separators=(',', ':'))
             os.replace(tmp_file, cache_file)
             
             print(f"✅ Processed {len(race_data['laps'])} laps → {cache_file.name}")

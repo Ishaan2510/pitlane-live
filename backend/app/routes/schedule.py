@@ -1,23 +1,33 @@
 from flask import Blueprint, jsonify, request
 import pandas as pd
 from app.services.fastf1_service import get_event_schedule
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone, time as dtime
 
 bp = Blueprint('schedule', __name__, url_prefix='/api')
 
+RACE_LIVE_HOURS = 3
 
-def _race_status(race_date: date, race_date_end: date = None) -> str:
-    """
-    Determine whether a race is completed, live, or upcoming.
-    'live'      — race day (race_date itself, or within 4 hours after)
-    'completed' — race date is in the past
-    'upcoming'  — race date is in the future
-    """
-    today = date.today()
 
-    if race_date > today:
+def _race_start_utc(event, race_date: date) -> datetime:
+    """Race start (Session5DateUtc) as aware UTC; noon UTC on race day if FastF1 has no time yet."""
+    val = event.get('Session5DateUtc')
+    if val is not None and pd.notna(val):
+        ts = pd.Timestamp(val)
+        ts = ts.tz_localize('UTC') if ts.tzinfo is None else ts.tz_convert('UTC')
+        return ts.to_pydatetime()
+    return datetime.combine(race_date, dtime(12, 0), tzinfo=timezone.utc)
+
+
+def _race_status(race_start: datetime) -> str:
+    """
+    'upcoming'  — before race start (UTC)
+    'live'      — race start to start + RACE_LIVE_HOURS
+    'completed' — after that
+    """
+    now = datetime.now(timezone.utc)
+    if now < race_start:
         return 'upcoming'
-    if race_date == today:
+    if now < race_start + timedelta(hours=RACE_LIVE_HOURS):
         return 'live'
     return 'completed'
 
@@ -27,12 +37,12 @@ def get_schedule():
     """
     Return the full F1 race calendar for a given year.
     Uses FastF1's event schedule — no database required.
-    Status is computed dynamically from today's date.
+    Status is computed dynamically from the race start time (UTC).
 
     Query params:
         year  — defaults to current year
     """
-    year = request.args.get('year', date.today().year, type=int)
+    year = request.args.get('year', datetime.now(timezone.utc).year, type=int)
 
     try:
         schedule = get_event_schedule(year)
@@ -53,7 +63,7 @@ def get_schedule():
             continue
 
         race_date = event_date.date() if hasattr(event_date, 'date') else event_date
-        status    = _race_status(race_date)
+        status    = _race_status(_race_start_utc(event, race_date))
 
         # Mark the first upcoming race as 'next'
         is_next = False

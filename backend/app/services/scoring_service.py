@@ -12,7 +12,7 @@ Usage (from Flask shell or a cron job):
     print(result)
 
 Or via the API endpoint:
-    curl -X POST https://pitlane-live-three.vercel.app/api/scoring/score-race \\
+    curl -X POST https://pitlane-live-f1.vercel.app/api/scoring/score-race \\
          -H "Content-Type: application/json" \\
          -H "X-Admin-Key: <ADMIN_KEY from .env>" \\
          -d '{"year": 2026, "round": 1}'
