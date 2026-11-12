@@ -64,11 +64,11 @@ def get_driver_telemetry(year, race_round, driver, lap_number):
 
 @bp.route('/available-years', methods=['GET'])
 def get_available_years():
-    """Which years have F1 data available."""
+    """Which years have processed race data, from the processed file names."""
+    years = sorted({r['year'] for r in fastf1_service.get_race_index()})
     return jsonify({
-        'years':   [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
-        'default': 2024,
-        'note':    '2025 data available after each race weekend concludes'
+        'years':   years,
+        'default': years[-1] if years else None,
     })
 
 # ─── Live race (OpenF1) ───────────────────────────────────────────────────────

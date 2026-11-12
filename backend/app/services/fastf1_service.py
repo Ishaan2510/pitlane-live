@@ -446,7 +446,20 @@ class FastF1Service:
         }
 
     def get_race_summary(self, year, race_round):
-        """Get quick race summary"""
+        """Get quick race summary. Built from the processed JSON; FastF1 only off-prod."""
+        race_data = self.load_processed(year, race_round)
+        if race_data is not None:
+            from app.services.race_prediction_scoring import extract_finishing_order
+            order = extract_finishing_order(race_data)
+            return {
+                'name':   race_data.get('name'),
+                'date':   race_data.get('date'),
+                'winner': order[0] if order else None,
+                'podium': order[:3],
+            }
+        if PREBUILT_ONLY:
+            return None
+
         try:
             session = self.load_race_session(year, race_round)
             if not session:
@@ -475,6 +488,19 @@ class FastF1Service:
                 return json.load(f)
 
         if PREBUILT_ONLY:
+            # No per-lap telemetry files in prod: use the speed-trap figures in the processed JSON
+            race_data = self.load_processed(year, race_round) or {}
+            laps = race_data.get('laps', [])
+            if not 1 <= lap_number <= len(laps):
+                return None
+            for d in laps[lap_number - 1].get('drivers', []):
+                if d.get('driver') == driver_code:
+                    return {
+                        'driver':    driver_code,
+                        'lap':       lap_number,
+                        'avg_speed': d.get('avg_speed'),
+                        'max_speed': d.get('max_speed'),
+                    }
             return None
 
         try:
