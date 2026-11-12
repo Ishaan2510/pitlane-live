@@ -43,25 +43,28 @@ def extract_finishing_order(race_data: dict) -> list[str]:
     """
     Returns the top-10 finishing order as a list of driver codes.
 
-    The processed JSON sorts drivers by position within each lap. The final
-    lap's driver list is the finishing order — drivers who DNF'd drop out of
-    later laps automatically.
+    Uses the official classification (race_data['results']) when present.
+    Older processed files have no results, so fall back to: laps completed
+    descending, then position on the driver's final lap. That keeps a
+    retirement behind every driver who completed more laps, instead of
+    keeping the position they held when they stopped.
     """
-    laps = race_data.get('laps', [])
-    if not laps:
-        return []
+    results = race_data.get('results')
+    if results:
+        ranked = sorted((r for r in results if r.get('position')), key=lambda r: r['position'])
+        return [r['driver'].upper() for r in ranked[:10]]
 
-    # Walk backwards from final lap to find the most complete classification.
-    # The last lap a driver appears in is their final position.
-    final_positions = {}
-    for lap in reversed(laps):
+    laps_done = {}   # code -> laps with a position
+    final_pos = {}   # code -> position on their last such lap
+    for lap in race_data.get('laps', []):
         for driver in lap.get('drivers', []):
-            code = driver['driver'].upper()
-            if code not in final_positions and driver.get('position'):
-                final_positions[code] = int(driver['position'])
+            if driver.get('position'):
+                code = driver['driver'].upper()
+                laps_done[code] = laps_done.get(code, 0) + 1
+                final_pos[code] = int(driver['position'])
 
-    sorted_drivers = sorted(final_positions.items(), key=lambda kv: kv[1])
-    return [code for code, _ in sorted_drivers[:10]]
+    ranked = sorted(laps_done, key=lambda c: (-laps_done[c], final_pos[c]))
+    return ranked[:10]
 
 
 def extract_stint_sequences(race_data: dict) -> dict[str, list[str]]:

@@ -262,6 +262,7 @@ class FastF1Service:
                 'date':       session.event['EventDate'].isoformat(),
                 'total_laps': total_laps,
                 'weather':    self._weather_from_session(session),
+                'results':    self._results_from_session(session),
                 'laps':       [self._build_lap(laps, n) for n in range(1, total_laps + 1)]
             }
             
@@ -274,6 +275,24 @@ class FastF1Service:
             print(f"✅ Processed {len(race_data['laps'])} laps → {cache_file.name}")
             return race_data
         
+    def _results_from_session(self, session):
+        """Official classification. Position is the finishing order (retirements included, behind finishers)."""
+        def num(v, cast):
+            return cast(v) if pd.notna(v) else None
+
+        results = []
+        for _, r in session.results.iterrows():
+            results.append({
+                'driver':              r['Abbreviation'],
+                'position':            num(r['Position'], int),
+                'classified_position': str(r['ClassifiedPosition']),
+                'status':              r['Status'] if pd.notna(r['Status']) else None,
+                'grid_position':       num(r['GridPosition'], int),
+                'points':              num(r['Points'], float),
+                'laps':                num(r['Laps'], int),
+            })
+        return results
+
     def _lap_speed_avg(self, lap):
         spds = [float(lap[c]) for c in ['SpeedI1','SpeedI2','SpeedFL','SpeedST']
                 if c in lap.index and pd.notna(lap[c]) and float(lap[c]) > 0]
