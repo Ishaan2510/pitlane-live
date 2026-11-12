@@ -7,6 +7,7 @@ import numpy as np
 import threading
 import requests
 import os
+import time
 
 
 # Setup FastF1 cache
@@ -15,6 +16,12 @@ CACHE_DIR.mkdir(exist_ok=True)
 fastf1.Cache.enable_cache(str(CACHE_DIR))
 
 OPENF1_BASE = 'https://api.openf1.org/v1'
+LIVE_STATE_TTL  = 5      # seconds; every viewer shares one OpenF1 fetch per window
+SESSION_KEY_TTL = 600
+
+
+class OpenF1Unavailable(Exception):
+    """OpenF1 refused the request (401/403): real-time data needs a paid subscription."""
 
 # Render sets RENDER=true. FastF1 session loads need 1-2GB RAM, the free tier has 512MB,
 # so in prod we only ever serve the pre-built JSONs and never touch FastF1 on demand.
@@ -29,6 +36,9 @@ class FastF1Service:
         self._session_cache = {}
         self._global_lock = threading.Lock()
         self._race_locks = {}        # per-race locks
+        self._live_lock = threading.Lock()
+        self._live_cache = None          # (timestamp, state)
+        self._session_key_cache = None   # (timestamp, session_key)
 
     def _get_race_lock(self, key):
         """Get or create a lock for a specific race"""
@@ -410,28 +420,49 @@ class FastF1Service:
             print(f"[get_driver_lap_telemetry] {e}")
             return None
 
-    def _safe_json_list(self, url, timeout=5):
+    def _openf1_list(self, url, timeout=5):
         """
-        GET a URL and return parsed JSON only if it's a list.
-        Protects against OpenF1 returning dicts on error or no-session.
+        GET an OpenF1 URL and return parsed JSON only if it's a list ([] on any error).
+        Raises OpenF1Unavailable on 401/403: real-time data needs a paid OPENF1_TOKEN.
         """
+        token = os.getenv('OPENF1_TOKEN')
+        headers = {'Authorization': f'Bearer {token}'} if token else {}
         try:
-            r = requests.get(url, timeout=timeout)
-            data = r.json()
-            return data if isinstance(data, list) else []
+            r = requests.get(url, headers=headers, timeout=timeout)
         except Exception:
             return []
+        if r.status_code in (401, 403):
+            raise OpenF1Unavailable(f'OpenF1 rejected the request ({r.status_code})')
+        try:
+            data = r.json()
+        except Exception:
+            return []
+        return data if isinstance(data, list) else []
+
+    def _safe_json_list(self, url, timeout=5):
+        """Like _openf1_list, but an auth rejection is just an empty result."""
+        try:
+            return self._openf1_list(url, timeout)
+        except OpenF1Unavailable:
+            return []
+
+    def _cached_session_key(self):
+        """Latest Race session_key this year, cached 10 minutes. May raise OpenF1Unavailable."""
+        cached = self._session_key_cache
+        if cached and time.time() - cached[0] < SESSION_KEY_TTL:
+            return cached[1]
+        sessions = self._openf1_list(
+            f'{OPENF1_BASE}/sessions?session_type=Race&year={datetime.utcnow().year}'
+        )
+        key = sessions[-1].get('session_key') if sessions else None
+        self._session_key_cache = (time.time(), key)
+        return key
 
     def get_live_session_key(self):
         """Get the session_key for the current or most recent live session."""
         try:
-            r = requests.get(f'{OPENF1_BASE}/sessions?session_type=Race', timeout=5)
-            sessions = r.json()
-            if not isinstance(sessions, list) or not sessions:
-                return None
-            return sessions[-1]['session_key']
-        except Exception as e:
-            print(f"[get_live_session_key] {e}")
+            return self._cached_session_key()
+        except OpenF1Unavailable:
             return None
 
     def get_live_positions(self, session_key=None):
@@ -595,35 +626,46 @@ class FastF1Service:
         """
         One call that assembles everything the frontend needs for live mode:
         positions + intervals + stints + latest race control message.
-        The frontend polls this every 3 seconds via SSE or short polling.
+        Shared by all viewers: cached for LIVE_STATE_TTL seconds, one OpenF1 fetch at a time.
+        Returns {'status': 'unavailable', 'reason': ...} when there is no usable live data.
         """
-        session_key = self.get_live_session_key()
+        with self._live_lock:
+            cached = self._live_cache
+            if cached and time.time() - cached[0] < LIVE_STATE_TTL:
+                return cached[1]
+            state = self._build_live_state()
+            self._live_cache = (time.time(), state)
+            return state
+
+    def _build_live_state(self):
+        def unavailable(reason):
+            return {'status': 'unavailable', 'reason': reason}
+
+        if not os.getenv('OPENF1_TOKEN'):
+            return unavailable('Live timing needs an OpenF1 subscription (OPENF1_TOKEN is not set).')
+        try:
+            session_key = self._cached_session_key()
+        except OpenF1Unavailable as e:
+            return unavailable(str(e))
         if not session_key:
-            return {'error': 'No live session', 'session_key': None}
+            return unavailable('No live session.')
 
         positions = self.get_live_positions(session_key)
+        if not positions:
+            return unavailable('No live timing data for the current session.')
         intervals = self.get_live_intervals(session_key)
         stints    = self.get_live_stints(session_key)
         rc_msgs   = self.get_live_race_control(session_key)
         latest_rc = rc_msgs[-1] if rc_msgs else None
 
         # Driver number → abbreviation/team mapping from OpenF1
-        try:
-            drv_r = requests.get(
-                f'{OPENF1_BASE}/drivers?session_key={session_key}',
-                timeout=5
-            )
-            drv_data = drv_r.json()
-            drivers_meta = {}
-            if isinstance(drv_data, list):
-                for d in drv_data:
-                    if isinstance(d, dict):
-                        drivers_meta[str(d.get('driver_number', ''))] = {
-                            'code': d.get('name_acronym', '???'),
-                            'team': d.get('team_name', 'Unknown'),
-                        }
-        except Exception:
-            drivers_meta = {}
+        drivers_meta = {}
+        for d in self._safe_json_list(f'{OPENF1_BASE}/drivers?session_key={session_key}'):
+            if isinstance(d, dict):
+                drivers_meta[str(d.get('driver_number', ''))] = {
+                    'code': d.get('name_acronym', '???'),
+                    'team': d.get('team_name', 'Unknown'),
+                }
 
         # Merge everything into one list
         merged = []
@@ -647,6 +689,7 @@ class FastF1Service:
             })
 
         return {
+            'status':       'live',
             'session_key':  session_key,
             'drivers':      merged,
             'race_control': latest_rc,

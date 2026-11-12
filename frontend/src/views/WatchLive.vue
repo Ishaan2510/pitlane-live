@@ -159,6 +159,18 @@
         <div class="coming-card">
           <div class="coming-icon">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M3 15h14M5 12V8M9 12V5M13 12V9" stroke="#e10600" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="coming-title">Live Timing &amp; Pit Calls</div>
+            <div class="coming-desc">Timing tower, track map and pit-stop predictions. Try a simulated race any time.</div>
+          </div>
+          <router-link to="/live/timing" class="coming-link">GO →</router-link>
+        </div>
+        <div class="coming-card">
+          <div class="coming-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <circle cx="10" cy="10" r="7" stroke="#e10600" stroke-width="1.5"/>
               <path d="M10 6v4l2.5 2.5" stroke="#e10600" stroke-width="1.5" stroke-linecap="round"/>
             </svg>

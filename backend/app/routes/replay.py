@@ -1,6 +1,6 @@
-from flask import Blueprint, jsonify, request, Response
+from flask import Blueprint, jsonify, request
 from app.services.fastf1_service import fastf1_service
-import json, time
+import json
 
 bp = Blueprint('replay', __name__, url_prefix='/api/replay')
 
@@ -76,7 +76,7 @@ def get_available_years():
 
 @bp.route('/live/state', methods=['GET'])
 def get_live_state():
-    """Full live race state. Frontend polls this every 3 seconds."""
+    """Full live race state, or {"status": "unavailable"}. Frontend polls this every 5 seconds."""
     state = fastf1_service.get_live_full_state()
     return jsonify(state)
 
@@ -105,24 +105,6 @@ def get_live_pit_stops():
     """All pit stops so far in the current session."""
     session_key = request.args.get('session_key', type=int)
     return jsonify(fastf1_service.get_live_pit_stops(session_key))
-
-@bp.route('/live/stream', methods=['GET'])
-def live_stream():
-    """Server-Sent Events stream."""
-    def generate():
-        while True:
-            state = fastf1_service.get_live_full_state()
-            yield f"data: {json.dumps(state)}\n\n"
-            time.sleep(3)
-
-    return Response(
-        generate(),
-        mimetype='text/event-stream',
-        headers={
-            'Cache-Control':     'no-cache',
-            'X-Accel-Buffering': 'no',
-        }
-    )
 
 # ─── Simulation mode ──────────────────────────────────────────────────────────
 
