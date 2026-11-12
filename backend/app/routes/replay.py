@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
 from app.services.fastf1_service import fastf1_service
-import json
 
 bp = Blueprint('replay', __name__, url_prefix='/api/replay')
 
@@ -183,16 +182,12 @@ def simulate_live_state():
     race_round = request.args.get('round', 1,    type=int)
     lap        = request.args.get('lap',   1,    type=int)
 
-    cache_file = fastf1_service.processed_cache_dir / f"{year}_R{race_round}_processed.json"
-
-    if not cache_file.exists():
+    race_data = fastf1_service.load_processed(year, race_round)
+    if race_data is None:
         return jsonify({
             'error':     f'Race not cached: {year} R{race_round}',
             'simulated': True,
         }), 404
-
-    with open(cache_file) as f:
-        race_data = json.load(f)
 
     state = _lap_to_live_state(race_data, lap)
     return jsonify(state)
@@ -205,30 +200,4 @@ def get_simulatable_races():
     (i.e. races that are cached and ready).
     Used by the frontend to populate the simulation picker.
     """
-    import os
-    races = []
-
-    processed_dir = fastf1_service.processed_cache_dir
-    for f in sorted(processed_dir.glob('*_processed.json')):
-        # filename format: 2025_R3_processed.json
-        parts = f.stem.replace('_processed', '').split('_R')
-        if len(parts) != 2:
-            continue
-        try:
-            year      = int(parts[0])
-            round_num = int(parts[1])
-        except ValueError:
-            continue
-
-        with open(f) as fh:
-            data = json.load(fh)
-
-        races.append({
-            'year':       year,
-            'round':      round_num,
-            'name':       data.get('name', f'Round {round_num}'),
-            'circuit':    data.get('circuit', ''),
-            'total_laps': data.get('total_laps', 0),
-        })
-
-    return jsonify(races)
+    return jsonify(fastf1_service.get_race_index())

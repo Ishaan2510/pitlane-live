@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
-import fastf1
 import pandas as pd
+from app.services.fastf1_service import get_event_schedule
 from datetime import datetime, date, timedelta
 
 bp = Blueprint('schedule', __name__, url_prefix='/api')
@@ -35,7 +35,7 @@ def get_schedule():
     year = request.args.get('year', date.today().year, type=int)
 
     try:
-        schedule = fastf1.get_event_schedule(year, include_testing=False)
+        schedule = get_event_schedule(year)
     except Exception as e:
         return jsonify({'error': f'Could not fetch schedule: {e}'}), 500
 

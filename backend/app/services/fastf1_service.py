@@ -8,6 +8,7 @@ import threading
 import requests
 import os
 import time
+from collections import OrderedDict
 
 
 # Setup FastF1 cache
@@ -22,6 +23,32 @@ SESSION_KEY_TTL = 600
 
 class OpenF1Unavailable(Exception):
     """OpenF1 refused the request (401/403): real-time data needs a paid subscription."""
+
+
+RACE_JSON_CACHE_SIZE = 4         # parsed processed JSONs kept in memory (~512 MB box)
+SCHEDULE_TTL = 6 * 3600
+_schedule_cache = {}             # year -> (fetched_at, DataFrame)
+_schedule_lock = threading.Lock()
+
+
+def get_event_schedule(year):
+    """fastf1.get_event_schedule(year, include_testing=False), cached 6h per year.
+    If a refresh fails and a stale copy exists, the stale copy is returned."""
+    with _schedule_lock:
+        hit = _schedule_cache.get(year)
+    if hit and time.time() - hit[0] < SCHEDULE_TTL:
+        return hit[1]
+    try:
+        schedule = fastf1.get_event_schedule(year, include_testing=False)
+        if schedule is None or schedule.empty:
+            raise ValueError(f'empty schedule for {year}')
+    except Exception:
+        if hit:
+            return hit[1]
+        raise
+    with _schedule_lock:
+        _schedule_cache[year] = (time.time(), schedule)
+    return schedule
 
 # Render sets RENDER=true. FastF1 session loads need 1-2GB RAM, the free tier has 512MB,
 # so in prod we only ever serve the pre-built JSONs and never touch FastF1 on demand.
@@ -39,6 +66,70 @@ class FastF1Service:
         self._live_lock = threading.Lock()
         self._live_cache = None          # (timestamp, state)
         self._session_key_cache = None   # (timestamp, session_key)
+        self._json_lock = threading.Lock()
+        self._json_cache = OrderedDict()  # (year, round) -> (mtime, parsed race JSON), LRU
+        self._race_index = None           # (dir signature, [race summaries])
+
+    def load_processed(self, year, race_round):
+        """
+        Parsed {year}_R{round}_processed.json, or None if it doesn't exist.
+        LRU-cached (RACE_JSON_CACHE_SIZE races), invalidated when the file's mtime changes.
+        The returned dict is shared between requests: read it, never mutate it.
+        """
+        path = self.processed_cache_dir / f"{year}_R{race_round}_processed.json"
+        try:
+            mtime = path.stat().st_mtime
+        except FileNotFoundError:
+            return None
+        key = (year, race_round)
+        with self._json_lock:
+            hit = self._json_cache.get(key)
+            if hit and hit[0] == mtime:
+                self._json_cache.move_to_end(key)
+                return hit[1]
+        with open(path, 'r') as f:
+            data = json.load(f)
+        with self._json_lock:
+            self._json_cache[key] = (mtime, data)
+            self._json_cache.move_to_end(key)
+            while len(self._json_cache) > RACE_JSON_CACHE_SIZE:
+                self._json_cache.popitem(last=False)
+        return data
+
+    def get_race_index(self):
+        """
+        [{year, round, name, circuit, total_laps}] for every processed race, in filename order.
+        Built once; rebuilt only when the directory's file list or mtimes change.
+        """
+        files = sorted(self.processed_cache_dir.glob('*_processed.json'))
+        signature = tuple((f.name, f.stat().st_mtime) for f in files)
+        with self._json_lock:
+            if self._race_index and self._race_index[0] == signature:
+                return self._race_index[1]
+
+        races = []
+        for f in files:
+            # filename format: 2025_R3_processed.json
+            parts = f.stem.replace('_processed', '').split('_R')
+            if len(parts) != 2:
+                continue
+            try:
+                year, round_num = int(parts[0]), int(parts[1])
+            except ValueError:
+                continue
+            with open(f) as fh:
+                data = json.load(fh)
+            races.append({
+                'year':       year,
+                'round':      round_num,
+                'name':       data.get('name', f'Round {round_num}'),
+                'circuit':    data.get('circuit', ''),
+                'total_laps': data.get('total_laps', 0),
+            })
+
+        with self._json_lock:
+            self._race_index = (signature, races)
+        return races
 
     def _get_race_lock(self, key):
         """Get or create a lock for a specific race"""
@@ -69,7 +160,7 @@ class FastF1Service:
     def get_available_races(self, year=2024):
         """Get list of races that are ACTUALLY cached and ready to replay"""
         try:
-            schedule = fastf1.get_event_schedule(year)
+            schedule = get_event_schedule(year)
             cached_rounds = self._get_cached_rounds(year)
             
             races = []
@@ -198,12 +289,9 @@ class FastF1Service:
 
     def get_weather_data(self, year, race_round):
         """Weather at the end of the race. Embedded in the processed JSON; falls back to the session."""
-        cache_file = self.processed_cache_dir / f"{year}_R{race_round}_processed.json"
-        if cache_file.exists():
-            with open(cache_file, 'r') as f:
-                weather = json.load(f).get('weather')
-            if weather:
-                return weather
+        weather = (self.load_processed(year, race_round) or {}).get('weather')
+        if weather:
+            return weather
 
         session = self.load_race_session(year, race_round)
         if not session:
@@ -234,19 +322,17 @@ class FastF1Service:
         cache_file = self.processed_cache_dir / f"{year}_R{race_round}_processed.json"
         
         # Return immediately if already processed
-        if cache_file.exists():
-            print(f"Loading from cache: {cache_file}")
-            with open(cache_file, 'r') as f:
-                return json.load(f)
-        
+        cached = self.load_processed(year, race_round)
+        if cached is not None:
+            return cached
+
         # Lock per race so only ONE thread processes it
         lock = self._get_race_lock(f"telemetry_{year}_R{race_round}")
         with lock:
             # Double-check after acquiring lock
-            if cache_file.exists():
-                print(f"Loading from cache: {cache_file}")
-                with open(cache_file, 'r') as f:
-                    return json.load(f)
+            cached = self.load_processed(year, race_round)
+            if cached is not None:
+                return cached
 
             session = self.load_race_session(year, race_round)
             if not session:

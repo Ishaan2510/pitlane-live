@@ -11,7 +11,6 @@ from flask import Blueprint, jsonify, request
 from app.services.scoring_service import score_race as _score_race, build_pit_registry
 from app.models import Prediction
 from app.routes.users import is_admin as _check_admin
-import json
 
 bp = Blueprint('scoring', __name__, url_prefix='/api/scoring')
 
@@ -86,13 +85,9 @@ def preview_scoring(year, round_num):
     """
     from app.services.fastf1_service import fastf1_service
 
-    cache_file = fastf1_service.processed_cache_dir / f"{year}_R{round_num}_processed.json"
-
-    if not cache_file.exists():
+    race_data = fastf1_service.load_processed(year, round_num)
+    if race_data is None:
         return jsonify({'error': f'Race not cached: {year} R{round_num}'}), 404
-
-    with open(cache_file) as f:
-        race_data = json.load(f)
 
     pit_registry = build_pit_registry(race_data)
     pending_count = Prediction.query.filter_by(
@@ -135,12 +130,9 @@ def score_sim_test():
 
     from app.services.fastf1_service import fastf1_service
 
-    cache_file = fastf1_service.processed_cache_dir / f"{int(year)}_R{int(round_num)}_processed.json"
-    if not cache_file.exists():
+    race_data = fastf1_service.load_processed(int(year), int(round_num))
+    if race_data is None:
         return jsonify({'error': f'Race not cached: {year} R{round_num}'}), 404
-
-    with open(cache_file) as f:
-        race_data = json.load(f)
 
     pit_registry = build_pit_registry(race_data)
 

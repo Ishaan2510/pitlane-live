@@ -177,15 +177,12 @@ def score_race_predictions(year: int, round_num: int) -> dict:
     """
     Score every pending RacePrediction for the given race.
     """
-    cache_file = fastf1_service.processed_cache_dir / f"{year}_R{round_num}_processed.json"
-    if not cache_file.exists():
+    race_data = fastf1_service.load_processed(year, round_num)
+    if race_data is None:
         return {
             'error': f'Race not cached: {year} R{round_num}. '
                      f'Run warm_cache.py --year {year} --round {round_num} first.'
         }
-
-    with open(cache_file) as f:
-        race_data = json.load(f)
 
     actual_order  = extract_finishing_order(race_data)
     actual_stints = extract_stint_sequences(race_data)
