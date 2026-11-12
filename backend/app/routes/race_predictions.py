@@ -11,7 +11,7 @@ Endpoints:
 from flask import Blueprint, jsonify, request
 from datetime import datetime
 from app.models import db, RacePrediction
-from app.routes.users import token_required
+from app.routes.users import token_required, is_admin
 from app.services.prediction_window_service import (
     get_window_state,
     can_accept_predictions,
@@ -157,18 +157,13 @@ def get_all_predictions(year, round_num):
         for p in preds
     ])
 
-import os
-
-ADMIN_KEY = os.getenv('ADMIN_KEY')
-
-
 @bp.route('/score/<int:year>/<int:round_num>', methods=['POST'])
 def score_race(year, round_num):
     """
     Admin — score all pending race predictions for a completed race.
     Requires X-Admin-Key header.
     """
-    if not ADMIN_KEY or request.headers.get('X-Admin-Key', '') != ADMIN_KEY:
+    if not is_admin(request):
         return jsonify({'error': 'Unauthorized — X-Admin-Key required'}), 401
 
     from app.services.race_prediction_scoring import score_race_predictions

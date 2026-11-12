@@ -4,7 +4,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    if not SECRET_KEY:
+        if os.getenv('RENDER'):
+            raise RuntimeError('SECRET_KEY must be set in production')
+        SECRET_KEY = 'dev-secret-key'
     uri = os.getenv('DATABASE_URL', '')
     SQLALCHEMY_DATABASE_URI = uri
     SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True}

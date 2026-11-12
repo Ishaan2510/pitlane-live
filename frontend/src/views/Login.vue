@@ -63,7 +63,7 @@
         </form>
 
         <div class="form-footer">
-          No account? <router-link to="/register">CREATE ONE →</router-link>
+          No account? <router-link :to="{ path: '/register', query: $route.query }">CREATE ONE →</router-link>
         </div>
       </div>
     </div>
@@ -72,10 +72,12 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { safeRedirect } from '@/router'
 
 const router = useRouter()
+const route  = useRoute()
 const auth   = useAuthStore()
 
 const form        = reactive({ identifier: '', password: '' })
@@ -97,7 +99,7 @@ async function submit() {
   loading.value = true
   try {
     await auth.login(form.identifier.trim(), form.password)
-    router.push('/')
+    router.push(safeRedirect(route.query.redirect))
   } catch (e) {
     serverError.value = e.message
   } finally {

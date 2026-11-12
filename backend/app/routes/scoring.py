@@ -7,20 +7,12 @@ Endpoints:
     GET  /api/scoring/preview/<year>/<round>   Dry run — see what would be scored
 """
 
-import os
 from flask import Blueprint, jsonify, request
 from app.services.scoring_service import score_race as _score_race, build_pit_registry
 from app.models import Prediction
-import json
+from app.routes.users import is_admin as _check_admin
 
 bp = Blueprint('scoring', __name__, url_prefix='/api/scoring')
-
-ADMIN_KEY = os.getenv('ADMIN_KEY')
-
-
-def _check_admin(req):
-    """Return True if the request carries the correct admin key. Always False if ADMIN_KEY is unset."""
-    return bool(ADMIN_KEY) and req.headers.get('X-Admin-Key', '') == ADMIN_KEY
 
 
 # ── Score a race ──────────────────────────────────────────────────────────────
@@ -34,9 +26,9 @@ def score_race():
     Header:    X-Admin-Key: <value of ADMIN_KEY in .env>
 
     Example curl:
-        curl -X POST https://pitlane-live-three.vercel.app/api/scoring/score-race \\
+        curl -X POST https://pitlane-live-f1.vercel.app/api/scoring/score-race \\
              -H "Content-Type: application/json" \\
-             -H "X-Admin-Key: pitlane-admin-2026" \\
+             -H "X-Admin-Key: <ADMIN_KEY>" \\
              -d '{"year": 2026, "round": 1}'
     """
     if not _check_admin(request):
@@ -93,16 +85,14 @@ def preview_scoring(year, round_num):
     """
     from app.services.fastf1_service import fastf1_service
 
-    cache_file = fastf1_service.processed_cache_dir / f"{year}_R{round_num}_processed.json"
-
-    if not cache_file.exists():
+    race_data = fastf1_service.load_processed(year, round_num)
+    if race_data is None:
         return jsonify({'error': f'Race not cached: {year} R{round_num}'}), 404
 
-    with open(cache_file) as f:
-        race_data = json.load(f)
-
     pit_registry = build_pit_registry(race_data)
-    pending_count = Prediction.query.filter_by(status='pending').count()
+    pending_count = Prediction.query.filter_by(
+        status='pending', year=year, round_num=round_num, mode='live'
+    ).count()
 
     return jsonify({
         'race':            race_data.get('name'),
@@ -116,16 +106,16 @@ def preview_scoring(year, round_num):
 @bp.route('/score-sim-test', methods=['POST'])
 def score_sim_test():
     """
-    Score all sim predictions (race_id IS NULL) against any cached race.
+    Dry run: score the sim predictions made on this race. Never writes to the DB.
     Used to verify the scoring engine is working before race day.
 
     Body JSON: { "year": 2025, "round": 1 }
     Header:    X-Admin-Key: <your key>
 
     Example curl:
-        curl -X POST http://20.198.85.246/api/scoring/score-sim-test \\
+        curl -X POST https://pitlane-live-f1.vercel.app/api/scoring/score-sim-test \\
              -H "Content-Type: application/json" \\
-             -H "X-Admin-Key: pitlane-admin-2026" \\
+             -H "X-Admin-Key: <ADMIN_KEY>" \\
              -d '{"year": 2025, "round": 1}'
     """
     if not _check_admin(request):
@@ -140,17 +130,15 @@ def score_sim_test():
 
     from app.services.fastf1_service import fastf1_service
 
-    cache_file = fastf1_service.processed_cache_dir / f"{int(year)}_R{int(round_num)}_processed.json"
-    if not cache_file.exists():
+    race_data = fastf1_service.load_processed(int(year), int(round_num))
+    if race_data is None:
         return jsonify({'error': f'Race not cached: {year} R{round_num}'}), 404
-
-    with open(cache_file) as f:
-        race_data = json.load(f)
 
     pit_registry = build_pit_registry(race_data)
 
-    # All sim predictions have race_id = NULL
-    sim_preds = Prediction.query.filter(Prediction.race_id == None).all()
+    sim_preds = Prediction.query.filter_by(
+        mode='sim', year=int(year), round_num=int(round_num)
+    ).all()
     if not sim_preds:
         return jsonify({'message': 'No sim predictions found', 'scored': 0}), 200
 

@@ -25,6 +25,7 @@ Tyre scoring (segment-by-segment):
 import json
 from app.models import db, RacePrediction
 from app.services.fastf1_service import fastf1_service
+from app.services.user_totals import recompute_user_totals
 
 # Position scoring constants
 SLOT_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
@@ -43,25 +44,28 @@ def extract_finishing_order(race_data: dict) -> list[str]:
     """
     Returns the top-10 finishing order as a list of driver codes.
 
-    The processed JSON sorts drivers by position within each lap. The final
-    lap's driver list is the finishing order — drivers who DNF'd drop out of
-    later laps automatically.
+    Uses the official classification (race_data['results']) when present.
+    Older processed files have no results, so fall back to: laps completed
+    descending, then position on the driver's final lap. That keeps a
+    retirement behind every driver who completed more laps, instead of
+    keeping the position they held when they stopped.
     """
-    laps = race_data.get('laps', [])
-    if not laps:
-        return []
+    results = race_data.get('results')
+    if results:
+        ranked = sorted((r for r in results if r.get('position')), key=lambda r: r['position'])
+        return [r['driver'].upper() for r in ranked[:10]]
 
-    # Walk backwards from final lap to find the most complete classification.
-    # The last lap a driver appears in is their final position.
-    final_positions = {}
-    for lap in reversed(laps):
+    laps_done = {}   # code -> laps with a position
+    final_pos = {}   # code -> position on their last such lap
+    for lap in race_data.get('laps', []):
         for driver in lap.get('drivers', []):
-            code = driver['driver'].upper()
-            if code not in final_positions and driver.get('position'):
-                final_positions[code] = int(driver['position'])
+            if driver.get('position'):
+                code = driver['driver'].upper()
+                laps_done[code] = laps_done.get(code, 0) + 1
+                final_pos[code] = int(driver['position'])
 
-    sorted_drivers = sorted(final_positions.items(), key=lambda kv: kv[1])
-    return [code for code, _ in sorted_drivers[:10]]
+    ranked = sorted(laps_done, key=lambda c: (-laps_done[c], final_pos[c]))
+    return ranked[:10]
 
 
 def extract_stint_sequences(race_data: dict) -> dict[str, list[str]]:
@@ -167,55 +171,18 @@ def score_tyres(predicted_strategies: dict[str, list[str]],
     return total
 
 
-# ── Aggregate user scoring (mirrors existing pattern) ─────────────────────────
-
-def update_user_aggregate_scores():
-    """
-    Recomputes User.total_score and User.accuracy_rate to include
-    BOTH the in-race pit-call predictions AND the race predictions.
-
-    accuracy_rate stays based on the in-race game only — race predictions
-    are graded on partial credit so a binary correct/wrong doesn't fit.
-    Race-prediction totals are simply added to total_score.
-    """
-    from app.models import User, Prediction
-
-    users = User.query.all()
-    for user in users:
-        # In-race game (unchanged logic from existing scoring_service.py)
-        in_race_preds = [p for p in user.predictions]
-        scored        = [p for p in in_race_preds if p.status in ('correct', 'wrong')]
-        correct       = [p for p in scored if p.status == 'correct']
-
-        in_race_points = sum(p.points_earned for p in in_race_preds)
-        accuracy       = round(len(correct) / len(scored) * 100, 1) if scored else 0.0
-
-        # Race predictions (new)
-        race_preds   = RacePrediction.query.filter_by(user_id=user.id, status='scored').all()
-        race_points  = sum(p.total_points for p in race_preds)
-
-        user.total_score   = in_race_points + race_points
-        user.accuracy_rate = accuracy
-
-    db.session.commit()
-    return len(users)
-
-
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def score_race_predictions(year: int, round_num: int) -> dict:
     """
     Score every pending RacePrediction for the given race.
     """
-    cache_file = fastf1_service.processed_cache_dir / f"{year}_R{round_num}_processed.json"
-    if not cache_file.exists():
+    race_data = fastf1_service.load_processed(year, round_num)
+    if race_data is None:
         return {
             'error': f'Race not cached: {year} R{round_num}. '
                      f'Run warm_cache.py --year {year} --round {round_num} first.'
         }
-
-    with open(cache_file) as f:
-        race_data = json.load(f)
 
     actual_order  = extract_finishing_order(race_data)
     actual_stints = extract_stint_sequences(race_data)
@@ -244,7 +211,7 @@ def score_race_predictions(year: int, round_num: int) -> dict:
         pred.status          = 'scored'
 
     db.session.commit()
-    users_updated = update_user_aggregate_scores()
+    users_updated = recompute_user_totals()
 
     return {
         'race':           race_data.get('name'),

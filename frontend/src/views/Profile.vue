@@ -97,8 +97,8 @@ export default {
   computed: {
     user()    { return useAuthStore().user },
     initials(){ return this.user?.username?.slice(0,2).toUpperCase() || '??' },
-    realPredictions() { return this.predictions.filter(p => p.race_id !== null && p.race_id !== undefined) },
-    simPredictions()  { return this.predictions.filter(p => p.race_id === null  || p.race_id === undefined) }
+    realPredictions() { return this.predictions.filter(p => p.mode === 'live') },
+    simPredictions()  { return this.predictions.filter(p => p.mode !== 'live') }
   },
   async mounted() {
     await Promise.all([this.loadPredictions(), this.loadRank()])

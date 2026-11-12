@@ -216,7 +216,12 @@ export default {
   },
 
   async mounted() {
+    // /replay/:year/:round opens that race directly
+    const { year, round } = this.$route.params
+    if (year) this.selectedYear = parseInt(year, 10)
     await this.loadAvailableRaces()
+    const race = round && this.availableRaces.find(r => r.round === parseInt(round, 10))
+    if (race?.ready) this.selectRace(race)
   },
 
   beforeUnmount() {

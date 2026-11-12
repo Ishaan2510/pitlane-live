@@ -12,7 +12,7 @@ Usage (from Flask shell or a cron job):
     print(result)
 
 Or via the API endpoint:
-    curl -X POST https://pitlane-live-three.vercel.app/api/scoring/score-race \\
+    curl -X POST https://pitlane-live-f1.vercel.app/api/scoring/score-race \\
          -H "Content-Type: application/json" \\
          -H "X-Admin-Key: <ADMIN_KEY from .env>" \\
          -d '{"year": 2026, "round": 1}'
@@ -23,8 +23,9 @@ import os
 from pathlib import Path
 
 # These imports work when called inside a Flask app context
-from app.models import db, Prediction, User
+from app.models import db, Prediction
 from app.services.fastf1_service import fastf1_service
+from app.services.user_totals import recompute_user_totals
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -177,29 +178,6 @@ def calculate_points(confidence: int, lap_diff) -> int:
     return int(base * multiplier)
 
 
-# ─── User score aggregation ───────────────────────────────────────────────────
-
-def update_user_scores():
-    """
-    Recompute total_score and accuracy_rate for every user from their predictions.
-    Called after all predictions have been marked correct/wrong.
-    """
-    users = User.query.all()
-    for user in users:
-        all_preds    = user.predictions
-        scored       = [p for p in all_preds if p.status in ('correct', 'wrong')]
-        correct      = [p for p in scored    if p.status == 'correct']
-
-        user.total_score   = sum(p.points_earned for p in all_preds)
-        user.accuracy_rate = (
-            round(len(correct) / len(scored) * 100, 1)
-            if scored else 0.0
-        )
-
-    db.session.commit()
-    return len(users)
-
-
 # ─── Main entry point ─────────────────────────────────────────────────────────
 
 def score_race(year: int, round_num: int) -> dict:
@@ -213,28 +191,33 @@ def score_race(year: int, round_num: int) -> dict:
     Returns:
         Summary dict with counts and race name.
     """
-    cache_file = fastf1_service.processed_cache_dir / f"{year}_R{round_num}_processed.json"
-
-    if not cache_file.exists():
+    race_data = fastf1_service.load_processed(year, round_num)
+    if race_data is None:
         return {
             'error': f'Race not cached yet: {year} R{round_num}. '
                      f'Run warm_cache.py --year {year} --round {round_num} first.'
         }
 
-    with open(cache_file) as f:
-        race_data = json.load(f)
-
     pit_registry  = build_pit_registry(race_data)
     race_drivers  = get_race_drivers(race_data)
     race_name     = race_data.get('name', f'{year} R{round_num}')
 
-    pending = Prediction.query.filter_by(status='pending').all()
+    # Only live calls made for THIS race. Sim calls are never scored here; legacy rows
+    # without year/round stay pending and are just reported.
+    pending = Prediction.query.filter_by(
+        status='pending', year=year, round_num=round_num, mode='live'
+    ).all()
+    legacy_unscored = Prediction.query.filter(
+        Prediction.status == 'pending',
+        (Prediction.year == None) | (Prediction.round_num == None),
+    ).count()
 
     if not pending:
         return {
-            'race':    race_name,
-            'message': 'No pending predictions found.',
-            'scored':  0,
+            'race':            race_name,
+            'message':         'No pending predictions found.',
+            'scored':          0,
+            'legacy_unscored': legacy_unscored,
         }
 
     tally = {'correct': 0, 'wrong': 0, 'skipped': 0}
@@ -261,7 +244,7 @@ def score_race(year: int, round_num: int) -> dict:
 
     db.session.commit()
 
-    users_updated = update_user_scores()
+    users_updated = recompute_user_totals()
 
     return {
         'race':          race_name,
@@ -270,5 +253,6 @@ def score_race(year: int, round_num: int) -> dict:
         'correct':       tally['correct'],
         'wrong':         tally['wrong'],
         'skipped':       tally['skipped'],
+        'legacy_unscored': legacy_unscored,
         'users_updated': users_updated,
     }

@@ -7,9 +7,21 @@
     <div v-if="(!liveState || !liveState.drivers?.length) && !loading" class="no-session">
       <div class="no-session-inner">
         <div class="no-session-icon">🏁</div>
-        <h2>No Live Session</h2>
-        <p>There's no F1 race happening right now.</p>
-        <p class="hint">The live feed activates automatically during race weekends.<br>Check back on race day — usually Sundays from ~13:00 local circuit time.</p>
+        <h2>No Live Timing Right Now</h2>
+        <template v-if="nextRace">
+          <p>Next up: <strong class="next-name">{{ nextRace.name }}</strong></p>
+          <p class="next-countdown">{{ nextRaceCountdown }}</p>
+        </template>
+        <p v-else class="hint">Live timing appears here during the race.</p>
+
+        <div class="next-race-links">
+          <router-link v-if="latestReplay" :to="`/replay/${latestReplay.year}/${latestReplay.round}`" class="btn-outline">
+            ▶ Replay {{ latestReplay.name }}
+          </router-link>
+          <router-link v-if="predictWindowOpen" :to="`/predict/${nextRace.year}/${nextRace.round}`" class="btn-outline btn-accent">
+            Predict the {{ nextRace.name }} →
+          </router-link>
+        </div>
 
         <!-- ── Simulation picker ── -->
         <div class="sim-box" v-if="simulatableRaces.length">
@@ -40,7 +52,6 @@
 
         <div class="next-race-links" style="margin-top: 1rem">
           <router-link to="/replay" class="btn-outline">← Browse Replays</router-link>
-          <button @click="retryConnection" class="btn-outline">↻ Check Again</button>
         </div>
       </div>
     </div>
@@ -74,7 +85,7 @@
             </button>
             <button class="sim-nav-btn" @click="simStepLap(1)"   title="+1 lap">›</button>
             <button class="sim-nav-btn" @click="simStepLap(5)"   title="+5 laps">»</button>
-            <button class="sim-nav-btn stop" @click="stopSimulation" title="Stop simulation">✕</button>
+            <button class="sim-nav-btn stop" @click="exitSimulation" title="Stop simulation">✕</button>
           </span>
         </div>
 
@@ -211,7 +222,12 @@
           <div class="prediction-panel">
             <div class="panel-heading">MAKE PREDICTION</div>
 
-            <div v-if="!selectedDriver" class="pred-hint">
+            <div v-if="!auth.isLoggedIn" class="pred-hint">
+              <router-link :to="{ name: 'Login', query: { redirect: $route.fullPath } }" class="pred-submit">
+                Log in to predict
+              </router-link>
+            </div>
+            <div v-else-if="!selectedDriver" class="pred-hint">
               Select a driver first
             </div>
             <div v-else class="pred-form">
@@ -289,6 +305,7 @@ import { TEAM_COLORS } from '@/data/drivers'
 import TrackCanvas from '../components/TrackCanvas.vue'
 import api from '../services/api.js'
 import { apiUrl } from '@/services/apiBase'
+import { useAuthStore } from '@/stores/auth'
 
 
 const SHORT_TEAM = {
@@ -308,8 +325,10 @@ export default {
       selectedDriver: null,
       rcHistory:      [],
       lastUpdated:    '—',
-      eventSource:    null,
       pollInterval:   null,
+      now:            Date.now(),
+      clockTimer:     null,
+      predictWindowOpen: false,
       sessionName:    'Live Race',
       circuitData:    null,   // ← real circuit SVG coords for TrackCanvas
 
@@ -335,10 +354,39 @@ export default {
       simPlayInterval:   null,
       simYear:           null,
       simRound:          null,
+
+      schedule:          [],     // /api/schedule rows for the current year
     }
   },
 
   computed: {
+    auth() { return useAuthStore() },
+    // The race weekend live calls are attached to (year/round for scoring)
+    liveRace() {
+      return this.schedule.find(r => r.status === 'live') || null
+    },
+    nextRace() {
+      return this.liveRace || this.schedule.find(r => r.status === 'upcoming') || null
+    },
+    nextRaceCountdown() {
+      const r = this.nextRace
+      if (!r) return ''
+      const start = new Date(r.race_time_utc || `${r.date}T12:00:00Z`)
+      const diff = start - this.now
+      if (diff <= 0) return 'Race in progress'
+      const d = Math.floor(diff / 86400000)
+      const h = Math.floor((diff % 86400000) / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      return `Race starts in ${d ? d + 'd ' : ''}${h}h ${m}m ${s}s`
+    },
+    // Most recent cached race, for the Replay shortcut
+    latestReplay() {
+      return this.simulatableRaces.reduce(
+        (best, r) => (!best || r.year * 100 + r.round > best.year * 100 + best.round ? r : best),
+        null
+      )
+    },
     selectedDriverData() {
       if (!this.selectedDriver || !this.liveState) return null
       return this.liveState.drivers.find(d => d.driver === this.selectedDriver) ?? null
@@ -378,69 +426,56 @@ export default {
   },
 
   async mounted() {
+    document.addEventListener('visibilitychange', this.onVisibilityChange)
+    this.clockTimer = setInterval(() => { this.now = Date.now() }, 1000)
+    this.loadSchedule()
     await this.connect()
     this.loadSimulatableRaces()
   },
 
   beforeUnmount() {
+    document.removeEventListener('visibilitychange', this.onVisibilityChange)
+    clearInterval(this.clockTimer)
     this.disconnect()
     this.stopSimulation()
   },
 
   methods: {
-    // ── Connection (real live) ────────────────────────────────────────────────
+    // ── Connection (real live): poll every 5s while the tab is visible ────────
     async connect() {
       this.loading = true
-      try {
-        const state = await this.fetchState()
-        if (!state || state.error) {
-          this.liveState = null
-          this.loading   = false
-          return
-        }
-        this.applyState(state)
-      } catch {
-        this.liveState = null
-        this.loading   = false
-        return
-      }
+      await this.pollOnce()
       this.loading = false
-      this.connectSSE()
+      this.startPolling()
     },
 
-    connectSSE() {
+    async pollOnce() {
       try {
-        this.eventSource = new EventSource(apiUrl('/replay/live/stream'))
-        this.eventSource.onmessage = (e) => {
-          try {
-            const state = JSON.parse(e.data)
-            if (!state.error) this.applyState(state)
-          } catch { /* ignore */ }
-        }
-        this.eventSource.onerror = () => {
-          this.eventSource?.close()
-          this.eventSource = null
-          this.startPolling()
-        }
-      } catch {
-        this.startPolling()
-      }
+        const state = await this.fetchState()
+        if (this.isSimulated) return
+        if (state?.status === 'live' && state.drivers?.length) this.applyState(state)
+        else this.liveState = null
+      } catch { /* network blip: keep what we have */ }
     },
 
     startPolling() {
-      this.pollInterval = setInterval(async () => {
-        try {
-          const state = await this.fetchState()
-          if (state && !state.error) this.applyState(state)
-        } catch { /* ignore */ }
-      }, 4000)
+      clearInterval(this.pollInterval)
+      if (document.visibilityState === 'hidden' || this.isSimulated) return
+      this.pollInterval = setInterval(this.pollOnce, 5000)
     },
 
     disconnect() {
-      this.eventSource?.close()
-      this.eventSource = null
       clearInterval(this.pollInterval)
       this.pollInterval = null
+    },
+
+    onVisibilityChange() {
+      if (document.visibilityState === 'hidden') {
+        this.disconnect()
+      } else if (!this.isSimulated) {
+        this.pollOnce()
+        this.startPolling()
+      }
     },
 
     async fetchState() {
@@ -471,9 +506,17 @@ export default {
       })
     },
 
-    async retryConnection() {
-      this.disconnect()
-      await this.connect()
+    async loadSchedule() {
+      try {
+        const res = await fetch(apiUrl('/schedule'))
+        if (res.ok) this.schedule = await res.json()
+      } catch { /* schedule is optional */ }
+      const r = this.nextRace
+      if (!r) return
+      try {
+        const res = await fetch(apiUrl(`/race-predictions/window/${r.year}/${r.round}`))
+        this.predictWindowOpen = res.ok && (await res.json()).state === 'window_open'
+      } catch { /* button just stays hidden */ }
     },
 
     // ── Simulation ────────────────────────────────────────────────────────────
@@ -531,6 +574,12 @@ export default {
       this.rcHistory   = []
     },
 
+    exitSimulation() {
+      this.stopSimulation()
+      this.pollOnce()
+      this.startPolling()
+    },
+
     simTogglePlay() {
       if (this.simPlaying) {
         this.simPlaying = false
@@ -584,6 +633,9 @@ export default {
       try {
         await api.submitPrediction({
           raceId:     0,
+          year:       this.isSimulated ? this.simYear  : this.liveRace?.year,
+          round:      this.isSimulated ? this.simRound : this.liveRace?.round,
+          mode:       this.isSimulated ? 'sim' : 'live',
           driver:     this.selectedDriver,
           action:     this.prediction.action,
           lap:        this.isSimulated ? this.prediction.targetLap : 0,
@@ -752,6 +804,9 @@ export default {
   transition: all 0.15s;
 }
 .btn-outline:hover { border-color: #888; color: #fff; }
+.btn-accent { border-color: rgba(225,6,0,0.5); color: #e10600; }
+.next-name { color: #ddd; }
+.next-countdown { font-family: monospace; font-size: 1.1rem; color: #e10600 !important; margin-bottom: 1.5rem !important; }
 
 .loading-screen {
   flex: 1;

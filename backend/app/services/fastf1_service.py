@@ -7,6 +7,8 @@ import numpy as np
 import threading
 import requests
 import os
+import time
+from collections import OrderedDict
 
 
 # Setup FastF1 cache
@@ -15,6 +17,38 @@ CACHE_DIR.mkdir(exist_ok=True)
 fastf1.Cache.enable_cache(str(CACHE_DIR))
 
 OPENF1_BASE = 'https://api.openf1.org/v1'
+LIVE_STATE_TTL  = 5      # seconds; every viewer shares one OpenF1 fetch per window
+SESSION_KEY_TTL = 600
+
+
+class OpenF1Unavailable(Exception):
+    """OpenF1 refused the request (401/403): real-time data needs a paid subscription."""
+
+
+RACE_JSON_CACHE_SIZE = 4         # parsed processed JSONs kept in memory (~512 MB box)
+SCHEDULE_TTL = 6 * 3600
+_schedule_cache = {}             # year -> (fetched_at, DataFrame)
+_schedule_lock = threading.Lock()
+
+
+def get_event_schedule(year):
+    """fastf1.get_event_schedule(year, include_testing=False), cached 6h per year.
+    If a refresh fails and a stale copy exists, the stale copy is returned."""
+    with _schedule_lock:
+        hit = _schedule_cache.get(year)
+    if hit and time.time() - hit[0] < SCHEDULE_TTL:
+        return hit[1]
+    try:
+        schedule = fastf1.get_event_schedule(year, include_testing=False)
+        if schedule is None or schedule.empty:
+            raise ValueError(f'empty schedule for {year}')
+    except Exception:
+        if hit:
+            return hit[1]
+        raise
+    with _schedule_lock:
+        _schedule_cache[year] = (time.time(), schedule)
+    return schedule
 
 # Render sets RENDER=true. FastF1 session loads need 1-2GB RAM, the free tier has 512MB,
 # so in prod we only ever serve the pre-built JSONs and never touch FastF1 on demand.
@@ -29,6 +63,73 @@ class FastF1Service:
         self._session_cache = {}
         self._global_lock = threading.Lock()
         self._race_locks = {}        # per-race locks
+        self._live_lock = threading.Lock()
+        self._live_cache = None          # (timestamp, state)
+        self._session_key_cache = None   # (timestamp, session_key)
+        self._json_lock = threading.Lock()
+        self._json_cache = OrderedDict()  # (year, round) -> (mtime, parsed race JSON), LRU
+        self._race_index = None           # (dir signature, [race summaries])
+
+    def load_processed(self, year, race_round):
+        """
+        Parsed {year}_R{round}_processed.json, or None if it doesn't exist.
+        LRU-cached (RACE_JSON_CACHE_SIZE races), invalidated when the file's mtime changes.
+        The returned dict is shared between requests: read it, never mutate it.
+        """
+        path = self.processed_cache_dir / f"{year}_R{race_round}_processed.json"
+        try:
+            mtime = path.stat().st_mtime
+        except FileNotFoundError:
+            return None
+        key = (year, race_round)
+        with self._json_lock:
+            hit = self._json_cache.get(key)
+            if hit and hit[0] == mtime:
+                self._json_cache.move_to_end(key)
+                return hit[1]
+        with open(path, 'r') as f:
+            data = json.load(f)
+        with self._json_lock:
+            self._json_cache[key] = (mtime, data)
+            self._json_cache.move_to_end(key)
+            while len(self._json_cache) > RACE_JSON_CACHE_SIZE:
+                self._json_cache.popitem(last=False)
+        return data
+
+    def get_race_index(self):
+        """
+        [{year, round, name, circuit, total_laps}] for every processed race, in filename order.
+        Built once; rebuilt only when the directory's file list or mtimes change.
+        """
+        files = sorted(self.processed_cache_dir.glob('*_processed.json'))
+        signature = tuple((f.name, f.stat().st_mtime) for f in files)
+        with self._json_lock:
+            if self._race_index and self._race_index[0] == signature:
+                return self._race_index[1]
+
+        races = []
+        for f in files:
+            # filename format: 2025_R3_processed.json
+            parts = f.stem.replace('_processed', '').split('_R')
+            if len(parts) != 2:
+                continue
+            try:
+                year, round_num = int(parts[0]), int(parts[1])
+            except ValueError:
+                continue
+            with open(f) as fh:
+                data = json.load(fh)
+            races.append({
+                'year':       year,
+                'round':      round_num,
+                'name':       data.get('name', f'Round {round_num}'),
+                'circuit':    data.get('circuit', ''),
+                'total_laps': data.get('total_laps', 0),
+            })
+
+        with self._json_lock:
+            self._race_index = (signature, races)
+        return races
 
     def _get_race_lock(self, key):
         """Get or create a lock for a specific race"""
@@ -59,7 +160,7 @@ class FastF1Service:
     def get_available_races(self, year=2024):
         """Get list of races that are ACTUALLY cached and ready to replay"""
         try:
-            schedule = fastf1.get_event_schedule(year)
+            schedule = get_event_schedule(year)
             cached_rounds = self._get_cached_rounds(year)
             
             races = []
@@ -188,12 +289,9 @@ class FastF1Service:
 
     def get_weather_data(self, year, race_round):
         """Weather at the end of the race. Embedded in the processed JSON; falls back to the session."""
-        cache_file = self.processed_cache_dir / f"{year}_R{race_round}_processed.json"
-        if cache_file.exists():
-            with open(cache_file, 'r') as f:
-                weather = json.load(f).get('weather')
-            if weather:
-                return weather
+        weather = (self.load_processed(year, race_round) or {}).get('weather')
+        if weather:
+            return weather
 
         session = self.load_race_session(year, race_round)
         if not session:
@@ -224,19 +322,17 @@ class FastF1Service:
         cache_file = self.processed_cache_dir / f"{year}_R{race_round}_processed.json"
         
         # Return immediately if already processed
-        if cache_file.exists():
-            print(f"Loading from cache: {cache_file}")
-            with open(cache_file, 'r') as f:
-                return json.load(f)
-        
+        cached = self.load_processed(year, race_round)
+        if cached is not None:
+            return cached
+
         # Lock per race so only ONE thread processes it
         lock = self._get_race_lock(f"telemetry_{year}_R{race_round}")
         with lock:
             # Double-check after acquiring lock
-            if cache_file.exists():
-                print(f"Loading from cache: {cache_file}")
-                with open(cache_file, 'r') as f:
-                    return json.load(f)
+            cached = self.load_processed(year, race_round)
+            if cached is not None:
+                return cached
 
             session = self.load_race_session(year, race_round)
             if not session:
@@ -262,18 +358,37 @@ class FastF1Service:
                 'date':       session.event['EventDate'].isoformat(),
                 'total_laps': total_laps,
                 'weather':    self._weather_from_session(session),
+                'results':    self._results_from_session(session),
                 'laps':       [self._build_lap(laps, n) for n in range(1, total_laps + 1)]
             }
             
             # Write to a temp file first, then atomically replace — prevents corrupt reads
             tmp_file = cache_file.with_suffix('.tmp')
             with open(tmp_file, 'w') as f:
-                json.dump(race_data, f, indent=2)
+                json.dump(race_data, f, separators=(',', ':'))
             os.replace(tmp_file, cache_file)
             
             print(f"✅ Processed {len(race_data['laps'])} laps → {cache_file.name}")
             return race_data
         
+    def _results_from_session(self, session):
+        """Official classification. Position is the finishing order (retirements included, behind finishers)."""
+        def num(v, cast):
+            return cast(v) if pd.notna(v) else None
+
+        results = []
+        for _, r in session.results.iterrows():
+            results.append({
+                'driver':              r['Abbreviation'],
+                'position':            num(r['Position'], int),
+                'classified_position': str(r['ClassifiedPosition']),
+                'status':              r['Status'] if pd.notna(r['Status']) else None,
+                'grid_position':       num(r['GridPosition'], int),
+                'points':              num(r['Points'], float),
+                'laps':                num(r['Laps'], int),
+            })
+        return results
+
     def _lap_speed_avg(self, lap):
         spds = [float(lap[c]) for c in ['SpeedI1','SpeedI2','SpeedFL','SpeedST']
                 if c in lap.index and pd.notna(lap[c]) and float(lap[c]) > 0]
@@ -331,7 +446,20 @@ class FastF1Service:
         }
 
     def get_race_summary(self, year, race_round):
-        """Get quick race summary"""
+        """Get quick race summary. Built from the processed JSON; FastF1 only off-prod."""
+        race_data = self.load_processed(year, race_round)
+        if race_data is not None:
+            from app.services.race_prediction_scoring import extract_finishing_order
+            order = extract_finishing_order(race_data)
+            return {
+                'name':   race_data.get('name'),
+                'date':   race_data.get('date'),
+                'winner': order[0] if order else None,
+                'podium': order[:3],
+            }
+        if PREBUILT_ONLY:
+            return None
+
         try:
             session = self.load_race_session(year, race_round)
             if not session:
@@ -360,6 +488,19 @@ class FastF1Service:
                 return json.load(f)
 
         if PREBUILT_ONLY:
+            # No per-lap telemetry files in prod: use the speed-trap figures in the processed JSON
+            race_data = self.load_processed(year, race_round) or {}
+            laps = race_data.get('laps', [])
+            if not 1 <= lap_number <= len(laps):
+                return None
+            for d in laps[lap_number - 1].get('drivers', []):
+                if d.get('driver') == driver_code:
+                    return {
+                        'driver':    driver_code,
+                        'lap':       lap_number,
+                        'avg_speed': d.get('avg_speed'),
+                        'max_speed': d.get('max_speed'),
+                    }
             return None
 
         try:
@@ -391,28 +532,49 @@ class FastF1Service:
             print(f"[get_driver_lap_telemetry] {e}")
             return None
 
-    def _safe_json_list(self, url, timeout=5):
+    def _openf1_list(self, url, timeout=5):
         """
-        GET a URL and return parsed JSON only if it's a list.
-        Protects against OpenF1 returning dicts on error or no-session.
+        GET an OpenF1 URL and return parsed JSON only if it's a list ([] on any error).
+        Raises OpenF1Unavailable on 401/403: real-time data needs a paid OPENF1_TOKEN.
         """
+        token = os.getenv('OPENF1_TOKEN')
+        headers = {'Authorization': f'Bearer {token}'} if token else {}
         try:
-            r = requests.get(url, timeout=timeout)
-            data = r.json()
-            return data if isinstance(data, list) else []
+            r = requests.get(url, headers=headers, timeout=timeout)
         except Exception:
             return []
+        if r.status_code in (401, 403):
+            raise OpenF1Unavailable(f'OpenF1 rejected the request ({r.status_code})')
+        try:
+            data = r.json()
+        except Exception:
+            return []
+        return data if isinstance(data, list) else []
+
+    def _safe_json_list(self, url, timeout=5):
+        """Like _openf1_list, but an auth rejection is just an empty result."""
+        try:
+            return self._openf1_list(url, timeout)
+        except OpenF1Unavailable:
+            return []
+
+    def _cached_session_key(self):
+        """Latest Race session_key this year, cached 10 minutes. May raise OpenF1Unavailable."""
+        cached = self._session_key_cache
+        if cached and time.time() - cached[0] < SESSION_KEY_TTL:
+            return cached[1]
+        sessions = self._openf1_list(
+            f'{OPENF1_BASE}/sessions?session_type=Race&year={datetime.utcnow().year}'
+        )
+        key = sessions[-1].get('session_key') if sessions else None
+        self._session_key_cache = (time.time(), key)
+        return key
 
     def get_live_session_key(self):
         """Get the session_key for the current or most recent live session."""
         try:
-            r = requests.get(f'{OPENF1_BASE}/sessions?session_type=Race', timeout=5)
-            sessions = r.json()
-            if not isinstance(sessions, list) or not sessions:
-                return None
-            return sessions[-1]['session_key']
-        except Exception as e:
-            print(f"[get_live_session_key] {e}")
+            return self._cached_session_key()
+        except OpenF1Unavailable:
             return None
 
     def get_live_positions(self, session_key=None):
@@ -576,35 +738,46 @@ class FastF1Service:
         """
         One call that assembles everything the frontend needs for live mode:
         positions + intervals + stints + latest race control message.
-        The frontend polls this every 3 seconds via SSE or short polling.
+        Shared by all viewers: cached for LIVE_STATE_TTL seconds, one OpenF1 fetch at a time.
+        Returns {'status': 'unavailable', 'reason': ...} when there is no usable live data.
         """
-        session_key = self.get_live_session_key()
+        with self._live_lock:
+            cached = self._live_cache
+            if cached and time.time() - cached[0] < LIVE_STATE_TTL:
+                return cached[1]
+            state = self._build_live_state()
+            self._live_cache = (time.time(), state)
+            return state
+
+    def _build_live_state(self):
+        def unavailable(reason):
+            return {'status': 'unavailable', 'reason': reason}
+
+        if not os.getenv('OPENF1_TOKEN'):
+            return unavailable('Live timing needs an OpenF1 subscription (OPENF1_TOKEN is not set).')
+        try:
+            session_key = self._cached_session_key()
+        except OpenF1Unavailable as e:
+            return unavailable(str(e))
         if not session_key:
-            return {'error': 'No live session', 'session_key': None}
+            return unavailable('No live session.')
 
         positions = self.get_live_positions(session_key)
+        if not positions:
+            return unavailable('No live timing data for the current session.')
         intervals = self.get_live_intervals(session_key)
         stints    = self.get_live_stints(session_key)
         rc_msgs   = self.get_live_race_control(session_key)
         latest_rc = rc_msgs[-1] if rc_msgs else None
 
         # Driver number → abbreviation/team mapping from OpenF1
-        try:
-            drv_r = requests.get(
-                f'{OPENF1_BASE}/drivers?session_key={session_key}',
-                timeout=5
-            )
-            drv_data = drv_r.json()
-            drivers_meta = {}
-            if isinstance(drv_data, list):
-                for d in drv_data:
-                    if isinstance(d, dict):
-                        drivers_meta[str(d.get('driver_number', ''))] = {
-                            'code': d.get('name_acronym', '???'),
-                            'team': d.get('team_name', 'Unknown'),
-                        }
-        except Exception:
-            drivers_meta = {}
+        drivers_meta = {}
+        for d in self._safe_json_list(f'{OPENF1_BASE}/drivers?session_key={session_key}'):
+            if isinstance(d, dict):
+                drivers_meta[str(d.get('driver_number', ''))] = {
+                    'code': d.get('name_acronym', '???'),
+                    'team': d.get('team_name', 'Unknown'),
+                }
 
         # Merge everything into one list
         merged = []
@@ -628,6 +801,7 @@ class FastF1Service:
             })
 
         return {
+            'status':       'live',
             'session_key':  session_key,
             'drivers':      merged,
             'race_control': latest_rc,

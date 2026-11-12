@@ -17,8 +17,8 @@ Notes on FastF1 schedule columns:
 """
 
 from datetime import datetime, timedelta, timezone
-import fastf1
 import pandas as pd
+from app.services.fastf1_service import get_event_schedule
 
 QUALI_DURATION_MIN = 75    # 60 min session + 15 min buffer for delays
 LOCKOUT_HOURS      = 6     # Lock predictions 6h before race start
@@ -54,7 +54,7 @@ def get_window_state(year: int, round_num: int) -> dict:
     }
     """
     try:
-        schedule = fastf1.get_event_schedule(year, include_testing=False)
+        schedule = get_event_schedule(year)
     except Exception as e:
         return {'state': 'pre_quali', 'error': f'Schedule unavailable: {e}'}
 
