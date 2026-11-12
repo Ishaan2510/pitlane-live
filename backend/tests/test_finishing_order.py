@@ -25,8 +25,7 @@ def _races_with_duplicate_positions(n=3):
     found = []
     for f in sorted(PROCESSED.glob('*_processed.json')):
         data = json.loads(f.read_text())
-        if 'results' in data:
-            continue
+        data.pop('results', None)   # exercise the laps-completed fallback
         if any(c > 1 for c in Counter(_old_top10_positions(data)).values()):
             found.append(data)
             if len(found) == n:
