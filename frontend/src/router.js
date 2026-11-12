@@ -32,14 +32,12 @@ const routes = [
   {
     path: '/replay',
     name: 'Replay',
-    component: () => import('@/views/RaceReplay.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('@/views/RaceReplay.vue')
   },
   {
     path: '/replay/:year/:round',
     name: 'RaceReplay',
-    component: () => import('@/views/RaceReplay.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('@/views/RaceReplay.vue')
   },
   {
     path: '/standings',
@@ -60,8 +58,7 @@ const routes = [
   {
     path: '/the-grid', 
     name: 'TheGrid',
-    component: () => import('@/views/TheGrid.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('@/views/TheGrid.vue')
   },
   {
     path: '/predict/:year/:round',
@@ -75,6 +72,11 @@ const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+// Where to go after login/register: only same-site paths, never "//evil.com"
+export function safeRedirect(value) {
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/'
+}
 
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore()

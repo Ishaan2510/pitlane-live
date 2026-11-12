@@ -222,7 +222,12 @@
           <div class="prediction-panel">
             <div class="panel-heading">MAKE PREDICTION</div>
 
-            <div v-if="!selectedDriver" class="pred-hint">
+            <div v-if="!auth.isLoggedIn" class="pred-hint">
+              <router-link :to="{ name: 'Login', query: { redirect: $route.fullPath } }" class="pred-submit">
+                Log in to predict
+              </router-link>
+            </div>
+            <div v-else-if="!selectedDriver" class="pred-hint">
               Select a driver first
             </div>
             <div v-else class="pred-form">
@@ -300,6 +305,7 @@ import { TEAM_COLORS } from '@/data/drivers'
 import TrackCanvas from '../components/TrackCanvas.vue'
 import api from '../services/api.js'
 import { apiUrl } from '@/services/apiBase'
+import { useAuthStore } from '@/stores/auth'
 
 
 const SHORT_TEAM = {
@@ -354,6 +360,7 @@ export default {
   },
 
   computed: {
+    auth() { return useAuthStore() },
     // The race weekend live calls are attached to (year/round for scoring)
     liveRace() {
       return this.schedule.find(r => r.status === 'live') || null

@@ -87,7 +87,7 @@
         </form>
 
         <div class="form-footer">
-          Already in? <router-link to="/login">SIGN IN →</router-link>
+          Already in? <router-link :to="{ path: '/login', query: $route.query }">SIGN IN →</router-link>
         </div>
       </div>
     </div>
@@ -96,10 +96,12 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { safeRedirect } from '@/router'
 
 const router = useRouter()
+const route  = useRoute()
 const auth   = useAuthStore()
 
 const form        = reactive({ username: '', email: '', password: '' })
@@ -153,7 +155,7 @@ async function submit() {
   loading.value = true
   try {
     await auth.register(form.username.trim(), form.email.trim().toLowerCase(), form.password)
-    router.push('/')
+    router.push(safeRedirect(route.query.redirect))
   } catch (e) {
     serverError.value = e.message
   } finally {
