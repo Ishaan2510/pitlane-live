@@ -219,6 +219,12 @@ def test_qualifying_result_times():
     out = build.build_results(o.result_frame(row, drivers, pd.DataFrame(), quali=True), quali=True)
     assert (out[0]['q1_s'], out[0]['q2_s'], out[0]['q3_s'], out[0]['time_s']) == (71.285, 70.57, None, None)
     assert out[0]['status'] is None
+    # a text position ('RT') sorts last and counts as retired
+    rows = [dict(row[0], position='RT', duration=[None, None, None]), row[0]]
+    two = pd.concat([drivers, drivers.assign(Driver='LIN', DriverNumber='6')])
+    rows[0]['driver_number'] = 6
+    frame = o.result_frame(rows, two, pd.DataFrame(), quali=True)
+    assert frame[['Abbreviation', 'Position', 'ClassifiedPosition']].values.tolist() == [['NOR', 1, '1'], ['LIN', 2, 'R']]
 
 
 def test_session_is_ready_only_with_most_of_the_finishers_laps(raw):

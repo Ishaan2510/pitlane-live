@@ -388,7 +388,10 @@ def result_frame(results, drivers, grid, quali=False):
     """
     info = drivers.set_index(drivers['DriverNumber'].astype(int))
     grid = dict(zip(grid['Driver'], grid['GridPosition'])) if len(grid) else {}
-    ordered = sorted(results, key=lambda r: (r.get('position') is None, r.get('position') or 0,
+    def placed(r):                     # OpenF1 sometimes puts text here, e.g. 'RT' for a retirement
+        return r['position'] if isinstance(r.get('position'), int) else None
+
+    ordered = sorted(results, key=lambda r: (placed(r) is None, placed(r) or 0,
                                              -(r.get('number_of_laps') or 0)))
     most_laps = max((r.get('number_of_laps') or 0 for r in results), default=0)
     winner_time = next((r.get('duration') for r in ordered if isinstance(r.get('duration'), (int, float))), None)
@@ -398,6 +401,7 @@ def result_frame(results, drivers, grid, quali=False):
             continue
         d = info.loc[r['driver_number']]
         out = r.get('dsq') and 'D' or r.get('dns') and 'W' or r.get('dnf') and 'R'
+        out = out or (isinstance(r.get('position'), str) and 'R')
         laps = r.get('number_of_laps')
         status = r.get('status') or {'D': 'Disqualified', 'W': 'Did not start', 'R': 'Retired'}.get(out)
         if not status and not quali:
@@ -416,8 +420,8 @@ def result_frame(results, drivers, grid, quali=False):
             race_time = None
         rows.append({
             'Abbreviation': d['Driver'], 'DriverNumber': d['DriverNumber'], 'TeamName': d['Team'],
-            'TeamColor': d['TeamColor'], 'Position': r.get('position') or place,
-            'ClassifiedPosition': out or str(r.get('position') or place),
+            'TeamColor': d['TeamColor'], 'Position': placed(r) or place,
+            'ClassifiedPosition': out or str(placed(r) or place),
             'GridPosition': r.get('grid', grid.get(d['Driver'])), 'Status': status,
             'Points': r.get('points'), 'Laps': laps,
             'Time': pd.to_timedelta(race_time, unit='s') if race_time is not None else pd.NaT,
