@@ -163,9 +163,11 @@ python pipeline/build.py --year 2026                # every completed event not 
 python -m pytest pipeline -q
 ```
 
-F1's timing archive has needed an F1 TV login since October 2026 and none is configured,
-so the pipeline only builds sessions that are already in the raw FastF1 cache
-(`FASTF1_CACHE`) and skips the rest. New races will move to OpenF1.
+Sources: sessions that are already in a local raw FastF1 cache (`FASTF1_CACHE`) are built
+from it; everything else comes from the free [OpenF1](https://openf1.org) API, with
+[Jolpica](https://jolpi.ca) as the fallback for race classifications. F1's own timing
+archive has needed an F1 TV login since October 2026 and is never used. `--source
+auto|fastf1|openf1` overrides the choice; no credentials are needed anywhere.
 
 The replay and simulation pages read `/data/` directly. The backend reads the same files
 through `PUBLIC_DATA_BASE_URL` for scoring.

@@ -12,8 +12,12 @@ File shapes are documented in pipeline/SCHEMA.md.
 
     --force            rebuild sessions that are already on disk
     --sessions R,Q     limit sessions (R Race, Q Qualifying, S Sprint, SQ Sprint Qualifying)
+    --source auto      auto (default): FastF1 for sessions already in the local FastF1 cache,
+                       OpenF1 for everything else. Or force fastf1 / openf1.
 
-FastF1's raw cache lives in $FASTF1_CACHE (default .fastf1-cache/).
+The data comes from a source in pipeline/sources/ (see base.py for the contract).
+FastF1's raw cache lives in $FASTF1_CACHE (default .fastf1-cache/), OpenF1 responses in
+$OPENF1_CACHE (default .openf1-cache/). FastF1 never downloads in auto mode or in CI.
 """
 
 import argparse

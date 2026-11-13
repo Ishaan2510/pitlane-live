@@ -22,6 +22,30 @@ manifest.json
 
 Session codes: `R` Race, `Q` Qualifying, `S` Sprint, `SQ` Sprint Qualifying.
 
+## Sources
+
+Every session is built from one of two sources and both write the same files:
+
+- `fastf1`: sessions that are already in a local FastF1 cache (F1's timing archive has
+  needed a login since October 2026, so nothing new comes from it).
+- `openf1`: everything else, from the free OpenF1 REST API, with Jolpica as the fallback
+  for a missing race classification.
+
+`event.json` and each `manifest.json` entry record it per session in `source`.
+Differences you can see in the data:
+
+| | fastf1 | openf1 |
+|---|---|---|
+| Session time zero (`*_time_s` in `track_status.json`) | start of the timing feed, about an hour before lights out | the scheduled session start, so earlier messages are negative |
+| Track status | F1's own status stream | rebuilt from race control messages (sector yellows, SC, VSC, red, "TRACK CLEAR") |
+| Lap 1 | usually no lap or sector times | lap and sector times present |
+| `time_s` of lapped cars in `results.json` | gap at the flag | `null` (OpenF1 only says "+1 LAP") |
+| In-lap of a car that retires in the pits | `pit_in` is true | `pit_in` is false (no pit record) |
+| `position` in `laps.json` | computed by FastF1 | F1's position feed at the end of the lap; differs on about 1% of laps, mostly lapped cars |
+| `is_accurate` | FastF1's definition | timed lap with all sectors, not an in/out lap, no SC/VSC/red, not lap 1 |
+| Telemetry (`circuit.json`, `quali/fastest`) | about 4 Hz car data merged with position data | about 3.7 Hz car data; distance is speed integrated over time, so it can drift a few metres per lap |
+| Circuit corners | FastF1 `circuit_info` | same corner list (MultiViewer), `distance` taken from the nearest outline point |
+
 ## manifest.json
 
 Rebuilt from the folders on disk after every run. Events are sorted newest first.
@@ -34,7 +58,8 @@ Rebuilt from the folders on disk after every run. Events are sorted newest first
   "events": [
     { "year": 2025, "round": 8, "name": "Monaco Grand Prix", "country": "Monaco",
       "location": "Monaco", "date": "2025-05-25", "format": "conventional",
-      "sessions": ["Q", "R"], "built_at": "2026-11-13T10:50:11Z" }
+      "sessions": ["Q", "R"], "source": { "Q": "openf1", "R": "fastf1" },
+      "built_at": "2026-11-13T10:50:11Z" }
   ]
 }
 ```
@@ -43,12 +68,14 @@ Rebuilt from the folders on disk after every run. Events are sorted newest first
 
 `total_laps` is the race distance actually run (`null` until the race is built).
 `sessions` holds the start time of every session of the weekend the pipeline can build.
+`source` says where each built session came from (`fastf1` or `openf1`).
 
 ```json
 { "year": 2025, "round": 8, "name": "Monaco Grand Prix", "country": "Monaco",
   "location": "Monaco", "circuit": "Monte Carlo", "date": "2025-05-25",
   "format": "conventional", "total_laps": 78,
   "sessions": { "Q": "2025-05-24T14:00:00Z", "R": "2025-05-25T13:00:00Z" },
+  "source": { "Q": "openf1", "R": "fastf1" },
   "built_at": "2026-11-13T10:50:11Z" }
 ```
 
