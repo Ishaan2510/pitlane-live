@@ -45,9 +45,21 @@
             >▶ START SIMULATION</button>
           </div>
         </div>
-        <div class="sim-box sim-loading" v-else-if="loadingSimRaces">
+        <div class="sim-box" v-else-if="loadingSimRaces" data-theme="dark" aria-busy="true" aria-label="Loading available races">
           <div class="sim-heading">TEST WITH SIMULATION</div>
-          <p class="sim-sub">Loading available races…</p>
+          <div class="sim-controls">
+            <div class="skeleton sim-skeleton"></div>
+            <div class="skeleton sim-skeleton"></div>
+          </div>
+        </div>
+        <!-- This page is always dark, so the shared panel is pinned to the dark theme -->
+        <div v-else class="sim-state" data-theme="dark">
+          <StatePanel
+            label="Simulation unavailable"
+            text="The list of races could not be loaded."
+            action="Retry"
+            @action="loadSimulatableRaces"
+          />
         </div>
 
         <div class="next-race-links" style="margin-top: 1rem">
@@ -57,9 +69,10 @@
     </div>
 
     <!-- Loading -->
-    <div v-else-if="loading" class="loading-screen">
-      <div class="loading-pip"></div>
-      <p>Connecting to live timing…</p>
+    <div v-else-if="loading" class="loading-screen" data-theme="dark" aria-busy="true" aria-label="Connecting to live timing">
+      <div class="skeleton-stack">
+        <div class="skeleton" v-for="i in 10" :key="i"></div>
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════
@@ -307,6 +320,7 @@ import api from '../services/api.js'
 import { apiUrl } from '@/services/apiBase'
 import { getManifest, getReplay, getCircuit } from '@/services/data'
 import { useAuthStore } from '@/stores/auth'
+import StatePanel from '../components/StatePanel.vue'
 
 
 const SHORT_TEAM = {
@@ -317,7 +331,7 @@ const SHORT_TEAM = {
 
 export default {
   name: 'LiveRace',
-  components: { TrackCanvas },
+  components: { TrackCanvas, StatePanel },
 
   data() {
     return {
@@ -806,7 +820,8 @@ export default {
   border-color: #e10600;
 }
 .sim-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.sim-loading .sim-sub { color: #333; font-style: italic; }
+.sim-skeleton { height: 36px; }
+.sim-state { margin-top: 2rem; }
 
 .next-race-links {
   display: flex;
@@ -833,22 +848,9 @@ export default {
 
 .loading-screen {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  color: #444;
-}
-.loading-pip {
-  width: 12px; height: 12px;
-  background: #e10600;
-  border-radius: 50%;
-  animation: pip-pulse 1s ease-in-out infinite;
-}
-@keyframes pip-pulse {
-  0%, 100% { transform: scale(1);   opacity: 1; }
-  50%       { transform: scale(2.4); opacity: 0.4; }
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
 }
 
 

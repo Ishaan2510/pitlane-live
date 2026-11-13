@@ -46,6 +46,6 @@ main { padding-top: 56px; }
 @media (max-width: 480px) {
   .dock-open .site-footer { padding-bottom: 260px; }
 }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-active, .fade-leave-active { transition: opacity var(--dur-base) var(--ease); }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

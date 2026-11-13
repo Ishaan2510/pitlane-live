@@ -91,14 +91,22 @@
         <div class="news-source">via Autosport</div>
       </div>
 
-      <div v-if="newsLoading" class="news-loading">
-        <div class="news-pip"></div>
-        <span>Loading news…</span>
+      <div v-if="newsLoading" class="news-list" aria-busy="true" aria-label="Loading news">
+        <div class="skeleton news-skeleton" v-for="i in 6" :key="i"></div>
       </div>
 
-      <div v-else-if="newsError" class="news-error">
-        Could not load news feed. <a href="https://www.autosport.com/f1" target="_blank">Visit Autosport →</a>
-      </div>
+      <StatePanel
+        v-else-if="newsError"
+        label="News unavailable"
+        text="The news feed could not be loaded."
+        action="Retry"
+        @action="loadNews"
+      />
+      <StatePanel
+        v-else-if="!news.length"
+        label="No news"
+        text="Nothing in the feed right now."
+      />
 
       <div v-else class="news-list">
         <a
@@ -128,6 +136,7 @@
 <script>
 import { TEAM_COLORS } from '@/data/drivers'
 import { apiUrl } from '@/services/apiBase'
+import StatePanel from '@/components/StatePanel.vue'
 
 
 const DRIVERS = [
@@ -168,6 +177,7 @@ const DRIVERS = [
 
 export default {
   name: 'TheGrid',
+  components: { StatePanel },
 
   data() {
     return {
@@ -206,7 +216,7 @@ export default {
       try {
         const res  = await fetch(apiUrl('/news'))
         const data = await res.json()
-        if (data.error) throw new Error(data.error)
+        if (data.error || !Array.isArray(data)) throw new Error(data.error || 'Bad news response')
         this.news = data
       } catch {
         this.newsError = true
@@ -219,8 +229,6 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Work+Sans:wght@400;500;600;700&display=swap');
-
 .the-grid {
   min-height: calc(100vh - 56px);
   background: var(--bg-primary);
@@ -441,28 +449,8 @@ export default {
   font-family: 'DM Mono', monospace;
   letter-spacing: 0.08em;
 }
-.news-loading {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  font-family: 'DM Mono', monospace;
-}
-.news-pip {
-  width: 8px; height: 8px;
-  background: var(--accent);
-  border-radius: 50%;
-  animation: pip 1s ease-in-out infinite;
-}
-@keyframes pip { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(1.5)} }
-.news-error {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-family: 'DM Mono', monospace;
-}
-.news-error a { color: var(--accent); text-decoration: none; }
 
+.news-skeleton { height: 150px; background: var(--bg-secondary); }
 .news-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

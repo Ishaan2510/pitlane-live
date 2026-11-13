@@ -165,8 +165,6 @@ async function submit() {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
-
 .auth-shell {
   min-height: 100vh;
   display: grid;

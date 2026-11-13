@@ -9,7 +9,11 @@
           <span class="live-dot"></span>
           RACE IN PROGRESS
         </div>
-        <div class="race-info" v-if="nextRace">
+        <div class="race-info" v-if="loading" aria-busy="true" aria-label="Loading next race">
+          <div class="skeleton race-name-skeleton"></div>
+          <div class="skeleton race-loc-skeleton"></div>
+        </div>
+        <div class="race-info" v-else-if="nextRace">
           <h1 class="race-name">{{ nextRace.name }}</h1>
           <p class="race-location">{{ nextRace.location }}, {{ nextRace.country }}</p>
         </div>
@@ -151,6 +155,24 @@
 
         </div>
       </template>
+      <template v-else>
+        <div class="section-label">RACE WEEKEND</div>
+        <div v-if="loading" class="skeleton-stack" aria-busy="true" aria-label="Loading race weekend">
+          <div class="skeleton" v-for="i in 5" :key="i"></div>
+        </div>
+        <StatePanel
+          v-else-if="loadError"
+          label="Schedule unavailable"
+          text="The race weekend schedule could not be loaded."
+          action="Retry"
+          @action="loadRace"
+        />
+        <StatePanel
+          v-else
+          label="No upcoming race"
+          text="There is no race ahead on this season's calendar."
+        />
+      </template>
 
       <div class="divider"></div>
 
@@ -203,12 +225,16 @@
 
 <script>
 import { apiUrl } from '@/services/apiBase'
+import StatePanel from '@/components/StatePanel.vue'
 
 export default {
   name: 'WatchLive',
+  components: { StatePanel },
 
   data() {
     return {
+      loading:   true,
+      loadError: false,
       nextRace:  null,
       countdown: '—',
       ticker:    null,
@@ -250,14 +276,21 @@ export default {
 
   methods: {
     async loadRace() {
+      this.loading   = true
+      this.loadError = false
       try {
         const res  = await fetch(apiUrl('/schedule'))
         const data = await res.json()
+        if (!res.ok || !Array.isArray(data)) throw new Error('Schedule request failed')
         // Prefer a race that's currently live; fall back to next upcoming.
         this.nextRace = data.find(r => r.status === 'live')
                      || data.find(r => r.is_next)
                      || null
-      } catch { /* silent */ }
+      } catch {
+        this.loadError = true
+      } finally {
+        this.loading = false
+      }
     },
 
     tick() {
@@ -302,8 +335,6 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Work+Sans:wght@400;500;600;700&display=swap');
-
 .watch-live {
   min-height: calc(100vh - 56px);
   background: var(--bg-primary);
@@ -344,6 +375,8 @@ export default {
 .live-dot.small { width: 5px; height: 5px; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
+.race-name-skeleton { height: 2.6rem; width: min(22rem, 70vw); margin-bottom: 0.5rem; }
+.race-loc-skeleton  { height: 0.9rem; width: 10rem; }
 .race-name {
   font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(2rem, 4vw, 3.2rem);
