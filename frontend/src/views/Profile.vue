@@ -11,9 +11,13 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <div class="loading-pip"></div>
-      <p>Loading profile…</p>
+    <div v-if="loading" class="profile-body" aria-busy="true" aria-label="Loading profile">
+      <div class="stats-row">
+        <div class="skeleton stat-skeleton" v-for="i in 4" :key="i"></div>
+      </div>
+      <div class="skeleton-stack">
+        <div class="skeleton" v-for="i in 5" :key="i"></div>
+      </div>
     </div>
 
     <div v-else class="profile-body">
@@ -39,10 +43,20 @@
       <!-- Real race predictions -->
       <div class="section">
         <div class="section-heading">RECENT PREDICTIONS</div>
-        <div v-if="realPredictions.length === 0" class="empty-preds">
-          <p>No race predictions yet. Make your first call on race day!</p>
-          <router-link to="/live" class="cta-btn">GO LIVE →</router-link>
-        </div>
+        <StatePanel
+          v-if="loadError"
+          label="Predictions unavailable"
+          text="Your predictions could not be loaded."
+          action="Retry"
+          @action="load"
+        />
+        <StatePanel
+          v-else-if="realPredictions.length === 0"
+          label="No predictions yet"
+          text="Make your first call on race day."
+          action="Go live"
+          to="/live"
+        />
         <div v-else class="pred-list">
           <div class="pred-header">
             <span>DRIVER</span><span>ACTION</span><span>CONFIDENCE</span>
@@ -89,10 +103,12 @@
 <script>
 import { useAuthStore } from '@/stores/auth'
 import { apiUrl } from '@/services/apiBase'
+import StatePanel from '@/components/StatePanel.vue'
 export default {
   name: 'Profile',
+  components: { StatePanel },
   data() {
-    return { predictions: [], rank: null, loading: true, showSim: false }
+    return { predictions: [], rank: null, loading: true, loadError: false, showSim: false }
   },
   computed: {
     user()    { return useAuthStore().user },
@@ -100,19 +116,29 @@ export default {
     realPredictions() { return this.predictions.filter(p => p.mode === 'live') },
     simPredictions()  { return this.predictions.filter(p => p.mode !== 'live') }
   },
-  async mounted() {
-    await Promise.all([this.loadPredictions(), this.loadRank()])
-    this.loading = false
+  mounted() {
+    this.load()
   },
   methods: {
+    async load() {
+      this.loading = true
+      await Promise.all([this.loadPredictions(), this.loadRank()])
+      this.loading = false
+    },
     async loadPredictions() {
+      this.loadError = false
       try {
         const token = localStorage.getItem('pitlane_token')
         const res = await fetch(apiUrl('/predictions/mine'), {
           headers: { Authorization: `Bearer ${token}` }
         })
-        this.predictions = await res.json()
-      } catch(e) { console.error(e) }
+        const data = await res.json()
+        if (!res.ok || !Array.isArray(data)) throw new Error('Predictions request failed')
+        this.predictions = data
+      } catch(e) {
+        console.error(e)
+        this.loadError = true
+      }
     },
     async loadRank() {
       try {
@@ -191,22 +217,6 @@ export default {
 }
 .page-sub { font-size: 0.82rem; color: var(--text-muted); }
 
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 6rem;
-  color: var(--text-muted);
-}
-.loading-pip {
-  width: 10px; height: 10px;
-  background: var(--accent);
-  border-radius: 50%;
-  animation: pulse 1s ease infinite;
-}
-@keyframes pulse { 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(2); opacity:0.4; } }
 
 .profile-body { max-width: 1100px; margin: 0 auto; padding: 3rem 5rem 6rem; }
 
@@ -231,6 +241,7 @@ export default {
   line-height: 1;
   margin-bottom: 0.4rem;
 }
+.stat-skeleton { height: 108px; background: var(--bg-secondary); }
 .stat-label { font-size: 0.6rem; letter-spacing: 0.14em; color: var(--text-muted); font-weight: 700; }
 
 .section { margin-bottom: 2.5rem; }
@@ -253,23 +264,6 @@ export default {
 .sim-toggle { color: var(--border-secondary); font-size: 0.55rem; }
 .sim-note   { color: var(--text-faint); font-size: 0.58rem; letter-spacing: 0.08em; margin-left: auto; font-style: italic; }
 
-.empty-preds {
-  text-align: center;
-  padding: 4rem 2rem;
-  border: 1px solid var(--bg-card);
-  color: var(--text-muted);
-}
-.empty-preds p { margin-bottom: 1.5rem; }
-.cta-btn {
-  display: inline-block;
-  padding: 0.7rem 1.8rem;
-  background: var(--accent);
-  color: var(--text-inverse);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
 
 .pred-list { border: 1px solid var(--bg-card); }
 .sim-list  { border-color: var(--border-primary); opacity: 0.65; }

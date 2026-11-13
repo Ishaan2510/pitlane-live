@@ -9,16 +9,27 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <div class="loading-pip"></div>
-      <p>Loading standings…</p>
+    <div v-if="loading" class="standings-wrap" aria-busy="true" aria-label="Loading standings">
+      <div class="skeleton-stack">
+        <div class="skeleton" v-for="i in 8" :key="i"></div>
+      </div>
     </div>
 
-    <div v-else-if="leaders.length === 0" class="empty-state">
-      <div class="empty-icon">🏁</div>
-      <h2>No standings yet</h2>
-      <p>Be the first to make predictions on race day</p>
-      <router-link to="/register" class="cta-btn">JOIN THE GRID →</router-link>
+    <div v-else-if="error || leaders.length === 0" class="standings-wrap">
+      <StatePanel
+        v-if="error"
+        label="Standings unavailable"
+        text="The leaderboard could not be loaded."
+        action="Retry"
+        @action="load"
+      />
+      <StatePanel
+        v-else
+        label="No standings yet"
+        text="Be the first to make predictions on race day."
+        action="Join the grid"
+        to="/register"
+      />
     </div>
 
     <div v-else class="standings-wrap">
@@ -95,13 +106,16 @@
 <script>
 import { useAuthStore } from '@/stores/auth'
 import { apiUrl } from '@/services/apiBase'
+import StatePanel from '@/components/StatePanel.vue'
 
 export default {
   name: 'Standings',
+  components: { StatePanel },
   data() {
     return {
       leaders: [],
-      loading: true
+      loading: true,
+      error:   false
     }
   },
   computed: {
@@ -109,14 +123,24 @@ export default {
       return useAuthStore().user
     }
   },
-  async mounted() {
-    try {
-      const res = await fetch(apiUrl('/leaderboard'))
-      this.leaders = await res.json()
-    } catch (e) {
-      console.error(e)
-    } finally {
-      this.loading = false
+  mounted() {
+    this.load()
+  },
+  methods: {
+    async load() {
+      this.loading = true
+      this.error   = false
+      try {
+        const res  = await fetch(apiUrl('/leaderboard'))
+        const data = await res.json()
+        if (!res.ok || !Array.isArray(data)) throw new Error('Leaderboard request failed')
+        this.leaders = data
+      } catch (e) {
+        console.error(e)
+        this.error = true
+      } finally {
+        this.loading = false
+      }
     }
   }
 }
@@ -160,56 +184,14 @@ export default {
   color: var(--text-muted);
 }
 
-/* Loading */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 6rem;
-  color: var(--text-muted);
-}
-.loading-pip {
-  width: 10px; height: 10px;
-  background: var(--accent);
-  border-radius: 50%;
-  animation: pulse 1s ease infinite;
-}
-@keyframes pulse {
-  0%,100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(2); opacity: 0.4; }
-}
-
-/* Empty */
-.empty-state {
-  text-align: center;
-  padding: 6rem 2rem;
-}
-.empty-icon { font-size: 3rem; margin-bottom: 1rem; }
-.empty-state h2 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.5rem;
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
-}
-.empty-state p { color: var(--text-muted); margin-bottom: 2rem; }
-.cta-btn {
-  display: inline-block;
-  padding: 0.7rem 1.8rem;
-  background: var(--accent);
-  color: var(--text-inverse);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
 /* Standings wrap */
 .standings-wrap {
   max-width: 1100px;
   margin: 0 auto;
   padding: 3rem 5rem 6rem;
+}
+@media (max-width: 768px) {
+  .standings-wrap { padding: 1.5rem 1rem 4rem; }
 }
 
 /* Podium */

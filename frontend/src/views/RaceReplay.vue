@@ -20,7 +20,22 @@
           >{{ y }}</button>
         </div>
 
-        <div v-if="loadingRaces" class="loading">Loading races…</div>
+        <div v-if="loadingRaces" class="skeleton-stack" aria-busy="true" aria-label="Loading races">
+          <div class="skeleton" v-for="i in 8" :key="i"></div>
+        </div>
+
+        <StatePanel
+          v-else-if="loadError"
+          label="Replays unavailable"
+          text="The race list could not be loaded."
+          action="Retry"
+          @action="loadAvailableRaces"
+        />
+        <StatePanel
+          v-else-if="!availableRaces.length"
+          label="No replays"
+          :text="`No ${selectedYear} races have been built yet.`"
+        />
 
         <div v-else class="race-list">
           <div
@@ -34,6 +49,9 @@
             <div class="race-details">
               <div class="race-name-text">{{ race.name }}</div>
               <div class="race-location">{{ race.location }}, {{ race.country }}</div>
+              <div class="race-coverage">
+                <span v-for="tag in race.coverage" :key="tag" class="cov-tag">{{ tag }}</span>
+              </div>
             </div>
             <div class="race-date">
               {{ formatDate(race.date) }}
@@ -167,10 +185,14 @@ import TrackCanvas      from '../components/TrackCanvas.vue'
 import WeatherPanel     from '../components/WeatherPanel.vue'
 import TelemetryPanel   from '../components/TelemetryPanel.vue'
 import ProgressBar      from '../components/ProgressBar.vue'
+import StatePanel       from '../components/StatePanel.vue'
+
+// Sessions a weekend has data for, as shown on each race card
+const COVERAGE = [['R', 'RACE'], ['Q', 'QUALI'], ['S', 'SPRINT']]
 
 export default {
   name: 'RaceReplay',
-  components: { ToastNotification, TrackCanvas, WeatherPanel, TelemetryPanel, ProgressBar },
+  components: { ToastNotification, TrackCanvas, WeatherPanel, TelemetryPanel, ProgressBar, StatePanel },
 
   setup() {
     const { toasts, remove: removeToast, show } = useToast()
@@ -182,6 +204,7 @@ export default {
       selectedYear:   2026,
       availableYears: [2024, 2025, 2026],
       loadingRaces:   true,
+      loadError:      false,
       availableRaces: [],
       selectedRace:   null,
       raceData:       null,
@@ -231,6 +254,8 @@ export default {
     },
 
     async loadAvailableRaces() {
+      this.loadingRaces = true
+      this.loadError    = false
       try {
         // Every race in the manifest is built and ready to replay
         const manifest = await getManifest()
@@ -244,10 +269,12 @@ export default {
             country:  e.country,
             date:     e.date,
             year:     e.year,
+            coverage: COVERAGE.filter(([code]) => e.sessions.includes(code)).map(([, label]) => label),
             ready:    true
           }))
       } catch (e) {
         console.error(e)
+        this.loadError = true
       } finally {
         this.loadingRaces = false
       }
@@ -418,12 +445,6 @@ export default {
 .year-btn:hover  { border-color: var(--text-primary); color: var(--text-primary); }
 .year-btn.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
 
-.loading {
-  text-align: center;
-  padding: 4rem;
-  color: var(--text-secondary);
-}
-
 .race-list {
   display: grid;
   gap: 1px;
@@ -444,6 +465,15 @@ export default {
 .race-name-text     { font-weight: 500; margin-bottom: 0.2rem; color: var(--text-primary); }
 .race-location      { font-size: 0.82rem; color: var(--text-secondary); }
 .race-date          { text-align: right; color: var(--text-secondary); font-size: 0.9rem; }
+.race-coverage      { display: flex; gap: 0.3rem; margin-top: 0.45rem; }
+.cov-tag {
+  border: 1px solid var(--border-secondary);
+  color: var(--text-secondary);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  padding: 0.05rem 0.35rem;
+}
 
 /* ════════════════════════════════════════════════════
    REPLAY INTERFACE

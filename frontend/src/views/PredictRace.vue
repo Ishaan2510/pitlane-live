@@ -40,9 +40,20 @@
     </div>
 
     <!-- ── Loading ── -->
-    <div v-if="loading" class="loading-state">
-      <div class="loading-pip"></div>
-      <p>Loading prediction window…</p>
+    <div v-if="loading" class="state-wrap" aria-busy="true" aria-label="Loading prediction window">
+      <div class="skeleton-stack">
+        <div class="skeleton" v-for="i in 8" :key="i"></div>
+      </div>
+    </div>
+
+    <!-- ── Could not reach the backend ── -->
+    <div v-else-if="windowState === 'error'" class="state-wrap">
+      <StatePanel
+        label="Predictions unavailable"
+        text="The prediction window could not be loaded."
+        action="Retry"
+        @action="load"
+      />
     </div>
 
     <!-- ── Pre-quali message ── -->
@@ -226,6 +237,7 @@
 
 <script>
 import api from '@/services/api.js'
+import StatePanel from '@/components/StatePanel.vue'
 import { DRIVERS_2026, teamColor, driverByCode } from '@/data/drivers.js'
 
 const COMPOUNDS  = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
@@ -233,6 +245,7 @@ const MAX_STINTS = 4
 
 export default {
   name: 'PredictRace',
+  components: { StatePanel },
 
   data() {
     return {
@@ -280,11 +293,7 @@ export default {
   },
 
   async mounted() {
-    await this.loadWindowState()
-    if (this.windowState === 'window_open' || this.windowState === 'locked' || this.windowState === 'race_finished') {
-      await this.loadExistingPrediction()
-    }
-    this.loading = false
+    await this.load()
     this.startCountdown()
   },
 
@@ -296,6 +305,15 @@ export default {
     teamColor,
     driverByCode,
 
+    async load() {
+      this.loading = true
+      await this.loadWindowState()
+      if (this.windowState === 'window_open' || this.windowState === 'locked' || this.windowState === 'race_finished') {
+        await this.loadExistingPrediction()
+      }
+      this.loading = false
+    },
+
     async loadWindowState() {
       try {
         const info = await api.getPredictionWindow(this.year, this.round)
@@ -305,7 +323,7 @@ export default {
         this.secondsUntilLock = info.seconds_until_lock || 0
       } catch (e) {
         console.error('Window load failed:', e)
-        this.windowState = 'pre_quali'
+        this.windowState = 'error'
       }
     },
 
@@ -556,7 +574,8 @@ export default {
 .status-block.finished .status-value { color: var(--text-secondary); }
 
 /* ── Info states ── */
-.loading-state, .info-state {
+.state-wrap { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
+.info-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -566,13 +585,6 @@ export default {
   color: var(--text-muted);
   text-align: center;
 }
-.loading-pip {
-  width: 10px; height: 10px;
-  background: var(--accent);
-  border-radius: 50%;
-  animation: pulse 1s infinite;
-}
-@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(2);opacity:0.4} }
 .info-icon { font-size: 3rem; }
 .info-state h2 {
   font-family: 'Bebas Neue', sans-serif;

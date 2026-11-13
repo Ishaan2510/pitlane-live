@@ -252,8 +252,6 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;500;600;700&display=swap');
-
 .how-to-play {
   background: #080808;
   min-height: 100vh;

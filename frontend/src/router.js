@@ -70,7 +70,14 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  // Top of the page on navigation; back and forward restore where you were.
+  // 'instant' because globals.css sets smooth scrolling on <html>.
+  // Resolved after the 200 ms page fade-out, so the old page does not jump first.
+  scrollBehavior(to, from, savedPosition) {
+    const position = { ...(savedPosition || { top: 0 }), behavior: 'instant' }
+    return new Promise(resolve => setTimeout(() => resolve(position), 200))
+  }
 })
 
 // Where to go after login/register: only same-site paths, never "//evil.com"

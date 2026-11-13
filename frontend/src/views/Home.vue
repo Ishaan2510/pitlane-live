@@ -4,7 +4,7 @@
     <!-- ════════════════════════════════════════════
          HERO — Next Race Countdown
     ════════════════════════════════════════════ -->
-    <section class="hero" v-if="nextRace">
+    <section class="hero" :class="`enter-${heroEntrance}`" v-if="nextRace">
       <div class="hero-inner">
 
         <!-- Left: meta -->
@@ -29,8 +29,8 @@
                     v-for="(digit, i) in unit.digits"
                     :key="i"
                     class="cd-digit"
-                    :class="{ flip: unit.flipping }"
-                  >{{ digit }}</span>
+                    :class="{ flip: digit.flip }"
+                  >{{ digit.char }}</span>
                 </div>
                 <div class="cd-label">{{ unit.label }}</div>
               </div>
@@ -102,8 +102,9 @@
 
       <div v-else class="cal-list">
         <div
-          v-for="race in races"
+          v-for="(race, i) in races"
           :key="race.round"
+          v-reveal="(i % 8) * 30"
           class="cal-row"
           :class="{
             completed: race.status === 'completed',
@@ -111,7 +112,10 @@
             live:      race.status === 'live',
             next:      race.is_next,
           }"
+          :tabindex="isLink(race) ? 0 : null"
+          :role="isLink(race) ? 'link' : null"
           @click="navigateToRace(race)"
+          @keydown.enter="navigateToRace(race)"
         >
           <div class="cr-round">
             <span class="cr-rd">RD</span>
@@ -135,9 +139,9 @@
           <div class="cr-date">{{ formatDateLong(race.date) }}</div>
 
           <div class="cr-action">
-            <span v-if="race.status === 'live'"            class="cr-cta live-cta">LIVE →</span>
-            <span v-else-if="race.status === 'completed'"  class="cr-cta replay-cta">REPLAY →</span>
-            <span v-else-if="race.is_next"                 class="cr-cta next-cta">UPCOMING →</span>
+            <span v-if="race.status === 'live'"            class="cr-cta live-cta">LIVE <span class="cr-arrow">→</span></span>
+            <span v-else-if="race.status === 'completed'"  class="cr-cta replay-cta">REPLAY <span class="cr-arrow">→</span></span>
+            <span v-else-if="race.is_next"                 class="cr-cta next-cta">UPCOMING <span class="cr-arrow">→</span></span>
             <span v-else                                    class="cr-cta muted-cta">{{ daysUntil(race.date) }}</span>
           </div>
         </div>
@@ -149,6 +153,8 @@
 
 <script>
 import { apiUrl } from '@/services/apiBase'
+import { getSchedule } from '@/services/schedule'
+import { heroEntrance } from '@/services/intro'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -163,13 +169,15 @@ export default {
       availableYears: [CURRENT_YEAR - 1, CURRENT_YEAR],
       countdown:      { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 },
       countdownTimer: null,
-      flipStates:     { days: false, hours: false, minutes: false, seconds: false },
-      prevCountdown:  { days: -1, hours: -1, minutes: -1, seconds: -1 },
+      digits:         null,   // { days: '08', ... } as last shown
+      flips:          {},     // { seconds: [false, true] }: which digits changed this tick
+      flipTimer:      null,
       predictionWindow: null,
     }
   },
 
   computed: {
+    heroEntrance() { return heroEntrance.value },
     nextRace() {
       return this.races.find(r => r.is_next) || null
     },
@@ -177,12 +185,11 @@ export default {
       return this.races.filter(r => r.status === 'upcoming' || r.status === 'live')
     },
     countdownUnits() {
-      return [
-        { label: 'DAYS', digits: String(this.countdown.days).padStart(2, '0').split(''),    flipping: this.flipStates.days },
-        { label: 'HRS',  digits: String(this.countdown.hours).padStart(2, '0').split(''),   flipping: this.flipStates.hours },
-        { label: 'MIN',  digits: String(this.countdown.minutes).padStart(2, '0').split(''), flipping: this.flipStates.minutes },
-        { label: 'SEC',  digits: String(this.countdown.seconds).padStart(2, '0').split(''), flipping: true },
-      ]
+      const unit = (label, key) => ({
+        label,
+        digits: [...(this.digits?.[key] || '00')].map((char, i) => ({ char, flip: !!this.flips[key]?.[i] })),
+      })
+      return [unit('DAYS', 'days'), unit('HRS', 'hours'), unit('MIN', 'minutes'), unit('SEC', 'seconds')]
     },
     predictCta() {
       // Show CTA only if we have a next race AND we've loaded its window state
@@ -216,14 +223,14 @@ export default {
 
   beforeUnmount() {
     clearInterval(this.countdownTimer)
+    clearTimeout(this.flipTimer)
   },
 
   methods: {
     async loadSchedule() {
       this.loading = true
       try {
-        const res  = await fetch(apiUrl(`/schedule?year=${this.selectedYear}`))
-        this.races = await res.json()
+        this.races = await getSchedule(this.selectedYear)
       } catch (e) {
         console.error('Failed to load schedule:', e)
         this.races = []
@@ -282,18 +289,25 @@ export default {
       const minutes = Math.floor((diff % 3600000)  / 60000)
       const seconds = Math.floor((diff % 60000)    / 1000)
 
-      this.flipStates = {
-        days:    days    !== this.prevCountdown.days,
-        hours:   hours   !== this.prevCountdown.hours,
-        minutes: minutes !== this.prevCountdown.minutes,
-        seconds: true
+      // Flip only the digits whose character changed since the last tick
+      const values = { days, hours, minutes, seconds }
+      const digits = {}
+      const flips  = {}
+      for (const key in values) {
+        digits[key] = String(values[key]).padStart(2, '0')
+        flips[key]  = [...digits[key]].map((char, i) => !!this.digits && this.digits[key][i] !== char)
       }
-      this.prevCountdown = { days, hours, minutes, seconds }
-      this.countdown     = { days, hours, minutes, seconds, total: diff }
+      this.digits    = digits
+      this.flips     = flips
+      this.countdown = { ...values, total: diff }
 
-      setTimeout(() => {
-        this.flipStates = { days: false, hours: false, minutes: false, seconds: false }
-      }, 400)
+      // Drop the class once the 350 ms animation is over, so the next change can retrigger it
+      clearTimeout(this.flipTimer)
+      this.flipTimer = setTimeout(() => { this.flips = {} }, 400)
+    },
+
+    isLink(race) {
+      return race.status === 'live' || race.status === 'completed'
     },
 
     navigateToRace(race) {
@@ -557,6 +571,29 @@ export default {
   white-space: nowrap;
 }
 
+/* Entrance: label, title, location, countdown, buttons rise in turn.
+   Held while the intro overlay is up, skipped when the intro was skipped. */
+.hero-meta, .hero-title, .hero-location, .countdown, .countdown-live, .hero-actions {
+  animation: hero-rise 320ms var(--ease) both;
+}
+.hero-title    { animation-delay: 60ms; }
+.hero-location { animation-delay: 120ms; }
+.countdown, .countdown-live { animation-delay: 180ms; }
+.hero-actions  { animation-delay: 240ms; }
+.enter-hold :is(.hero-meta, .hero-title, .hero-location, .countdown, .countdown-live, .hero-actions) {
+  animation-play-state: paused;
+}
+.enter-none :is(.hero-meta, .hero-title, .hero-location, .countdown, .countdown-live, .hero-actions) {
+  animation: none;
+}
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-meta, .hero-title, .hero-location, .countdown, .countdown-live, .hero-actions { animation: none; }
+}
+
 /* Hero skeleton */
 .hero-loading { padding: 4rem 5rem; display: flex; flex-direction: column; gap: 1rem; }
 .skeleton-title, .skeleton-sub, .skeleton-countdown {
@@ -567,10 +604,7 @@ export default {
 .skeleton-title    { height: 72px; width: 55%; }
 .skeleton-sub      { height: 16px; width: 30%; }
 .skeleton-countdown { height: 80px; width: 42%; }
-@keyframes shimmer {
-  0%, 100% { opacity: 0.4; }
-  50%       { opacity: 0.7; }
-}
+/* shimmer keyframes: assets/motion.css */
 
 /* ════════════════════════════════════════════════════
    CALENDAR
@@ -650,6 +684,27 @@ export default {
 .muted-cta  { color: var(--border-secondary); font-weight: 600; }
 .cal-row.next .next-cta  { opacity: 1; }
 .cal-row:hover .replay-cta { color: var(--text-secondary); }
+
+/* Hover and keyboard focus: accent bar grows on the left edge, the arrow nudges right */
+.cal-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transition: transform var(--dur-base) var(--ease);
+}
+.cal-row:hover::before,
+.cal-row:focus-visible::before { transform: scaleY(1); }
+.cr-arrow {
+  display: inline-block;
+  transition: transform var(--dur-base) var(--ease);
+}
+.cal-row:hover .cr-arrow,
+.cal-row:focus-visible .cr-arrow { transform: translateX(4px); }
+.cal-row:focus-visible { background: var(--accent-dim); }
+.cal-row.completed:focus-visible { opacity: 0.7; }
 
 /* ════════════════════════════════════════════════════
    MOBILE
