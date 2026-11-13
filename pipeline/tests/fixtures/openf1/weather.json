@@ -1,0 +1,35 @@
+[
+ {
+  "date": "2025-05-25T12:07:18.971000+00:00",
+  "session_key": 9979,
+  "pressure": 1017.3,
+  "track_temperature": 42.6,
+  "wind_direction": 298,
+  "wind_speed": 1.0,
+  "rainfall": 0,
+  "air_temperature": 21.5,
+  "humidity": 55.0
+ },
+ {
+  "date": "2025-05-25T12:08:18.969000+00:00",
+  "session_key": 9979,
+  "pressure": 1017.3,
+  "track_temperature": 43.6,
+  "wind_direction": 176,
+  "wind_speed": 0.7,
+  "rainfall": 0,
+  "air_temperature": 21.6,
+  "humidity": 54.0
+ },
+ {
+  "date": "2025-05-25T12:09:19+00:00",
+  "session_key": 9979,
+  "pressure": 1017.3,
+  "track_temperature": 43.5,
+  "wind_direction": 180,
+  "wind_speed": 2.2,
+  "rainfall": 0,
+  "air_temperature": 21.6,
+  "humidity": 54.0
+ }
+]

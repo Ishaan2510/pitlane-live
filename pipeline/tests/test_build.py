@@ -87,12 +87,15 @@ def test_sc_periods_from_race_control():
     rcm = pd.DataFrame({
         'Message': ['GREEN LIGHT - PIT EXIT OPEN', 'VIRTUAL SAFETY CAR DEPLOYED',
                     'VIRTUAL SAFETY CAR ENDING', 'SAFETY CAR DEPLOYED',
-                    'SAFETY CAR IN THIS LAP', 'SAFETY CAR DEPLOYED'],
-        'Lap':     [1, 2, 4, 20, 24, 50],
+                    'SAFETY CAR IN THIS LAP', 'SAFETY CAR DEPLOYED', 'RED FLAG',
+                    'VSC DEPLOYED', 'VSC ENDING', 'SAFETY CAR DEPLOYED'],
+        'Lap':     [1, 2, 4, 20, 24, 30, 31, 40, 41, 50],
     })
     assert build.build_sc_periods(rcm, last_lap=52) == [
         {'type': 'vsc', 'start_lap': 2,  'end_lap': 4},
         {'type': 'sc',  'start_lap': 20, 'end_lap': 24},
+        {'type': 'sc',  'start_lap': 30, 'end_lap': 31},    # ended by the red flag
+        {'type': 'vsc', 'start_lap': 40, 'end_lap': 41},    # 2026 wording
         {'type': 'sc',  'start_lap': 50, 'end_lap': 52},    # never withdrawn: runs to the flag
     ]
 

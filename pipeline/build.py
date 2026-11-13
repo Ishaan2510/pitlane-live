@@ -12,8 +12,12 @@ File shapes are documented in pipeline/SCHEMA.md.
 
     --force            rebuild sessions that are already on disk
     --sessions R,Q     limit sessions (R Race, Q Qualifying, S Sprint, SQ Sprint Qualifying)
+    --source auto      auto (default): FastF1 for sessions already in the local FastF1 cache,
+                       OpenF1 for everything else. Or force fastf1 / openf1.
 
-FastF1's raw cache lives in $FASTF1_CACHE (default .fastf1-cache/).
+The data comes from a source in pipeline/sources/ (see base.py for the contract).
+FastF1's raw cache lives in $FASTF1_CACHE (default .fastf1-cache/), OpenF1 responses in
+$OPENF1_CACHE (default .openf1-cache/). FastF1 never downloads in auto mode or in CI.
 """
 
 import argparse
@@ -26,6 +30,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # for `sources`
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / 'frontend' / 'public' / 'data'
@@ -250,10 +256,13 @@ def build_sc_periods(messages, last_lap):
     periods, current = [], None
     for m in messages.to_dict('records'):
         text = str(m.get('Message', '')).upper()
-        if 'SAFETY CAR' not in text:
-            continue
         lap = as_int(m.get('Lap'))
-        virtual = 'VIRTUAL' in text
+        if text.startswith('RED FLAG') and current:   # a red flag ends the Safety Car period
+            current['end_lap'] = lap
+            current = None
+        if 'SAFETY CAR' not in text and 'VSC' not in text:
+            continue
+        virtual = 'VIRTUAL' in text or 'VSC' in text  # 2026 messages say "VSC DEPLOYED"
         if 'DEPLOYED' in text:
             if current is None:
                 current = {'type': 'vsc' if virtual else 'sc', 'start_lap': lap, 'end_lap': None}
@@ -405,21 +414,10 @@ def resample_by_distance(tel, step, linear=(), nearest=()):
     return out
 
 
-def build_circuit(session):
+def build_circuit(source, name):
     """Track outline from the fastest race lap (one point per ~10 m) plus corner markers."""
-    # Fastest lap first; some cars have no telemetry in the archive, so fall through to the
-    # next fastest until one gives a usable outline.
-    timed = session.laps.dropna(subset=['LapTime']).sort_values('LapTime')
-    rs = {'distance': []}
-    for _, lap in timed.drop_duplicates(subset='Driver').iterrows():
-        try:
-            tel = lap.get_telemetry()
-            tel = tel[tel['X'].notna() & tel['Y'].notna()]
-            rs = resample_by_distance(tel, 10, linear=('X', 'Y', 'Speed'))
-        except Exception:
-            continue
-        if len(rs['distance']) >= 100:
-            break
+    tel = source.circuit_outline()
+    rs = resample_by_distance(tel, 10, linear=('X', 'Y', 'Speed'))
     if len(rs['distance']) < 100:
         raise ValueError('no lap with position telemetry')
     points = [
@@ -428,8 +426,8 @@ def build_circuit(session):
     ]
     corners, rotation = [], None
     try:
-        info = session.get_circuit_info()
-        rotation = rnd(info.rotation, 1)
+        corner_rows, rotation = source.circuit_info()
+        rotation = rnd(rotation, 1)
         corners = [{
             'number':   as_int(c['Number']),
             'letter':   as_str(c['Letter']) or '',
@@ -437,13 +435,17 @@ def build_circuit(session):
             'y':        rnd(c['Y'], 1),
             'distance': rnd(c['Distance'], 1),
             'angle':    rnd(c['Angle'], 1),
-        } for c in info.corners.to_dict('records')]
+        } for c in corner_rows.to_dict('records')]
+        for c in corners:
+            if c['distance'] is None and c['x'] is not None:     # source gave no distance: nearest outline point
+                nearest = min(points, key=lambda p: (p['x'] - c['x']) ** 2 + (p['y'] - c['y']) ** 2)
+                c['distance'] = float(nearest['distance'])
     except Exception as e:
-        log(f'    circuit_info unavailable ({e}); writing outline without corners')
+        log(f'    WARNING circuit_info unavailable ({e}); writing outline without corners')
     return {
-        'name':           session.event['EventName'],
-        'driver':         lap['Driver'],
-        'lap_time_s':     secs(lap['LapTime']),
+        'name':           name,
+        'driver':         tel.attrs.get('driver'),
+        'lap_time_s':     secs(tel.attrs.get('lap_time')),
         'total_distance': points[-1]['distance'] if points else 0,
         'rotation':       rotation,
         'corners':        corners,
@@ -451,24 +453,16 @@ def build_circuit(session):
     }
 
 
-def build_quali_fastest(session):
+def build_quali_fastest(source):
     """{driver: fastest-lap telemetry on a 5 m grid} for every driver with a timed lap."""
-    laps = session.laps
-    segment = {}
-    for name, part in zip(('Q1', 'Q2', 'Q3'), laps.split_qualifying_sessions()):
-        if part is not None:
-            for d, n in zip(part['Driver'], part['LapNumber']):
-                segment[(d, n)] = name
-
     out = {}
-    for driver in laps['Driver'].unique():
+    for driver in source.drivers()['Driver']:
         try:
-            lap = laps.pick_drivers(driver).pick_fastest()
-            if lap is None or pd.isna(lap['LapTime']):
+            got = source.fastest_lap_telemetry(driver)
+            if got is None:
                 continue
-            tel = lap.get_car_data().add_distance()
-            tel = tel.assign(Brake=tel['Brake'].astype(int))
-            rs = resample_by_distance(tel, 5, linear=('Speed', 'Throttle', 'RPM'),
+            info, tel = got
+            rs = resample_by_distance(tel, 5, linear=('Speed', 'Throttle'),
                                       nearest=('Brake', 'nGear', 'DRS'))
         except Exception as e:
             log(f'    {driver}: no fastest-lap telemetry ({e})')
@@ -477,17 +471,15 @@ def build_quali_fastest(session):
             continue
         out[driver] = {
             'driver':     driver,
-            'team':       lap['Team'],
-            'lap_time_s': secs(lap['LapTime']),
-            'segment':    segment.get((driver, lap['LapNumber'])),
-            'compound':   as_str(lap.get('Compound')),
-            'step_m':     5,
-            'distance':   [int(v) for v in rs['distance']],
+            'team':       info['team'],
+            'lap_time_s': secs(info['lap_time']),
+            'segment':    info['segment'],
+            'compound':   as_str(info['compound']),
+            'step_m':     5,               # point i is at i * step_m metres; no distance array
             'speed':      [round(float(v), 1) for v in rs['Speed']],
             'throttle':   [int(round(v)) for v in rs['Throttle']],
             'brake':      [int(v) for v in rs['Brake']],
             'n_gear':     [int(v) for v in rs['nGear']],
-            'rpm':        [int(round(v)) for v in rs['RPM']],
             'drs':        [int(v) for v in rs['DRS']],
         }
     return out
@@ -521,7 +513,7 @@ def built_sessions(event_dir):
     return [c for c, (_, folder) in SESSIONS.items() if (event_dir / folder / 'results.json').exists()]
 
 
-def write_event(event_dir, year, event, total_laps=None, circuit=None):
+def write_event(event_dir, year, event, total_laps=None, circuit=None, source=None):
     prev = read_json(event_dir / 'event.json') or {}
     write_json(event_dir / 'event.json', {
         'year':       year,
@@ -534,12 +526,14 @@ def write_event(event_dir, year, event, total_laps=None, circuit=None):
         'format':     event['EventFormat'],
         'total_laps': total_laps or prev.get('total_laps'),
         'sessions':   {c: utc_iso(t) for c, t in event_sessions(event).items()},
+        'source':     {**prev.get('source', {}), **(source or {})},   # session code -> fastf1 | openf1
         'built_at':   now_iso(),
     })
 
 
-def rebuild_manifest(out_dir=OUT_DIR):
+def rebuild_manifest(out_dir=None):
     """manifest.json from the event folders on disk, newest first."""
+    out_dir = out_dir or OUT_DIR
     events = []
     for path in out_dir.glob('*/*/event.json'):
         ev = read_json(path)
@@ -549,7 +543,9 @@ def rebuild_manifest(out_dir=OUT_DIR):
         events.append({
             'year': ev['year'], 'round': ev['round'], 'name': ev['name'],
             'country': ev['country'], 'location': ev['location'], 'date': ev['date'],
-            'format': ev['format'], 'sessions': sessions, 'built_at': ev['built_at'],
+            'format': ev['format'], 'sessions': sessions,
+            'source': {c: ev.get('source', {}).get(c) for c in sessions},
+            'built_at': ev['built_at'],
         })
     events.sort(key=lambda e: (e['year'], e['round']), reverse=True)
     prev = read_json(out_dir / 'manifest.json') or {}
@@ -562,67 +558,69 @@ def rebuild_manifest(out_dir=OUT_DIR):
 
 # ── building one session ──────────────────────────────────────────────────────
 
-def load_session(year, round_num, code):
-    """Loaded FastF1 session, or None when F1 has not published the data yet."""
-    import fastf1
-    try:
-        session = fastf1.get_session(year, round_num, code)
-        session.load(laps=True, telemetry=True, weather=True, messages=True)
-        laps = session.laps
-    except Exception as e:
-        log(f'  {year} R{round_num} {code}: data is not out yet ({type(e).__name__}: {e}) - skipped. '
-            "F1's archive has needed a login since Oct 2026, so only sessions already in FASTF1_CACHE build.")
-        return None
-    if laps is None or laps.empty:
-        log(f'  {year} R{round_num} {code}: session loaded but has no laps, data is not out yet - skipped')
-        return None
-    return session
+def pick_source(choice, year, round_num, code):
+    """'auto' = FastF1 when the session is already in the local FastF1 cache, else OpenF1."""
+    if choice != 'auto':
+        return choice
+    from sources.fastf1_source import session_is_cached
+    return 'fastf1' if session_is_cached(year, round_num, code) else 'openf1'
 
 
-def build_race_like(session, year, round_num, event_dir, folder, is_race):
-    laps = session.laps
-    total_laps = int(getattr(session, 'total_laps', 0) or 0) or int(laps['LapNumber'].max())
+def make_source(kind, choice, year, event, code):
+    round_num = int(event['RoundNumber'])
+    if kind == 'fastf1':
+        from sources.fastf1_source import FastF1Source
+        # Only an explicit --source fastf1 outside CI may download; F1's archive needs a login anyway.
+        offline = choice != 'fastf1' or bool(os.getenv('CI'))
+        return FastF1Source(year, round_num, code, log=log, offline=offline)
+    from sources.openf1_source import OpenF1Source
+    return OpenF1Source(year, round_num, code, event_sessions(event)[code], log=log)
+
+
+def build_race_like(source, year, event, event_dir, folder, is_race):
+    laps = source.laps()
+    total_laps = int(source.event()['total_laps'])
     lap_ends = leader_lap_ends(laps)
     out = event_dir / folder
-    weather = session.weather_data
+    weather = source.weather()
 
     write_json(out / 'replay.json', {
         'year':       year,
-        'round':      round_num,
-        'name':       session.event['EventName'],
-        'circuit':    session.event['Location'],
-        'date':       session.event['EventDate'].isoformat(),
+        'round':      int(event['RoundNumber']),
+        'name':       event['EventName'],
+        'circuit':    event['Location'],
+        'date':       event['EventDate'].isoformat(),
         'total_laps': total_laps,
         'weather':    weather_summary(weather),
         'laps':       build_replay_laps(laps, total_laps),
     })
     write_json(out / 'laps.json', build_laps_table(laps))
     write_json(out / 'track_status.json', {
-        'periods':    build_track_status(session.track_status, lap_ends),
-        'sc_periods': build_sc_periods(session.race_control_messages, total_laps),
+        'periods':    build_track_status(source.track_status(), lap_ends),
+        'sc_periods': build_sc_periods(source.race_control(), total_laps),
     })
     write_json(out / 'weather.json', build_weather(weather, lap_ends))
     write_json(out / 'pit_loss.json', build_pit_loss(laps))
     if is_race:
         try:
-            write_json(event_dir / 'circuit.json', build_circuit(session))
+            write_json(event_dir / 'circuit.json', build_circuit(source, event['EventName']))
         except Exception as e:
-            log(f'    circuit.json skipped: {e}')
-    write_json(out / 'results.json', build_results(session.results))      # last: marks the build complete
+            log(f'    WARNING circuit.json skipped: {e}')
+    write_json(out / 'results.json', build_results(source.results()))     # last: marks the build complete
     return total_laps
 
 
-def build_quali_like(session, event_dir, folder):
+def build_quali_like(source, event_dir, folder):
     out = event_dir / folder
-    for driver, data in build_quali_fastest(session).items():
+    for driver, data in build_quali_fastest(source).items():
         path = out / 'fastest' / f'{driver}.json'
         write_json(path, data)
         if path.stat().st_size > 60_000:
             log(f'    WARNING {path.name} is {path.stat().st_size // 1024} KB (budget 60 KB)')
-    write_json(out / 'results.json', build_results(session.results, quali=True))
+    write_json(out / 'results.json', build_results(source.results(), quali=True))
 
 
-def build_event(year, event, codes, force=False):
+def build_event(year, event, codes, force=False, source='auto'):
     """Build the given session codes for one event. Returns (built codes, failed codes)."""
     round_num = int(event['RoundNumber'])
     event_dir = OUT_DIR / str(year) / str(round_num)
@@ -631,22 +629,23 @@ def build_event(year, event, codes, force=False):
     for code in codes:
         if code in done and not force:
             continue
-        log(f'  {year} R{round_num} {code}: loading...')
-        session = load_session(year, round_num, code)
-        if session is None:
-            continue
+        kind = pick_source(source, year, round_num, code)
+        log(f'  {year} R{round_num} {code}: loading from {kind}...')
         try:
+            src = make_source(kind, source, year, event, code)
+            if not src.load():
+                continue
             folder = SESSIONS[code][1]
             total_laps = None
             if code in ('R', 'S'):
-                laps_run = build_race_like(session, year, round_num, event_dir, folder, is_race=code == 'R')
+                laps_run = build_race_like(src, year, event, event_dir, folder, is_race=code == 'R')
                 total_laps = laps_run if code == 'R' else None
             else:
-                build_quali_like(session, event_dir, folder)
-            circuit = (session.session_info.get('Meeting', {}).get('Circuit', {}) or {}).get('ShortName')
-            write_event(event_dir, year, event, total_laps=total_laps, circuit=circuit)
+                build_quali_like(src, event_dir, folder)
+            write_event(event_dir, year, event, total_laps=total_laps,
+                        circuit=src.event()['circuit'], source={code: src.name})
             built.append(code)
-            log(f'  {year} R{round_num} {code}: built')
+            log(f'  {year} R{round_num} {code}: built from {src.name}')
         except Exception:
             failed.append(code)
             log(f'  {year} R{round_num} {code}: FAILED\n{traceback.format_exc()}')
@@ -699,6 +698,8 @@ def main(argv=None):
     p.add_argument('--skip-existing', action='store_true',
                    help='Skip sessions already on disk. This is the default; the flag exists for backfill scripts.')
     p.add_argument('--sessions', help='Comma list of R,Q,S,SQ. Default: every session of the weekend.')
+    p.add_argument('--source', choices=['auto', 'fastf1', 'openf1'], default='auto',
+                   help='auto = FastF1 for sessions already in the local FastF1 cache, OpenF1 for the rest.')
     p.add_argument('--manifest-only', action='store_true', help='Only rebuild manifest.json from disk.')
     p.add_argument('--describe-changes', action='store_true',
                    help='Read `git diff --cached --name-status` on stdin, print the commit message.')
@@ -725,9 +726,8 @@ def main(argv=None):
         p.error(f'unknown session(s): {",".join(unknown)}')
 
     import fastf1
-    cache_dir = Path(os.getenv('FASTF1_CACHE') or ROOT / '.fastf1-cache')
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    fastf1.Cache.enable_cache(str(cache_dir))
+    from sources.fastf1_source import enable_cache
+    enable_cache()
 
     total_built, total_failed = 0, 0
     for year in years:
@@ -742,7 +742,7 @@ def main(argv=None):
                 if args.round_num:
                     log(f'  {year} R{round_num}: no completed sessions yet')
                 continue
-            built, failed = build_event(year, event, codes, force=args.force)
+            built, failed = build_event(year, event, codes, force=args.force, source=args.source)
             total_built += len(built)
             total_failed += len(failed)
 

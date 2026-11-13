@@ -22,6 +22,30 @@ manifest.json
 
 Session codes: `R` Race, `Q` Qualifying, `S` Sprint, `SQ` Sprint Qualifying.
 
+## Sources
+
+Every session is built from one of two sources and both write the same files:
+
+- `fastf1`: sessions that are already in a local FastF1 cache (F1's timing archive has
+  needed a login since October 2026, so nothing new comes from it).
+- `openf1`: everything else, from the free OpenF1 REST API, with Jolpica as the fallback
+  for a missing race classification.
+
+`event.json` and each `manifest.json` entry record it per session in `source`.
+Differences you can see in the data:
+
+| | fastf1 | openf1 |
+|---|---|---|
+| Session time zero (`*_time_s` in `track_status.json`) | start of the timing feed, about an hour before lights out | the scheduled session start, so earlier messages are negative |
+| Track status | F1's own status stream | rebuilt from race control messages (sector yellows, SC, VSC, red, "TRACK CLEAR") |
+| Lap 1 | usually no lap or sector times | lap and sector times present |
+| `time_s` of lapped cars in `results.json` | gap at the flag | `null` (OpenF1 only says "+1 LAP") |
+| In-lap of a car that retires in the pits | `pit_in` is true | `pit_in` is false (no pit record) |
+| `position` in `laps.json` | computed by FastF1 | F1's position feed at the end of the lap; differs on about 1% of laps, mostly lapped cars |
+| `is_accurate` | FastF1's definition | timed lap with all sectors, not an in/out lap, no SC/VSC/red, not lap 1 |
+| Telemetry (`circuit.json`, `quali/fastest`) | about 4 Hz car data merged with position data | about 3.7 Hz car data; distance is speed integrated over time, so it can drift a few metres per lap |
+| Circuit corners | FastF1 `circuit_info` | same corner list (MultiViewer), `distance` taken from the nearest outline point |
+
 ## manifest.json
 
 Rebuilt from the folders on disk after every run. Events are sorted newest first.
@@ -34,7 +58,8 @@ Rebuilt from the folders on disk after every run. Events are sorted newest first
   "events": [
     { "year": 2025, "round": 8, "name": "Monaco Grand Prix", "country": "Monaco",
       "location": "Monaco", "date": "2025-05-25", "format": "conventional",
-      "sessions": ["Q", "R"], "built_at": "2026-11-13T10:50:11Z" }
+      "sessions": ["Q", "R"], "source": { "Q": "openf1", "R": "fastf1" },
+      "built_at": "2026-11-13T10:50:11Z" }
   ]
 }
 ```
@@ -43,12 +68,14 @@ Rebuilt from the folders on disk after every run. Events are sorted newest first
 
 `total_laps` is the race distance actually run (`null` until the race is built).
 `sessions` holds the start time of every session of the weekend the pipeline can build.
+`source` says where each built session came from (`fastf1` or `openf1`).
 
 ```json
 { "year": 2025, "round": 8, "name": "Monaco Grand Prix", "country": "Monaco",
   "location": "Monaco", "circuit": "Monte Carlo", "date": "2025-05-25",
   "format": "conventional", "total_laps": 78,
   "sessions": { "Q": "2025-05-24T14:00:00Z", "R": "2025-05-25T13:00:00Z" },
+  "source": { "Q": "openf1", "R": "fastf1" },
   "built_at": "2026-11-13T10:50:11Z" }
 ```
 
@@ -191,21 +218,24 @@ outline by `rotation` degrees to match the official track map. Replaces the old
 
 ## quali/fastest/{DRIVER}.json
 
-The driver's fastest qualifying lap from `get_car_data().add_distance()`, resampled to a
-5 m grid. Arrays are parallel, one value per grid point. `speed`, `throttle` and `rpm`
-are interpolated; `brake` (0/1), `n_gear` and `drs` take the nearest original sample.
-`segment` is `Q1`, `Q2` or `Q3`. About 5 KB per km of track; budget 60 KB per file.
+The driver's fastest qualifying lap on a 5 m distance grid. Arrays are parallel: value `i`
+is at `i * step_m` metres from the start line (there is no `distance` array). `speed` and
+`throttle` are interpolated; `brake` (0/1), `n_gear` and `drs` take the nearest original
+sample. `segment` is `Q1`, `Q2` or `Q3` (`null` if it cannot be told). Only what the lap
+comparison needs is published: no RPM. About 3 KB per km of track; budget 60 KB per file.
+
+OpenF1 car data is sampled at about 3.7 Hz (roughly one sample every 20 m at 300 km/h),
+and distance is speed integrated over time, so traces are a little smoother than the
+FastF1 ones and the last grid point can sit a few metres short of the true lap length.
 
 ```json
 {
   "driver": "VER", "team": "Red Bull Racing", "lap_time_s": 77.019, "segment": "Q3",
   "compound": "SOFT", "step_m": 5,
-  "distance": [500, 505, 510, 515],
   "speed":    [312.0, 312.0, 312.0, 312.0],
   "throttle": [100, 100, 100, 100],
   "brake":    [0, 0, 0, 0],
   "n_gear":   [8, 8, 8, 8],
-  "rpm":      [11081, 11078, 11073, 11068],
   "drs":      [0, 0, 0, 0]
 }
 ```

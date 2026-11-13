@@ -3,9 +3,9 @@ name: Ingest race data
 # Builds static race JSON with pipeline/build.py and commits it to main.
 # Vercel redeploys on that push, which publishes the files under /data/.
 #
-# No F1 TV login is configured. F1's timing archive has needed one since Oct 2026, so
-# sessions that are not in the restored FastF1 cache are skipped until new races move
-# to OpenF1.
+# Data source: OpenF1 (free, no login). F1's own timing archive has needed an F1 TV login
+# since Oct 2026, so CI never downloads from it: FastF1 runs offline here (CI=true) and
+# only matters for sessions that are already in a local FastF1 cache on a laptop.
 #
 # Repo settings this needs (Settings -> Secrets and variables -> Actions):
 #   secrets    ADMIN_KEY                  same value as ADMIN_KEY on Render
@@ -70,16 +70,16 @@ jobs:
 
       - run: pip install -r pipeline/requirements.txt
 
-      - name: Restore FastF1 cache
+      # Raw OpenF1 responses, so a rebuild does not download a session twice.
+      - name: Restore OpenF1 cache
         uses: actions/cache/restore@v4
         with:
-          path: .fastf1-cache
-          key: fastf1-${{ steps.year.outputs.year }}-${{ github.run_id }}
-          restore-keys: fastf1-${{ steps.year.outputs.year }}-
+          path: .openf1-cache
+          key: openf1-${{ steps.year.outputs.year }}-${{ github.run_id }}
+          restore-keys: openf1-${{ steps.year.outputs.year }}-
 
       - name: Build
         env:
-          FASTF1_CACHE: .fastf1-cache
           YEAR: ${{ steps.year.outputs.year }}
           ROUND: ${{ !inputs.backfill && inputs.round || '' }}
           FORCE: ${{ inputs.force }}
@@ -107,12 +107,12 @@ jobs:
           path: frontend/public/data/${{ steps.year.outputs.year }}
           retention-days: 3
 
-      - name: Save FastF1 cache
+      - name: Save OpenF1 cache
         if: ${{ !cancelled() && steps.diff.outputs.changed == 'true' }}
         uses: actions/cache/save@v4
         with:
-          path: .fastf1-cache
-          key: fastf1-${{ steps.year.outputs.year }}-${{ github.run_id }}
+          path: .openf1-cache
+          key: openf1-${{ steps.year.outputs.year }}-${{ github.run_id }}
 
   publish:
     name: Commit data and score
