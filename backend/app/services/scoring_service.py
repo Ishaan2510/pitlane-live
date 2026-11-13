@@ -24,7 +24,7 @@ from pathlib import Path
 
 # These imports work when called inside a Flask app context
 from app.models import db, Prediction
-from app.services.fastf1_service import fastf1_service
+from app.services.race_data import race_data_source
 from app.services.user_totals import recompute_user_totals
 
 # ─── Constants ────────────────────────────────────────────────────────────────
@@ -191,11 +191,11 @@ def score_race(year: int, round_num: int) -> dict:
     Returns:
         Summary dict with counts and race name.
     """
-    race_data = fastf1_service.load_processed(year, round_num)
+    race_data = race_data_source.get_race(year, round_num)
     if race_data is None:
         return {
-            'error': f'Race not cached yet: {year} R{round_num}. '
-                     f'Run warm_cache.py --year {year} --round {round_num} first.'
+            'error': f'No race data yet for {year} R{round_num}. '
+                     f'The data pipeline has not published it (see pipeline/build.py).'
         }
 
     pit_registry  = build_pit_registry(race_data)

@@ -149,7 +149,33 @@ Migration trigger: Azure student credits exhausted. The VM was also over-provisi
 
 ---
 
-## Post-Race Workflow
+## Race Data Pipeline
+
+Race data is built by `pipeline/build.py` and published as static JSON under
+`frontend/public/data/` (served by Vercel at `/data/`). The GitHub Actions workflow
+`.github/workflows/ingest.yml` runs it every 2 hours over a race weekend, commits the new
+files to `main` and then triggers scoring. File shapes are in `pipeline/SCHEMA.md`.
+
+```bash
+pip install -r pipeline/requirements.txt
+python pipeline/build.py --year 2026 --round 14     # one event
+python pipeline/build.py --year 2026                # every completed event not built yet
+python -m pytest pipeline -q
+```
+
+F1's timing archive needs an F1 TV login since October 2026: set `F1_USERNAME` and
+`F1_PASSWORD` (locally as environment variables, in CI as repo secrets). `FASTF1_CACHE`
+points the pipeline at an existing raw FastF1 cache.
+
+The replay and simulation pages read `/data/` directly. The backend reads the same files
+through `PUBLIC_DATA_BASE_URL` for scoring.
+
+> **Legacy data:** `backend/fastf1_cache/processed/`, `warm_cache.py` and the
+> `/api/replay/*` race routes are deprecated. They remain as a fallback and will be removed
+> once the static data is verified in production. The manual workflow below is only needed
+> until then.
+
+## Post-Race Workflow (legacy, manual)
 
 Run within 30 to 60 minutes of the chequered flag.
 

@@ -3,6 +3,12 @@ from app.services.fastf1_service import fastf1_service
 
 bp = Blueprint('replay', __name__, url_prefix='/api/replay')
 
+# DEPRECATED: the race, circuit, weather, summary, lap, telemetry, available*, and simulate/*
+# routes below are superseded by the static files the data pipeline publishes under /data/
+# (see pipeline/SCHEMA.md and frontend/src/services/data.js). The frontend no longer calls
+# them. They stay until the static data is verified in production, then go away together
+# with backend/fastf1_cache/processed/. The live/* routes (OpenF1) are NOT deprecated.
+
 @bp.route('/available', methods=['GET'])
 def get_available_races():
     """Get list of available races for replay"""

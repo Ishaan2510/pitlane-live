@@ -146,11 +146,7 @@
           <div class="sidebar-divider" />
 
           <div class="telemetry-section">
-            <TelemetryPanel
-              :driver="selectedDriverData"
-              :enriched="telemetryEnriched"
-              :loading="telemetryLoading"
-            />
+            <TelemetryPanel :driver="selectedDriverData" />
           </div>
 
         </div>
@@ -164,9 +160,8 @@
 </template>
 
 <script>
-import api              from '../services/api.js'
+import { getManifest, getReplay, getCircuit, getWeather } from '@/services/data'
 import { useToast }     from '../composables/useToast.js'
-import { apiUrl } from '@/services/apiBase'
 import ToastNotification from '../components/ToastNotification.vue'
 import TrackCanvas      from '../components/TrackCanvas.vue'
 import WeatherPanel     from '../components/WeatherPanel.vue'
@@ -198,8 +193,6 @@ export default {
       replayInterval: null,
       playbackSpeed:  1000,
       selectedDriver:    null,
-      telemetryEnriched: {},
-      telemetryLoading:  false,
       pitStopLog:   [],
       seenPitLaps:  {}
     }
@@ -239,23 +232,19 @@ export default {
 
     async loadAvailableRaces() {
       try {
-        const [scheduleRes, cachedRes] = await Promise.all([
-          fetch(apiUrl(`/schedule?year=${this.selectedYear}`)),
-          fetch(apiUrl(`/replay/available?year=${this.selectedYear}`))
-        ])
-        const schedule = await scheduleRes.json()
-        const cached = await cachedRes.json()
-        const cachedRounds = new Set(cached.map(r => r.round))
-        this.availableRaces = schedule
-          .filter(r => r.status === 'completed')
-          .map(r => ({
-            round:    r.round,
-            name:     r.name,
-            location: r.location,
-            country:  r.country,
-            date:     r.date,
-            year:     r.year || this.selectedYear,
-            ready:    cachedRounds.has(r.round)
+        // Every race in the manifest is built and ready to replay
+        const manifest = await getManifest()
+        this.availableRaces = manifest.events
+          .filter(e => e.year === this.selectedYear && e.sessions.includes('R'))
+          .sort((a, b) => a.round - b.round)
+          .map(e => ({
+            round:    e.round,
+            name:     e.name,
+            location: e.location,
+            country:  e.country,
+            date:     e.date,
+            year:     e.year,
+            ready:    true
           }))
       } catch (e) {
         console.error(e)
@@ -270,19 +259,18 @@ export default {
       try {
         const year  = race.year || this.selectedYear
         const round = race.round
-        const [raceData, circuitData, weatherData] = await Promise.all([
-          api.getReplayRaceData(year, round),
-          api.getCircuitData(year, round),
-          api.getWeatherData(year, round)
+        const [raceData, circuitData, weather] = await Promise.all([
+          getReplay(year, round),
+          getCircuit(year, round),
+          getWeather(year, round)
         ])
         this.raceData    = raceData
         this.circuitData = circuitData
-        this.weatherData = weatherData
+        this.weatherData = weather?.summary ?? raceData.weather
         this.currentLap        = 1
         this.pitStopLog        = []
         this.seenPitLaps       = {}
         this.selectedDriver    = null
-        this.telemetryEnriched = {}
         this.updateCurrentLap()
         this.showToast('Race loaded ✓')
       } catch (e) {
@@ -302,16 +290,12 @@ export default {
       this.pitStopLog        = []
       this.seenPitLaps       = {}
       this.selectedDriver    = null
-      this.telemetryEnriched = {}
     },
 
     updateCurrentLap() {
       if (!this.raceData || this.currentLap > this.raceData.laps.length) return
       this.currentLapData = this.raceData.laps[this.currentLap - 1]
       this.detectPitStops()
-      if (this.selectedDriver) {
-        this.fetchTelemetry(this.selectedDriver, this.currentLap)
-      }
     },
 
     detectPitStops() {
@@ -369,25 +353,9 @@ export default {
       this.showToast('Restarted')
     },
 
-    async onSelectDriver(code) {
-      if (this.selectedDriver === code) {
-        this.selectedDriver    = null
-        this.telemetryEnriched = {}
-        return
-      }
-      this.selectedDriver = code
-      await this.fetchTelemetry(code, this.currentLap)
-    },
-
-    async fetchTelemetry(code, lap) {
-      if (!this.selectedRace) return
-      this.telemetryLoading  = true
-      this.telemetryEnriched = {}
-      const year  = this.selectedRace.year || this.selectedYear
-      const round = this.selectedRace.round
-      const data  = await api.getDriverTelemetry(year, round, code, lap)
-      if (data) this.telemetryEnriched = data
-      this.telemetryLoading = false
+    // The telemetry panel reads lap time and speeds straight from the replay lap data
+    onSelectDriver(code) {
+      this.selectedDriver = this.selectedDriver === code ? null : code
     },
 
     getTireEmoji(compound) {

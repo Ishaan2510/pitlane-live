@@ -105,11 +105,11 @@ export default {
     formatSpeed(v) {
       return v == null ? 'N/A' : `${Math.round(v)} km/h`
     },
+    // lap_time is seconds (replay.json) -> "1:44.634"
     formatLapTime(t) {
-      if (!t) return '—'
-      const match = t.match(/(\d+):(\d{2}\.\d+)/)
-      if (match) return `${match[1]}:${parseFloat(match[2]).toFixed(3).padStart(6,'0')}`
-      return t.slice(0, 12)
+      if (typeof t !== 'number') return '—'
+      const minutes = Math.floor(t / 60)
+      return `${minutes}:${(t - minutes * 60).toFixed(3).padStart(6, '0')}`
     }
   }
 }

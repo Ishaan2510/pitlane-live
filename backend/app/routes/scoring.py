@@ -83,9 +83,9 @@ def preview_scoring(year, round_num):
 
     No auth required (read-only, no PII).
     """
-    from app.services.fastf1_service import fastf1_service
+    from app.services.race_data import race_data_source
 
-    race_data = fastf1_service.load_processed(year, round_num)
+    race_data = race_data_source.get_race(year, round_num)
     if race_data is None:
         return jsonify({'error': f'Race not cached: {year} R{round_num}'}), 404
 
@@ -128,9 +128,9 @@ def score_sim_test():
     if not year or not round_num:
         return jsonify({'error': 'year and round required'}), 400
 
-    from app.services.fastf1_service import fastf1_service
+    from app.services.race_data import race_data_source
 
-    race_data = fastf1_service.load_processed(int(year), int(round_num))
+    race_data = race_data_source.get_race(int(year), int(round_num))
     if race_data is None:
         return jsonify({'error': f'Race not cached: {year} R{round_num}'}), 404
 

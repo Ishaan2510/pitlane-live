@@ -105,7 +105,7 @@ export default {
     drivers: {
       deep: true,
       handler(newDrivers) {
-        if (!this.circuitData?.coordinates?.length) {
+        if (!this.circuitData?.points?.length) {
           this.draw()
           return
         }
@@ -152,9 +152,9 @@ export default {
     },
 
     computeBaseTransform() {
-      if (!this.circuitData?.coordinates?.length) return
+      if (!this.circuitData?.points?.length) return
 
-      const coords = this.circuitData.coordinates
+      const coords = this.circuitData.points
       const xs = coords.map(c => c.x)
       const ys = coords.map(c => c.y)
 
@@ -179,7 +179,7 @@ export default {
         ? 4 * t * t * t
         : 1 - Math.pow(-2 * t + 2, 3) / 2
 
-      const coords = this.circuitData?.coordinates
+      const coords = this.circuitData?.points
       if (coords?.length) {
         const total = coords.length
         Object.keys(this.targetIndices).forEach(code => {
@@ -213,7 +213,7 @@ export default {
       this.ctx.fillStyle = '#0a0a0a'
       this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
 
-      if (this.circuitData?.coordinates?.length) {
+      if (this.circuitData?.points?.length) {
         this.drawRealTrack()
       } else {
         this.drawGenericTrack()
@@ -223,7 +223,7 @@ export default {
     },
 
     drawRealTrack() {
-      const coords = this.circuitData.coordinates
+      const coords = this.circuitData.points
       const sc     = this.scale
       const ox     = this.offsetX
       const oy     = this.offsetY
@@ -394,7 +394,7 @@ export default {
 
     // REPLACE getDriverPosition with getDriverCanvasPos (new name + interpolation):
     getDriverCanvasPos(driver) {
-      const coords = this.circuitData?.coordinates
+      const coords = this.circuitData?.points
       if (coords?.length) {
         const idx = this.currentIndices[driver.driver]
         if (idx == null) return null
@@ -415,7 +415,7 @@ export default {
 
     // ADD new computeTargetIndex method:
     computeTargetIndex(driver) {
-      const coords = this.circuitData?.coordinates
+      const coords = this.circuitData?.points
       if (!coords?.length) return 0
       const total       = coords.length
       const spacing     = Math.max(1, Math.floor(total * 0.025))
