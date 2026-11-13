@@ -459,7 +459,7 @@ def build_quali_fastest(source):
             if got is None:
                 continue
             info, tel = got
-            rs = resample_by_distance(tel, 5, linear=('Speed', 'Throttle', 'RPM'),
+            rs = resample_by_distance(tel, 5, linear=('Speed', 'Throttle'),
                                       nearest=('Brake', 'nGear', 'DRS'))
         except Exception as e:
             log(f'    {driver}: no fastest-lap telemetry ({e})')
@@ -472,13 +472,11 @@ def build_quali_fastest(source):
             'lap_time_s': secs(info['lap_time']),
             'segment':    info['segment'],
             'compound':   as_str(info['compound']),
-            'step_m':     5,
-            'distance':   [int(v) for v in rs['distance']],
+            'step_m':     5,               # point i is at i * step_m metres; no distance array
             'speed':      [round(float(v), 1) for v in rs['Speed']],
             'throttle':   [int(round(v)) for v in rs['Throttle']],
             'brake':      [int(v) for v in rs['Brake']],
             'n_gear':     [int(v) for v in rs['nGear']],
-            'rpm':        [int(round(v)) for v in rs['RPM']],
             'drs':        [int(v) for v in rs['DRS']],
         }
     return out

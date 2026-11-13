@@ -218,21 +218,24 @@ outline by `rotation` degrees to match the official track map. Replaces the old
 
 ## quali/fastest/{DRIVER}.json
 
-The driver's fastest qualifying lap from `get_car_data().add_distance()`, resampled to a
-5 m grid. Arrays are parallel, one value per grid point. `speed`, `throttle` and `rpm`
-are interpolated; `brake` (0/1), `n_gear` and `drs` take the nearest original sample.
-`segment` is `Q1`, `Q2` or `Q3`. About 5 KB per km of track; budget 60 KB per file.
+The driver's fastest qualifying lap on a 5 m distance grid. Arrays are parallel: value `i`
+is at `i * step_m` metres from the start line (there is no `distance` array). `speed` and
+`throttle` are interpolated; `brake` (0/1), `n_gear` and `drs` take the nearest original
+sample. `segment` is `Q1`, `Q2` or `Q3` (`null` if it cannot be told). Only what the lap
+comparison needs is published: no RPM. About 3 KB per km of track; budget 60 KB per file.
+
+OpenF1 car data is sampled at about 3.7 Hz (roughly one sample every 20 m at 300 km/h),
+and distance is speed integrated over time, so traces are a little smoother than the
+FastF1 ones and the last grid point can sit a few metres short of the true lap length.
 
 ```json
 {
   "driver": "VER", "team": "Red Bull Racing", "lap_time_s": 77.019, "segment": "Q3",
   "compound": "SOFT", "step_m": 5,
-  "distance": [500, 505, 510, 515],
   "speed":    [312.0, 312.0, 312.0, 312.0],
   "throttle": [100, 100, 100, 100],
   "brake":    [0, 0, 0, 0],
   "n_gear":   [8, 8, 8, 8],
-  "rpm":      [11081, 11078, 11073, 11068],
   "drs":      [0, 0, 0, 0]
 }
 ```

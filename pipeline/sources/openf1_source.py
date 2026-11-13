@@ -180,14 +180,41 @@ def tyre_life(tyre_age_at_start, lap, lap_start):
     return tyre_age_at_start + (lap - lap_start) + 1
 
 
-def deleted_laps(race_control):
-    """{(driver_number, lap)} from 'CAR 22 (TSU) TIME 1:23.351 DELETED - ... LAP 8 ...' messages."""
+def deleted_laps(race_control, laps):
+    """
+    {(driver_number, lap)} of laps deleted by race control, e.g.
+    'CAR 22 (TSU) TIME 1:23.351 DELETED - TRACK LIMITS AT TURN 10 LAP 8 15:14:56'.
+    The lap is found by its TIME, because the message's lap number is one ahead of
+    OpenF1's lap numbers in qualifying. 'LAP DELETED' messages carry no time and use the number.
+    """
+    by_driver = {}
+    for lap in laps:
+        if lap.get('lap_duration') is not None:
+            by_driver.setdefault(lap['driver_number'], []).append((lap['lap_duration'], lap['lap_number']))
     found = set()
     for m in race_control:
-        hit = re.search(r'CAR (\d+) .*DELETED.*\bLAP (\d+)', m.get('message') or '')
-        if hit and 'REINSTATED' not in m['message']:
-            found.add((int(hit.group(1)), int(hit.group(2))))
+        text = m.get('message') or ''
+        hit = re.search(r'CAR (\d+) .*DELETED.*\bLAP (\d+)', text)
+        if not hit or 'REINSTATED' in text:
+            continue
+        number, lap_number = int(hit.group(1)), int(hit.group(2))
+        timed = re.search(r'TIME (\d+):(\d+\.\d+) DELETED', text)
+        if timed:
+            seconds = int(timed.group(1)) * 60 + float(timed.group(2))
+            match = [n for duration, n in by_driver.get(number, []) if abs(duration - seconds) < 0.0015]
+            lap_number = match[-1] if match else lap_number
+        found.add((number, lap_number))
     return found
+
+
+def quali_phase_starts(race_control):
+    """[(start Timestamp, 'Q1'), ...] from the qualifying_phase field of race control messages."""
+    first = {}
+    for m in sorted(race_control, key=lambda m: m['date']):
+        phase = m.get('qualifying_phase')
+        if phase in (1, 2, 3) and phase not in first:
+            first[phase] = pd.Timestamp(m['date'])
+    return sorted((start, f'Q{phase}') for phase, start in first.items())
 
 
 def track_status_frame(race_control, t0):
@@ -364,9 +391,9 @@ def result_frame(results, drivers, grid, quali=False):
         d = info.loc[r['driver_number']]
         out = r.get('dsq') and 'D' or r.get('dns') and 'W' or r.get('dnf') and 'R'
         laps = r.get('number_of_laps')
-        status = r.get('status') or (
-            {'D': 'Disqualified', 'W': 'Did not start', 'R': 'Retired'}.get(out)
-            or ('Finished' if laps == most_laps else 'Lapped'))
+        status = r.get('status') or {'D': 'Disqualified', 'W': 'Did not start', 'R': 'Retired'}.get(out)
+        if not status and not quali:
+            status = 'Finished' if laps == most_laps else 'Lapped'
         duration, gap = r.get('duration'), r.get('gap_to_leader')
         times = duration if isinstance(duration, list) else [None, None, None]
         if quali or out:
@@ -427,7 +454,7 @@ def telemetry_frame(car_data, start):
     OpenF1 car data arrives at about 3.7 Hz."""
     df = pd.DataFrame([c for c in car_data if c.get('speed') is not None])
     if df.empty:
-        return pd.DataFrame(columns=['t', 'Distance', 'Speed', 'Throttle', 'Brake', 'nGear', 'DRS', 'RPM'])
+        return pd.DataFrame(columns=['t', 'Distance', 'Speed', 'Throttle', 'Brake', 'nGear', 'DRS'])
     df['t'] = (_when(df['date']) - start).dt.total_seconds()
     df = df.sort_values('t').drop_duplicates('t').reset_index(drop=True)
     t, v = df['t'].to_numpy(), df['speed'].to_numpy(dtype=float) / 3.6
@@ -436,7 +463,7 @@ def telemetry_frame(car_data, start):
     return pd.DataFrame({
         't': t, 'Distance': distance, 'Speed': df['speed'].astype(float),
         'Throttle': df['throttle'].astype(float), 'Brake': (df['brake'] > 0).astype(int),
-        'nGear': df['n_gear'].astype(int), 'DRS': df['drs'].astype(int), 'RPM': df['rpm'].astype(float),
+        'nGear': df['n_gear'].astype(int), 'DRS': df['drs'].astype(int),
     })
 
 
@@ -520,7 +547,7 @@ class OpenF1Source:
         self._stints = stint_frame(raw['stints'], self.codes, in_laps)
         self._track_status = track_status_frame(raw['race_control'], self.t0)
         self._positions = positions_at_lap_end(raw['position'], self._timed, self.codes)
-        self._deleted = deleted_laps(raw['race_control'])
+        self._deleted = deleted_laps(raw['race_control'], raw['laps'])
         self._laps = lap_frame(self._timed, self._drivers, self._stints, in_laps, self._positions,
                                self._track_status, self._deleted, self.t0)
         self._results = result_frame(results, self._drivers, self._grid_rows(results),
@@ -616,11 +643,9 @@ class OpenF1Source:
         tel, _ = self._lap_telemetry(lap)
         if tel.empty:
             return None
-        row = self._results[self._results['Abbreviation'] == driver]
         segment = None
-        for name in ('Q1', 'Q2', 'Q3'):
-            best = row[name].iloc[0] if len(row) else pd.NaT
-            if pd.notna(best) and abs(best.total_seconds() - lap.lap_duration) < 0.0015:
+        for phase_start, name in quali_phase_starts(self._raw['race_control']):
+            if lap.start >= phase_start:
                 segment = name
         mine = self._laps[(self._laps['Driver'] == driver) & (self._laps['LapNumber'] == lap.lap_number)]
         info = {'team': self._drivers.set_index('Driver')['Team'].get(driver),
