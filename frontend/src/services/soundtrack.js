@@ -63,7 +63,7 @@ function createPlayer() {
     height: 200,
     host: 'https://www.youtube-nocookie.com',
     videoId: currentTrack().videoId,
-    playerVars: { playsinline: 1, controls: 1, rel: 0, modestbranding: 1, origin: window.location.origin },
+    playerVars: { playsinline: 1, controls: 1, rel: 0, modestbranding: 1, origin: window.location.origin, start: currentTrack().start || 0 },
     events: { onReady, onStateChange, onError },
   })
 }
@@ -98,7 +98,7 @@ export function next() {
     const i = (sound.index + step) % tracks.length
     if (!failed.has(i)) {
       sound.index = i
-      player.loadVideoById(tracks[i].videoId)
+      player.loadVideoById({ videoId: tracks[i].videoId, startSeconds: tracks[i].start || 0 })
       return
     }
   }
