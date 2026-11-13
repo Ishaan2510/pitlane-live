@@ -10,6 +10,7 @@
     </div>
 
     <div class="nav-auth">
+      <SoundToggle />
       <ThemeToggle />
 
       <!-- Logged in -->
@@ -35,6 +36,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ThemeToggle from './ThemeToggle.vue'
+import SoundToggle from './SoundToggle.vue'
 
 const auth   = useAuthStore()
 const router = useRouter()
