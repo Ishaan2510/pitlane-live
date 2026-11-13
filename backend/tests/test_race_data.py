@@ -1,5 +1,6 @@
 """RaceDataSource: static pipeline files first, legacy processed JSON as fallback."""
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -53,8 +54,8 @@ def test_fetched_race_is_cached_in_memory(source):
     assert len(source.calls) == 3
 
 
-def test_falls_back_to_legacy_when_static_file_is_missing(source):
-    assert not (STATIC / '2024' / '1').exists()      # not built by the pipeline yet
+def test_falls_back_to_legacy_when_static_file_is_missing(source, monkeypatch, tmp_path):
+    monkeypatch.setattr(sys.modules[__name__], 'STATIC', tmp_path)   # CDN has nothing
     race = source.get_race(2024, 1)
     assert race is fastf1_service.load_processed(2024, 1)
     assert (2024, 1) not in source._cache            # misses are not cached
