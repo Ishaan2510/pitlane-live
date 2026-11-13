@@ -39,3 +39,6 @@ Thumbs.db
 
 # Pipeline raw FastF1 cache (see pipeline/build.py)
 .fastf1-cache/
+
+# Pipeline OpenF1 response cache (see pipeline/sources/openf1_source.py)
+.openf1-cache/
