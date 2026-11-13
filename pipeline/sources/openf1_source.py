@@ -221,7 +221,10 @@ def track_status_frame(race_control, t0):
     """
     Rebuild F1's track status stream from race control messages.
     Codes: 1 green, 2 yellow (any sector), 4 SC, 5 red, 6 VSC, 7 VSC ending.
-    'TRACK CLEAR' / a green track flag ends everything.
+    'TRACK CLEAR' (or a green track flag) ends yellows and SC/VSC. A red flag lasts until
+    the session is started again ('SESSION STARTED'), whatever is cleared in between.
+    Message wording changed over the years ('VIRTUAL SAFETY CAR DEPLOYED' / 'VSC DEPLOYED',
+    a RED track flag / 'RED FLAG - RACE SUSPENDED'), so both forms are recognised.
     """
     names = {'1': 'AllClear', '2': 'Yellow', '4': 'SCDeployed', '5': 'Red',
              '6': 'VSCDeployed', '7': 'VSCEnding'}
@@ -230,10 +233,17 @@ def track_status_frame(race_control, t0):
     for m in sorted(race_control, key=lambda m: m['date']):
         text = (m.get('message') or '').upper()
         flag, scope = m.get('flag'), m.get('scope')
-        if m.get('category') == 'SafetyCar':
-            if 'VIRTUAL' in text and 'DEPLOYED' in text:
+        virtual = 'VIRTUAL' in text or 'VSC' in text
+        if (scope == 'Track' and flag == 'RED') or text.startswith('RED FLAG') or text == 'SESSION ABORTED':
+            red = True
+        elif text == 'SESSION STARTED':
+            if not red:
+                continue                              # the race start, not a restart
+            yellow, neutral, red = set(), None, False
+        elif m.get('category') == 'SafetyCar':
+            if virtual and 'DEPLOYED' in text:
                 neutral = '6'
-            elif 'VIRTUAL' in text and 'ENDING' in text:
+            elif virtual and 'ENDING' in text:
                 neutral = '7'
             elif 'DEPLOYED' in text:
                 neutral = '4'
@@ -241,10 +251,8 @@ def track_status_frame(race_control, t0):
             yellow.add(m.get('sector'))
         elif scope == 'Sector' and flag == 'CLEAR':
             yellow.discard(m.get('sector'))
-        elif scope == 'Track' and flag == 'RED':
-            red = True
         elif scope == 'Track' and flag in ('CLEAR', 'GREEN'):
-            yellow, neutral, red = set(), None, False
+            yellow, neutral = set(), None
         else:
             continue
         code = '5' if red else neutral or ('2' if yellow else '1')
@@ -452,7 +460,7 @@ def laps_ready(results, laps):
 def telemetry_frame(car_data, start):
     """car_data rows of one lap -> Distance (m, speed integrated over time) plus channels.
     OpenF1 car data arrives at about 3.7 Hz."""
-    df = pd.DataFrame([c for c in car_data if c.get('speed') is not None])
+    df = pd.DataFrame([c for c in car_data if c.get('speed') is not None]).fillna(0)
     if df.empty:
         return pd.DataFrame(columns=['t', 'Distance', 'Speed', 'Throttle', 'Brake', 'nGear', 'DRS'])
     df['t'] = (_when(df['date']) - start).dt.total_seconds()

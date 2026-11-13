@@ -256,10 +256,13 @@ def build_sc_periods(messages, last_lap):
     periods, current = [], None
     for m in messages.to_dict('records'):
         text = str(m.get('Message', '')).upper()
-        if 'SAFETY CAR' not in text:
-            continue
         lap = as_int(m.get('Lap'))
-        virtual = 'VIRTUAL' in text
+        if text.startswith('RED FLAG') and current:   # a red flag ends the Safety Car period
+            current['end_lap'] = lap
+            current = None
+        if 'SAFETY CAR' not in text and 'VSC' not in text:
+            continue
+        virtual = 'VIRTUAL' in text or 'VSC' in text  # 2026 messages say "VSC DEPLOYED"
         if 'DEPLOYED' in text:
             if current is None:
                 current = {'type': 'vsc' if virtual else 'sc', 'start_lap': lap, 'end_lap': None}

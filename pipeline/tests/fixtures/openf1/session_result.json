@@ -1,0 +1,38 @@
+[
+ {
+  "position": 1,
+  "driver_number": 4,
+  "number_of_laps": 78,
+  "points": 25.0,
+  "dnf": false,
+  "dns": false,
+  "dsq": false,
+  "duration": 6033.843,
+  "gap_to_leader": 0,
+  "session_key": 9979
+ },
+ {
+  "position": 17,
+  "driver_number": 22,
+  "number_of_laps": 76,
+  "points": 0.0,
+  "dnf": false,
+  "dns": false,
+  "dsq": false,
+  "gap_to_leader": "+2 LAPS",
+  "duration": null,
+  "session_key": 9979
+ },
+ {
+  "position": null,
+  "driver_number": 10,
+  "number_of_laps": 7,
+  "points": 0.0,
+  "dnf": true,
+  "dns": false,
+  "dsq": false,
+  "gap_to_leader": null,
+  "duration": null,
+  "session_key": 9979
+ }
+]
