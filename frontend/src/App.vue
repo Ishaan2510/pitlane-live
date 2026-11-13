@@ -1,6 +1,6 @@
 <template>
   <div class="app">
-    <ColdStartOverlay v-if="coldStart" @ready="coldStart = false" />
+    <ColdStartOverlay />
     <Navbar />
     <main>
       <router-view v-slot="{ Component }">
@@ -17,10 +17,7 @@ import Navbar from '@/components/Navbar.vue'
 import ColdStartOverlay from '@/components/ColdStartOverlay.vue'
 export default {
   name: 'App',
-  components: { Navbar, ColdStartOverlay },
-  data() {
-    return { coldStart: true }
-  }
+  components: { Navbar, ColdStartOverlay }
 }
 </script>
 

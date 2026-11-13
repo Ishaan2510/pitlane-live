@@ -5,6 +5,9 @@ import './assets/globals.css'
 import './assets/theme.css'
 import { createPinia } from 'pinia'
 import { useAuthStore } from './stores/auth'
+import { installApiPendingTracker } from './services/apiPending'
+
+installApiPendingTracker()   // before the first request, so the cold-start overlay sees it
 
 const app = createApp(App)
 app.use(router)

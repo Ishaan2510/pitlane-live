@@ -104,6 +104,7 @@ export default {
     
     drivers: {
       deep: true,
+      immediate: true,   // place the cars on first render, not only after the first lap change
       handler(newDrivers) {
         if (!this.circuitData?.points?.length) {
           this.draw()

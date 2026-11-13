@@ -48,7 +48,7 @@
     <!-- ══════════════════════════════════════════════
          REPLAY INTERFACE
     ══════════════════════════════════════════════ -->
-    <div v-else class="replay-interface">
+    <div v-else-if="raceData" class="replay-interface">
 
       <div class="top-bar">
         <button @click="backToSelector" class="back-btn">← Back</button>
