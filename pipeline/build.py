@@ -407,10 +407,21 @@ def resample_by_distance(tel, step, linear=(), nearest=()):
 
 def build_circuit(session):
     """Track outline from the fastest race lap (one point per ~10 m) plus corner markers."""
-    lap = session.laps.pick_fastest()
-    tel = lap.get_telemetry()
-    tel = tel[tel['X'].notna() & tel['Y'].notna()]
-    rs = resample_by_distance(tel, 10, linear=('X', 'Y', 'Speed'))
+    # Fastest lap first; some cars have no telemetry in the archive, so fall through to the
+    # next fastest until one gives a usable outline.
+    timed = session.laps.dropna(subset=['LapTime']).sort_values('LapTime')
+    rs = {'distance': []}
+    for _, lap in timed.drop_duplicates(subset='Driver').iterrows():
+        try:
+            tel = lap.get_telemetry()
+            tel = tel[tel['X'].notna() & tel['Y'].notna()]
+            rs = resample_by_distance(tel, 10, linear=('X', 'Y', 'Speed'))
+        except Exception:
+            continue
+        if len(rs['distance']) >= 100:
+            break
+    if len(rs['distance']) < 100:
+        raise ValueError('no lap with position telemetry')
     points = [
         {'x': round(float(x), 1), 'y': round(float(y), 1), 'distance': int(d), 'speed': round(float(s), 1)}
         for d, x, y, s in zip(rs['distance'], rs['X'], rs['Y'], rs['Speed'])
