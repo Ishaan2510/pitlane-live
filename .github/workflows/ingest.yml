@@ -3,9 +3,12 @@ name: Ingest race data
 # Builds static race JSON with pipeline/build.py and commits it to main.
 # Vercel redeploys on that push, which publishes the files under /data/.
 #
+# No F1 TV login is configured. F1's timing archive has needed one since Oct 2026, so
+# sessions that are not in the restored FastF1 cache are skipped until new races move
+# to OpenF1.
+#
 # Repo settings this needs (Settings -> Secrets and variables -> Actions):
-#   secrets    F1_USERNAME, F1_PASSWORD   F1 TV account (the timing archive needs a login)
-#              ADMIN_KEY                  same value as ADMIN_KEY on Render
+#   secrets    ADMIN_KEY                  same value as ADMIN_KEY on Render
 #   variables  BACKEND_URL                e.g. https://pitlane-live-tmzh.onrender.com
 #              PUBLIC_DATA_BASE_URL       e.g. https://pitlane-live-f1.vercel.app/data
 
@@ -77,8 +80,6 @@ jobs:
       - name: Build
         env:
           FASTF1_CACHE: .fastf1-cache
-          F1_USERNAME: ${{ secrets.F1_USERNAME }}
-          F1_PASSWORD: ${{ secrets.F1_PASSWORD }}
           YEAR: ${{ steps.year.outputs.year }}
           ROUND: ${{ !inputs.backfill && inputs.round || '' }}
           FORCE: ${{ inputs.force }}

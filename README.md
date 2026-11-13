@@ -163,9 +163,9 @@ python pipeline/build.py --year 2026                # every completed event not 
 python -m pytest pipeline -q
 ```
 
-F1's timing archive needs an F1 TV login since October 2026: set `F1_USERNAME` and
-`F1_PASSWORD` (locally as environment variables, in CI as repo secrets). `FASTF1_CACHE`
-points the pipeline at an existing raw FastF1 cache.
+F1's timing archive has needed an F1 TV login since October 2026 and none is configured,
+so the pipeline only builds sessions that are already in the raw FastF1 cache
+(`FASTF1_CACHE`) and skips the rest. New races will move to OpenF1.
 
 The replay and simulation pages read `/data/` directly. The backend reads the same files
 through `PUBLIC_DATA_BASE_URL` for scoring.

@@ -560,7 +560,7 @@ def load_session(year, round_num, code):
         laps = session.laps
     except Exception as e:
         log(f'  {year} R{round_num} {code}: data is not out yet ({type(e).__name__}: {e}) - skipped. '
-            'If the session is days old, check the F1 TV login (F1_USERNAME / F1_PASSWORD).')
+            "F1's archive has needed a login since Oct 2026, so only sessions already in FASTF1_CACHE build.")
         return None
     if laps is None or laps.empty:
         log(f'  {year} R{round_num} {code}: session loaded but has no laps, data is not out yet - skipped')
