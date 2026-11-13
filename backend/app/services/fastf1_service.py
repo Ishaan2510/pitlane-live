@@ -446,8 +446,9 @@ class FastF1Service:
         }
 
     def get_race_summary(self, year, race_round):
-        """Get quick race summary. Built from the processed JSON; FastF1 only off-prod."""
-        race_data = self.load_processed(year, race_round)
+        """Get quick race summary from the static race data (legacy processed JSON as fallback); FastF1 only off-prod."""
+        from app.services.race_data import race_data_source
+        race_data = race_data_source.get_race(year, race_round)
         if race_data is not None:
             from app.services.race_prediction_scoring import extract_finishing_order
             order = extract_finishing_order(race_data)

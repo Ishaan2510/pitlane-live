@@ -1,0 +1,219 @@
+name: Ingest race data
+
+# Builds static race JSON with pipeline/build.py and commits it to main.
+# Vercel redeploys on that push, which publishes the files under /data/.
+#
+# No F1 TV login is configured. F1's timing archive has needed one since Oct 2026, so
+# sessions that are not in the restored FastF1 cache are skipped until new races move
+# to OpenF1.
+#
+# Repo settings this needs (Settings -> Secrets and variables -> Actions):
+#   secrets    ADMIN_KEY                  same value as ADMIN_KEY on Render
+#   variables  BACKEND_URL                e.g. https://pitlane-live-tmzh.onrender.com
+#              PUBLIC_DATA_BASE_URL       e.g. https://pitlane-live-f1.vercel.app/data
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: Season to build (default is the current year)
+        required: false
+      round:
+        description: Only this round (needs a year)
+        required: false
+      force:
+        description: Rebuild sessions that already exist
+        type: boolean
+        default: false
+      backfill:
+        description: Build 2024, 2025 and 2026 (ignores year and round)
+        type: boolean
+        default: false
+  schedule:
+    # Every 2 hours from Friday 10:00 UTC to Tuesday 06:00 UTC
+    - cron: '0 10-22/2 * * 5'
+    - cron: '0 */2 * * 6,0,1'
+    - cron: '0 0-6/2 * * 2'
+
+permissions:
+  contents: write
+
+# Never two runs at once, so two runs never push at once.
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.year || 'current year' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        # backfill: one job per season. Otherwise one job; '' means the current year.
+        year: ${{ fromJSON(inputs.backfill && '["2024","2025","2026"]' || format('["{0}"]', inputs.year)) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve year
+        id: year
+        env:
+          YEAR: ${{ matrix.year }}
+        run: echo "year=${YEAR:-$(date -u +%Y)}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Restore FastF1 cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .fastf1-cache
+          key: fastf1-${{ steps.year.outputs.year }}-${{ github.run_id }}
+          restore-keys: fastf1-${{ steps.year.outputs.year }}-
+
+      - name: Build
+        env:
+          FASTF1_CACHE: .fastf1-cache
+          YEAR: ${{ steps.year.outputs.year }}
+          ROUND: ${{ !inputs.backfill && inputs.round || '' }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          args=(--year "$YEAR")
+          if [ -n "$ROUND" ]; then args+=(--round "$ROUND"); fi
+          if [ "$FORCE" = "true" ]; then args+=(--force); fi
+          python pipeline/build.py "${args[@]}"
+
+      - name: Anything new?
+        id: diff
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -n "$(git status --porcelain frontend/public/data)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The artifact is named after the year so the publish job can unpack it
+      # straight into frontend/public/data/<year>/.
+      - name: Upload built data
+        if: ${{ !cancelled() && steps.diff.outputs.changed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.year.outputs.year }}
+          path: frontend/public/data/${{ steps.year.outputs.year }}
+          retention-days: 3
+
+      - name: Save FastF1 cache
+        if: ${{ !cancelled() && steps.diff.outputs.changed == 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .fastf1-cache
+          key: fastf1-${{ steps.year.outputs.year }}-${{ github.run_id }}
+
+  publish:
+    name: Commit data and score
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Always main: this job pushes, whatever branch the run was started from.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Download built data
+        continue-on-error: true      # no artifact = nothing new this run
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '20*'
+          path: frontend/public/data
+
+      - name: Rebuild manifest from the folders on disk
+        run: python pipeline/build.py --manifest-only
+
+      - name: Commit and push
+        id: commit
+        run: |
+          git add -A frontend/public/data
+          if git diff --cached --quiet; then
+            echo "No data changes."
+            exit 0
+          fi
+          message="$(git diff --cached --name-status | python pipeline/build.py --describe-changes)"
+          git config user.name "pitlane-data-bot"
+          git config user.email "pitlane-data-bot@users.noreply.github.com"
+          git commit -m "$message"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Could not push the data commit to main"
+          exit 1
+
+      # Scoring problems are warnings: the data commit above has already landed.
+      - name: Score new races
+        if: ${{ steps.commit.outputs.pushed == 'true' && steps.commit.outputs.new_races != '' }}
+        continue-on-error: true
+        env:
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
+          BACKEND_URL: ${{ vars.BACKEND_URL }}
+          DATA_URL: ${{ vars.PUBLIC_DATA_BASE_URL }}
+          RACES: ${{ steps.commit.outputs.new_races }}
+        run: |
+          if [ -z "$ADMIN_KEY" ] || [ -z "$BACKEND_URL" ]; then
+            echo "::warning::ADMIN_KEY secret or BACKEND_URL variable is not set; scoring skipped"
+            exit 0
+          fi
+          BACKEND_URL="${BACKEND_URL%/}"
+
+          # Render free tier sleeps after 15 idle minutes: retry health for up to 3 minutes.
+          awake=""
+          for i in $(seq 1 12); do
+            if curl -fsS -m 10 "$BACKEND_URL/api/health" > /dev/null; then awake=1; break; fi
+            sleep 5
+          done
+          if [ -z "$awake" ]; then
+            echo "::warning::Backend did not answer /api/health within 3 minutes; scoring skipped for $RACES"
+            exit 0
+          fi
+
+          post() {   # post <label> <url> [json body]
+            body="${3:-}"
+            if [ -z "$body" ]; then body='{}'; fi
+            code="$(curl -sS -m 120 -o response.txt -w '%{http_code}' -X POST "$2" \
+              -H "X-Admin-Key: $ADMIN_KEY" -H "Content-Type: application/json" -d "$body")" || code="000"
+            cat response.txt 2> /dev/null; echo
+            if [ "$code" != "200" ]; then echo "::warning::$1 returned HTTP $code"; fi
+          }
+
+          for race in $RACES; do
+            year="${race%/*}"; round="${race#*/}"
+            # The backend reads results.json and laps.json from Vercel: wait for the deploy (up to 5 min).
+            if [ -n "$DATA_URL" ]; then
+              for i in $(seq 1 30); do
+                if curl -fsS -m 10 -o /dev/null "${DATA_URL%/}/$year/$round/race/results.json"; then break; fi
+                sleep 10
+              done
+            else
+              sleep 120
+            fi
+            post "score-race $year R$round" "$BACKEND_URL/api/scoring/score-race" "{\"year\":$year,\"round\":$round}"
+            post "race-predictions score $year R$round" "$BACKEND_URL/api/race-predictions/score/$year/$round"
+          done

@@ -36,3 +36,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Pipeline raw FastF1 cache (see pipeline/build.py)
+.fastf1-cache/

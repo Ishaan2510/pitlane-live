@@ -24,7 +24,7 @@ Tyre scoring (segment-by-segment):
 
 import json
 from app.models import db, RacePrediction
-from app.services.fastf1_service import fastf1_service
+from app.services.race_data import race_data_source
 from app.services.user_totals import recompute_user_totals
 
 # Position scoring constants
@@ -177,11 +177,11 @@ def score_race_predictions(year: int, round_num: int) -> dict:
     """
     Score every pending RacePrediction for the given race.
     """
-    race_data = fastf1_service.load_processed(year, round_num)
+    race_data = race_data_source.get_race(year, round_num)
     if race_data is None:
         return {
-            'error': f'Race not cached: {year} R{round_num}. '
-                     f'Run warm_cache.py --year {year} --round {round_num} first.'
+            'error': f'No race data yet for {year} R{round_num}. '
+                     f'The data pipeline has not published it (see pipeline/build.py).'
         }
 
     actual_order  = extract_finishing_order(race_data)

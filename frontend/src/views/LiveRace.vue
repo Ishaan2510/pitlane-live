@@ -305,6 +305,7 @@ import { TEAM_COLORS } from '@/data/drivers'
 import TrackCanvas from '../components/TrackCanvas.vue'
 import api from '../services/api.js'
 import { apiUrl } from '@/services/apiBase'
+import { getManifest, getReplay, getCircuit } from '@/services/data'
 import { useAuthStore } from '@/stores/auth'
 
 
@@ -354,6 +355,7 @@ export default {
       simPlayInterval:   null,
       simYear:           null,
       simRound:          null,
+      simRace:           null,   // replay.json of the simulated race
 
       schedule:          [],     // /api/schedule rows for the current year
     }
@@ -523,8 +525,9 @@ export default {
     async loadSimulatableRaces() {
       this.loadingSimRaces = true
       try {
-        const res = await fetch(apiUrl('/replay/simulate/races'))
-        this.simulatableRaces = await res.json()
+        // Every race built by the data pipeline (newest first)
+        const manifest = await getManifest()
+        this.simulatableRaces = manifest.events.filter(e => e.sessions.includes('R'))
       } catch {
         this.simulatableRaces = []
       } finally {
@@ -536,21 +539,26 @@ export default {
       if (!this.simSelection) return
       this.disconnect()   // stop polling real live endpoint
 
+      const { year, round } = this.simSelection
+      let race, circuit
+      try {
+        // Circuit is optional: TrackCanvas falls back to the oval when it is null
+        [race, circuit] = await Promise.all([getReplay(year, round), getCircuit(year, round)])
+      } catch {
+        this.startPolling()
+        return
+      }
+
       this.isSimulated  = true
-      this.simYear      = this.simSelection.year
-      this.simRound     = this.simSelection.round
-      this.simTotalLaps = this.simSelection.total_laps
+      this.simYear      = year
+      this.simRound     = round
+      this.simRace      = race
+      this.simTotalLaps = race.total_laps
       this.simLap       = 1
       this.rcHistory    = []
-      this.circuitData  = null
+      this.circuitData  = circuit
 
-      // Load real circuit layout for TrackCanvas
-      try {
-        const res = await fetch(apiUrl(`/replay/circuit/${this.simYear}/${this.simRound}`))
-        if (res.ok) this.circuitData = await res.json()
-      } catch { /* TrackCanvas falls back to oval if null */ }
-
-      await this.fetchSimState()
+      this.fetchSimState()
       this.prediction.targetLap = Math.min(this.simTotalLaps, this.simLap + 3)
       this.simPlaying = true
       this.simPlayInterval = setInterval(async () => {
@@ -559,12 +567,13 @@ export default {
           return
         }
         this.simLap++
-        await this.fetchSimState()
+        this.fetchSimState()
       }, 3000)
     },
 
     stopSimulation() {
       this.isSimulated = false
+      this.simRace     = null
       this.simPlaying  = false
       clearInterval(this.simPlayInterval)
       this.simPlayInterval = null
@@ -603,17 +612,31 @@ export default {
       await this.fetchSimState()
     },
 
-    async fetchSimState() {
-      try {
-        const res = await fetch(
-          apiUrl(`/replay/simulate/state?year=${this.simYear}&round=${this.simRound}&lap=${this.simLap}`)
-        )
-        const state = await res.json()
-        if (!state.error) {
-          this.simTotalLaps = state.sim_total_laps || this.simTotalLaps
-          this.applyState(state)
-        }
-      } catch { /* ignore */ }
+    // Turn lap `simLap` of the replay into the same shape /replay/live/state returns,
+    // so the live UI renders a simulated race without knowing the difference.
+    fetchSimState() {
+      const race = this.simRace
+      if (!race) return
+      const drivers = race.laps[this.simLap - 1]?.drivers ?? []
+      const pitted  = drivers.filter(d => d.pit_in || d.pit_out).map(d => d.driver)
+      this.applyState({
+        session_key:  `SIM_${race.year}_${race.round}`,
+        drivers: drivers.map((d, i) => ({
+          driver_number: i + 1,          // not shown anywhere
+          driver:        d.driver,
+          team:          d.team,
+          position:      d.position || i + 1,
+          gap:           d.gap || 'LEADER',
+          interval:      null,
+          compound:      d.compound || 'UNKNOWN',
+          tire_age:      d.tire_life || 0,
+        })),
+        race_control: pitted.length
+          ? { flag: 'PIT', message: `PIT STOP: ${pitted.join(', ')}` }
+          : null,
+        simulated:     true,
+        sim_race_name: race.name,
+      })
     },
 
     // ── Driver selection ──────────────────────────────────────────────────────

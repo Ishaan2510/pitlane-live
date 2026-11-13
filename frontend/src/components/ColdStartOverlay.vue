@@ -31,80 +31,63 @@
 </template>
 
 <script>
-import { apiUrl } from '@/services/apiBase'
+import { apiWaiting } from '@/services/apiPending'
 
 export default {
   name: 'ColdStartOverlay',
 
   data() {
     return {
-      visible:    true,
       elapsed:    0,
       litCount:   0,
       statusText: 'Waking up the server',
       ticker:     null,
       lightTimer: null,
-      pollTimer:  null,
     }
   },
 
-  mounted() {
-    // If backend responds instantly, skip the whole overlay
-    this.checkBackend()
+  computed: {
+    // Shown only while an /api call has been waiting for a while (Render cold start).
+    // Pages that only read static /data/ files never trigger it.
+    visible() { return apiWaiting.value },
+  },
 
-    // Tick elapsed counter every second
-    this.ticker = setInterval(() => {
-      this.elapsed++
-      if (this.elapsed > 5 && this.elapsed <= 15) {
-        this.statusText = 'Server is cold-starting on Render'
-      } else if (this.elapsed > 15 && this.elapsed <= 40) {
-        this.statusText = 'Almost there — loading race data'
-      } else if (this.elapsed > 40) {
-        this.statusText = 'Still warming up — hang tight'
-      }
-    }, 1000)
-
-    // Animate F1 start lights (cycle 1→5 then reset)
-    this.lightTimer = setInterval(() => {
-      this.litCount++
-      if (this.litCount > 5) this.litCount = 0
-    }, 800)
-
-    // Poll /health every 3 seconds
-    this.pollTimer = setInterval(() => this.checkBackend(), 3000)
+  watch: {
+    visible(on) { on ? this.start() : this.stop() },
   },
 
   beforeUnmount() {
-    clearInterval(this.ticker)
-    clearInterval(this.lightTimer)
-    clearInterval(this.pollTimer)
+    this.stop()
   },
 
   methods: {
-    async checkBackend() {
-      try {
-        const res = await fetch(apiUrl('/health'))
-        if (res.ok) {
-          this.dismiss()
+    start() {
+      this.elapsed    = 0
+      this.litCount   = 0
+      this.statusText = 'Waking up the server'
+
+      // Tick elapsed counter every second
+      this.ticker = setInterval(() => {
+        this.elapsed++
+        if (this.elapsed > 5 && this.elapsed <= 15) {
+          this.statusText = 'Server is cold-starting on Render'
+        } else if (this.elapsed > 15 && this.elapsed <= 40) {
+          this.statusText = 'Almost there — loading race data'
+        } else if (this.elapsed > 40) {
+          this.statusText = 'Still warming up — hang tight'
         }
-      } catch {
-        // Still cold — keep waiting
-      }
+      }, 1000)
+
+      // Animate F1 start lights (cycle 1→5 then reset)
+      this.lightTimer = setInterval(() => {
+        this.litCount++
+        if (this.litCount > 5) this.litCount = 0
+      }, 800)
     },
 
-    dismiss() {
+    stop() {
       clearInterval(this.ticker)
       clearInterval(this.lightTimer)
-      clearInterval(this.pollTimer)
-
-      // Brief "lights out" moment before fade
-      this.litCount   = 5
-      this.statusText = 'Lights out and away we go'
-
-      setTimeout(() => {
-        this.visible = false
-        this.$emit('ready')
-      }, 600)
     },
   },
 }
