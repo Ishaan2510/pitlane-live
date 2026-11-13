@@ -1,5 +1,6 @@
 <template>
   <div class="app">
+    <IntroSequence />
     <ColdStartOverlay />
     <Navbar />
     <main>
@@ -20,9 +21,10 @@
 <script>
 import Navbar from '@/components/Navbar.vue'
 import ColdStartOverlay from '@/components/ColdStartOverlay.vue'
+import IntroSequence from '@/components/IntroSequence.vue'
 export default {
   name: 'App',
-  components: { Navbar, ColdStartOverlay }
+  components: { Navbar, ColdStartOverlay, IntroSequence }
 }
 </script>
 

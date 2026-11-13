@@ -4,7 +4,7 @@
     <!-- ════════════════════════════════════════════
          HERO — Next Race Countdown
     ════════════════════════════════════════════ -->
-    <section class="hero" v-if="nextRace">
+    <section class="hero" :class="`enter-${heroEntrance}`" v-if="nextRace">
       <div class="hero-inner">
 
         <!-- Left: meta -->
@@ -149,6 +149,8 @@
 
 <script>
 import { apiUrl } from '@/services/apiBase'
+import { getSchedule } from '@/services/schedule'
+import { heroEntrance } from '@/services/intro'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -170,6 +172,7 @@ export default {
   },
 
   computed: {
+    heroEntrance() { return heroEntrance.value },
     nextRace() {
       return this.races.find(r => r.is_next) || null
     },
@@ -222,8 +225,7 @@ export default {
     async loadSchedule() {
       this.loading = true
       try {
-        const res  = await fetch(apiUrl(`/schedule?year=${this.selectedYear}`))
-        this.races = await res.json()
+        this.races = await getSchedule(this.selectedYear)
       } catch (e) {
         console.error('Failed to load schedule:', e)
         this.races = []
@@ -555,6 +557,29 @@ export default {
   font-weight: 600;
   letter-spacing: 0.04em;
   white-space: nowrap;
+}
+
+/* Entrance: label, title, location, countdown, buttons rise in turn.
+   Held while the intro overlay is up, skipped when the intro was skipped. */
+.hero-meta, .hero-title, .hero-location, .countdown, .countdown-live, .hero-actions {
+  animation: hero-rise 320ms var(--ease) both;
+}
+.hero-title    { animation-delay: 60ms; }
+.hero-location { animation-delay: 120ms; }
+.countdown, .countdown-live { animation-delay: 180ms; }
+.hero-actions  { animation-delay: 240ms; }
+.enter-hold :is(.hero-meta, .hero-title, .hero-location, .countdown, .countdown-live, .hero-actions) {
+  animation-play-state: paused;
+}
+.enter-none :is(.hero-meta, .hero-title, .hero-location, .countdown, .countdown-live, .hero-actions) {
+  animation: none;
+}
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-meta, .hero-title, .hero-location, .countdown, .countdown-live, .hero-actions { animation: none; }
 }
 
 /* Hero skeleton */
