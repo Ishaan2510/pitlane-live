@@ -36,7 +36,7 @@ export default {
 .app { min-height: 100vh; }
 main { padding-top: 56px; }
 .site-footer {
-  padding: 1.25rem 1rem;
+  padding: 0.5rem 1rem;
   text-align: center;
   font-size: 0.72rem;
   color: var(--text-secondary);
