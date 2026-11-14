@@ -45,3 +45,14 @@ export function getWeather(year, round) {
 export function getResults(year, round, session = 'R') {
   return getJson(`${year}/${round}/${SESSION_DIR[session] || session}/results.json`)
 }
+
+// Races that have a built Race session, newest first (the manifest's own order).
+export function getRaces() {
+  return getManifest().then(m => m.events.filter(e => e.sessions.includes('R')))
+}
+
+// Session coverage tags shown on race cards and in the Race Room header
+const COVERAGE = [['R', 'RACE'], ['Q', 'QUALI'], ['S', 'SPRINT']]
+export function coverageTags(event) {
+  return COVERAGE.filter(([code]) => event.sessions.includes(code)).map(([, label]) => label)
+}

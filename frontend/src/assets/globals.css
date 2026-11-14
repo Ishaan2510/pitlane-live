@@ -66,3 +66,13 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+/* Session coverage tag (RACE / QUALI / SPRINT) on race cards and the Race Room header */
+.cov-tag {
+  border: 1px solid var(--border-secondary);
+  color: var(--text-secondary);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  padding: 0.05rem 0.35rem;
+}

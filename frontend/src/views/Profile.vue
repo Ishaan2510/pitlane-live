@@ -32,7 +32,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-num">{{ realPredictions.length }}</div>
-          <div class="stat-label">PREDICTIONS</div>
+          <div class="stat-label">PIT CALLS</div>
         </div>
         <div class="stat-card">
           <div class="stat-num">{{ rank || '—' }}</div>
@@ -40,22 +40,15 @@
         </div>
       </div>
 
-      <!-- Real race predictions -->
-      <div class="section">
-        <div class="section-heading">RECENT PREDICTIONS</div>
+      <!-- Pit-call history: the pit-call game is retired, so this is read-only -->
+      <div class="section" v-if="loadError || realPredictions.length">
+        <div class="section-heading">PIT CALL HISTORY</div>
         <StatePanel
           v-if="loadError"
           label="Predictions unavailable"
           text="Your predictions could not be loaded."
           action="Retry"
           @action="load"
-        />
-        <StatePanel
-          v-else-if="realPredictions.length === 0"
-          label="No predictions yet"
-          text="Make your first call on race day."
-          action="Go live"
-          to="/live"
         />
         <div v-else class="pred-list">
           <div class="pred-header">
@@ -95,7 +88,7 @@
       <!-- Simulation predictions -->
       <div class="section" v-if="simPredictions.length > 0">
         <div class="section-heading sim-heading" @click="showSim = !showSim">
-          SIMULATION PREDICTIONS
+          SIMULATION PIT CALLS
           <span class="sim-count">{{ simPredictions.length }}</span>
           <span class="sim-toggle">{{ showSim ? '▲' : '▼' }}</span>
           <span class="sim-note">practice only — not scored</span>

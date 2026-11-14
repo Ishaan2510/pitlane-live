@@ -26,7 +26,7 @@
       <StatePanel
         v-else
         label="No standings yet"
-        text="Be the first to make predictions on race day."
+        text="Be the first to predict a race result."
         action="Join the grid"
         to="/register"
       />
