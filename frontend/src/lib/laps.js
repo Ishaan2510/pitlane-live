@@ -10,6 +10,15 @@ export function cleanCompound(value) {
   return UNKNOWN_COMPOUNDS.has(c) ? null : c
 }
 
+// Did the driver pit at the end of lap n? The flags alone are not enough: some races
+// have pit_in set on lap 1 for cars that never stopped. A stop is an in-lap followed
+// by an out-lap, or either flag together with a new stint.
+export function isPitStop(d, n) {
+  if (n < 1 || n >= d.laps) return false
+  const flagIn = !!d.pitIn[n], flagOut = !!d.pitOut[n + 1]
+  return (flagIn && flagOut) || ((flagIn || flagOut) && d.stint[n + 1] !== d.stint[n])
+}
+
 export function parseLaps(json) {
   const col = Object.fromEntries(json.columns.map((name, i) => [name, i]))
   const rows = json.rows

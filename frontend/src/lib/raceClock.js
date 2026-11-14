@@ -47,6 +47,7 @@
 // a retirement the cars around it can be one place off the data for a moment.
 
 import { TEAM_COLORS } from '@/data/drivers'
+import { isPitStop } from './laps'
 
 const DEFAULT_PIT_LOSS_S = 22
 const MAX_HOLD_SHARE = 0.6     // a pit hold never takes more than this share of the out-lap
@@ -191,7 +192,7 @@ export function buildRaceClock({ laps, replay, results = null, pitLoss = null })
   for (const d of drivers) {
     const L = d.data
     for (let n = 2; n <= d.done; n++) {
-      if (!L.pitOut[n] && !L.pitIn[n - 1]) continue
+      if (!isPitStop(L, n - 1)) continue
       const loss = lossOf[`${d.driver}:${n - 1}`]
       const dur = d.times[n] - d.times[n - 1]
       d.hold[n] = Math.min(loss > 0 ? loss : medianLoss, MAX_HOLD_SHARE * dur)
@@ -248,7 +249,7 @@ export function buildRaceClock({ laps, replay, results = null, pitLoss = null })
         const into = t - T[lap - 1], dur = T[lap] - T[lap - 1], hold = d.hold[lap]
         if (into < hold) inPit = true
         else fraction = (into - hold) / (dur - hold)
-        if (L.pitIn[lap] && fraction > 0.97) inPit = true   // rolling into the pit lane
+        if (fraction > 0.97 && isPitStop(L, lap)) inPit = true   // rolling into the pit lane
         progress = lap - 1 + fraction
         reached = T[lap - 1]
       } else if (d.partial && t - T[d.done] < d.partial.dur) {

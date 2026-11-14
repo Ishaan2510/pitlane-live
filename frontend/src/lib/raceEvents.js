@@ -2,6 +2,8 @@
 // pit stops, and the event list the replay feed fills in as the race plays.
 // Pure functions; inputs are parseLaps() output and the raw JSON files.
 
+import { isPitStop } from './laps'
+
 export const STATUS_LABEL = {
   red: 'Red flag', sc: 'Safety Car', vsc: 'Virtual Safety Car', yellow: 'Yellow flag',
 }
@@ -75,7 +77,7 @@ export function pitStops(laps, pitLoss, bands) {
   const stops = []
   for (const d of Object.values(laps.drivers)) {
     for (let n = 1; n < d.laps; n++) {
-      if (!d.pitIn[n] && !d.pitOut[n + 1]) continue
+      if (!isPitStop(d, n)) continue
       const m = measured[`${d.driver}:${n}`]
       const here = lapStatus(bands, n), next = lapStatus(bands, n + 1)
       const status = [here, next].sort((a, b) => (SEVERITY[b] || 0) - (SEVERITY[a] || 0))[0] || null
