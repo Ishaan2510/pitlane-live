@@ -42,9 +42,15 @@
 //
 // LIMITS: no data on where on track a car was inside a lap, so speed is uniform and
 // the start is not staggered by grid slot (all cars leave the line at t = 0).
-// A car that has just retired keeps its place until the cars behind have covered the
-// same distance. The timing feeds drop it sooner or later than that, so on the lap of
-// a retirement the cars around it can be one place off the data for a moment.
+//
+// RETIRED CARS IN THE ORDER
+// Running cars are ranked by distance covered. A car that has stopped for good has no
+// distance to compare: the timing feeds keep it in its place for a while and then drop
+// it, sooner or later than the cars behind actually pass where it stopped. So a stopped
+// car's rank comes from the data instead. Every lap end of every other car says how
+// many cars were ahead of it; whatever the running cars do not account for must be
+// stopped cars, and the stopped cars are moved just ahead of or just behind that line
+// to make the count right. Between lap ends a stopped car keeps the rank it last had.
 
 import { TEAM_COLORS } from '@/data/drivers'
 import { isPitStop } from './laps'
@@ -53,6 +59,7 @@ const DEFAULT_PIT_LOSS_S = 22
 const MAX_HOLD_SHARE = 0.6     // a pit hold never takes more than this share of the out-lap
 const MIN_LAP_SHARE = 0.25     // a gap that implies a lap shorter than this share is a glitch
 const NUDGE_S = 0.001
+const RANK_STEP = 1e-6       // how far past a car a stopped car is ranked, in laps
 
 function parseGap(gap) {
   if (typeof gap === 'number') return gap
@@ -135,6 +142,8 @@ export function buildRaceClock({ laps, replay, results = null, pitLoss = null })
       times:   new Float64Array(done + 1),            // T[n]: race time at the end of lap n
       hold:    new Float64Array(d.laps + 2),          // pit hold at the start of lap n, seconds
       partial: null,                                  // { frac, dur } of the unfinished last lap
+      rankT:   [],                                    // once stopped for good: from race time rankT[i]
+      rankV:   [],                                    //   the car ranks as if it had covered rankV[i] laps
       _partialLap: partialLap,
     }
   })
@@ -174,8 +183,9 @@ export function buildRaceClock({ laps, replay, results = null, pitLoss = null })
       d.times[n] = t
     }
 
-    // The order at the line is the order of the positions in laps.json
-    const ranked = running.filter(d => d.data.position[n] > 0).sort((a, b) => a.data.position[n] - b.data.position[n])
+    // The order at the line is the order of the positions in laps.json. A car with no
+    // position on a lap (a retiring car's last lap, usually) crosses after those that have one.
+    const ranked = running.slice().sort((a, b) => (a.data.position[n] || 99) - (b.data.position[n] || 99) || a.times[n] - b.times[n])
     for (let i = 1; i < ranked.length; i++) {
       const floor = ranked[i - 1].times[n] + NUDGE_S
       if (ranked[i].times[n] < floor) {
@@ -239,7 +249,28 @@ export function buildRaceClock({ laps, replay, results = null, pitLoss = null })
    *   stoppedFor seconds since the car stopped (0 while running), for fading it out
    */
   function stateAt(t) {
-    const cars = drivers.map(d => {
+    const cars = rank(carsAt(t))
+    const lead = cars[0]
+    let ahead = null
+    cars.forEach((c, i) => {
+      c.position = i + 1
+      if (!c.retired) {
+        c.gap = i === 0 ? 0 : c.finished ? c._finalGap : Math.max(0, t - timeAt(c.progress))
+        c.lapsDown = Math.max(0, Math.floor(lead.progress - c.progress + 1e-9))
+        if (ahead) c.interval = Math.max(0, c.gap - ahead.gap)
+        ahead = c
+      }
+      delete c._key
+      delete c._reached
+      delete c._grid
+      delete c._finalGap
+    })
+    return cars
+  }
+
+  // Where every car is at race time t, unranked
+  function carsAt(t) {
+    return drivers.map(d => {
       const L = d.data, T = d.times
       let lap, fraction = 0, progress, inPit = false, stoppedFor = 0
       let reached = T[d.done]                                // when it got to `progress`, for ties
@@ -268,33 +299,56 @@ export function buildRaceClock({ laps, replay, results = null, pitLoss = null })
 
       const row = Math.min(lap, L.laps)
       const stopped = t >= T[d.done] + (d.partial?.dur || 0)
+      const retired = d.retired && stopped
+      // Rank key: laps covered, or for a stopped car the rank the data last gave it
+      let key = progress
+      if (retired && d.rankT.length) {
+        const i = upperBound(d.rankT, t, 0, d.rankT.length - 1) - 1
+        if (i >= 0) key = d.rankV[i]
+      }
       return {
         driver: d.driver, team: d.team, color: d.color,
         lap, fraction, progress, position: 0, gap: null, interval: null, lapsDown: 0,
         compound: L.compound[row], tyreAge: L.tyreLife[row],
-        inPit, retired: d.retired && stopped, finished: !d.retired && stopped, stoppedFor,
-        _reached: reached, _grid: d.grid, _finalGap: T[d.done] - spine[d.done],
+        inPit, retired, finished: !d.retired && stopped, stoppedFor,
+        _key: key, _reached: reached, _grid: d.grid, _finalGap: T[d.done] - spine[d.done],
       }
     })
+  }
 
-    // Rank by distance covered; level cars by who got there first, then by grid slot
-    cars.sort((a, b) => b.progress - a.progress || a._reached - b._reached || a._grid - b._grid)
+  // By distance covered (stopped cars by their data rank); level cars by who got there
+  // first, then by grid slot
+  function rank(cars) {
+    return cars.sort((a, b) => b._key - a._key || a._reached - b._reached || a._grid - b._grid)
+  }
 
-    const lead = cars[0]
-    let ahead = null
-    cars.forEach((c, i) => {
-      c.position = i + 1
-      if (!c.retired) {
-        c.gap = i === 0 ? 0 : c.finished ? c._finalGap : Math.max(0, t - timeAt(c.progress))
-        c.lapsDown = Math.max(0, Math.floor(lead.progress - c.progress + 1e-9))
-        if (ahead) c.interval = Math.max(0, c.gap - ahead.gap)
-        ahead = c
+  // ── Where the data puts each stopped car (see RETIRED CARS IN THE ORDER) ──
+  if (drivers.some(d => d.retired)) {
+    const lapEnds = []
+    for (const d of drivers) {
+      for (let n = 1; n <= d.done; n++) if (d.data.position[n] > 0) lapEnds.push({ t: d.times[n], d, n, p: d.data.position[n] })
+    }
+    lapEnds.sort((a, b) => a.t - b.t)
+    for (const e of lapEnds) {
+      let aheadRunning = 0
+      const stopped = []
+      for (const car of carsAt(e.t)) {
+        if (car.driver === e.d.driver) continue
+        if (car.retired) stopped.push(car)
+        else if (car.progress > e.n || (car.progress === e.n && car._reached < e.t)) aheadRunning++
       }
-      delete c._reached
-      delete c._grid
-      delete c._finalGap
-    })
-    return cars
+      if (!stopped.length) continue
+      rank(stopped)
+      // this many stopped cars are still ahead of the car that just crossed the line
+      const k = Math.min(stopped.length, Math.max(0, e.p - 1 - aheadRunning))
+      stopped.forEach((car, i) => {
+        const isAhead = car._key > e.n || (car._key === e.n && car._reached < e.t)
+        if (i < k === isAhead) return
+        const x = byCode[car.driver]
+        x.rankT.push(e.t)
+        x.rankV.push(i < k ? e.n + RANK_STEP * (stopped.length - i) : e.n - RANK_STEP * (i + 1))
+      })
+    }
   }
 
   return { totalLaps, duration, drivers, byCode, spine, stats, timeAt, playheadAt, stateAt }

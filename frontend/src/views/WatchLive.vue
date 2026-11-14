@@ -213,7 +213,7 @@
             </svg>
           </div>
           <div>
-            <div class="coming-title">Full Season Calendar</div>
+            <div class="coming-title">Full season calendar</div>
             <div class="coming-desc">Every round of the season, sprint weekends marked, with results as they come in.</div>
           </div>
           <router-link to="/" class="coming-link">GO →</router-link>
