@@ -8,30 +8,8 @@ class APIService {
     return response.data
   }
 
-  async getLiveRace(id) {
-    const response = await axios.get(`${API_ROOT}/races/${id}`)
-    return {
-      id:          response.data.id,
-      name:        response.data.name,
-      circuit:     response.data.circuit,
-      country:     response.data.country,
-      status:      response.data.status,
-      currentLap:  response.data.currentLap,
-      totalLaps:   response.data.laps,
-      leaders:     response.data.leaders || []
-    }
-  }
-
   async getLeaderboard() {
     const response = await axios.get(`${API_ROOT}/leaderboard`)
-    return response.data
-  }
-
-  async submitPrediction(prediction) {
-    const token = localStorage.getItem('pitlane_token')
-    const response = await axios.post(`${API_ROOT}/predictions`, prediction, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    })
     return response.data
   }
 

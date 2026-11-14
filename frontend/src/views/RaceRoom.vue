@@ -161,7 +161,7 @@ function formatDate(d) {
   grid-template-columns: 1fr auto auto;
   align-items: end;
   gap: 1rem 2rem;
-  padding: 1.25rem 1.5rem 1rem;
+  padding: 0.9rem 1.5rem 0.8rem;
   border-bottom: 1px solid var(--border-primary);
 }
 .rr-label, .rr-meta, .pod-pos, .pod-team, .rr-btn, .rr-tab {
@@ -172,10 +172,10 @@ function formatDate(d) {
 .rr-name {
   font-family: 'Bebas Neue', sans-serif;
   font-weight: 400;
-  font-size: clamp(1.9rem, 4vw, 3rem);
+  font-size: clamp(1.8rem, 3.2vw, 2.5rem);
   letter-spacing: 0.03em;
   line-height: 1;
-  margin: 0.3rem 0 0.45rem;
+  margin: 0.2rem 0 0.35rem;
 }
 .rr-meta {
   display: flex;
@@ -229,7 +229,7 @@ function formatDate(d) {
   border-bottom: 1px solid var(--border-primary);
 }
 .rr-tab {
-  padding: 0.8rem 0 0.7rem;
+  padding: 0.65rem 0 0.55rem;
   font-size: 0.68rem;
   letter-spacing: 0.18em;
   color: var(--text-secondary);
