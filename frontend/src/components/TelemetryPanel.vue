@@ -34,7 +34,7 @@
         <div class="stat-row">
           <span class="stat-label">Tyre</span>
           <span class="tyre-pill" :class="(driver.compound || 'unknown').toLowerCase()">
-            {{ tireEmoji }} {{ driver.compound || '?' }}
+            <span class="tyre-key" :class="(driver.compound || '').toLowerCase()"></span> {{ driver.compound || '?' }}
           </span>
         </div>
 
@@ -92,7 +92,6 @@ export default {
 
   computed: {
     teamColor()    { return TEAM_COLORS[this.driver?.team] || '#888' },
-    tireEmoji()    { return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪', INTERMEDIATE:'🟢', WET:'🔵' }[this.driver?.compound] || '⚫' },
     hasSpeedData() {
       return (
         this.enriched.avg_speed != null ||

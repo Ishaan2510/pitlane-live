@@ -45,6 +45,23 @@ body {
   color: white;
 }
 
+/* Tyre compound dots, in the real Pirelli colours. Used wherever a compound is shown,
+   so every race reads the same way: <span class="tyre-key soft"></span> */
+.tyre-key {
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  border-radius: 50%;
+  border: 1px solid var(--border-secondary);
+  background: var(--text-muted);   /* unknown compound */
+  vertical-align: middle;
+}
+.tyre-key.soft         { background: #e10600; border-color: #e10600; }
+.tyre-key.medium       { background: #ffd200; border-color: #ffd200; }
+.tyre-key.hard         { background: #ffffff; border-color: #888888; }
+.tyre-key.intermediate { background: #00a442; border-color: #00a442; }
+.tyre-key.wet          { background: #0067ff; border-color: #0067ff; }
+
 /* Smooth scroll */
 html {
   scroll-behavior: smooth;

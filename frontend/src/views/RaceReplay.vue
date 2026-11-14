@@ -87,6 +87,11 @@
 
           <div class="lb-section">
             <div class="sidebar-heading">LEADERBOARD</div>
+            <div class="tyre-legend" aria-label="Tyre colours">
+              <span v-for="c in ['Soft', 'Medium', 'Hard', 'Inter', 'Wet']" :key="c">
+                <span class="tyre-key" :class="c === 'Inter' ? 'intermediate' : c.toLowerCase()"></span> {{ c }}
+              </span>
+            </div>
             <div
               v-for="driver in currentLapDrivers"
               :key="driver.driver"
@@ -96,7 +101,9 @@
             >
               <div class="lb-pos">{{ driver.position }}</div>
               <div class="lb-code">{{ driver.driver }}</div>
-              <div class="lb-tire">{{ getTireEmoji(driver.compound) }}</div>
+              <div class="lb-tire">
+                <span class="tyre-key" :class="(driver.compound || '').toLowerCase()" :title="driver.compound"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -155,7 +162,7 @@
                 </div>
                 <div class="pit-driver-name">{{ pit.driver }}</div>
                 <span class="tyre-pill" :class="pit.compound.toLowerCase()">
-                  {{ getTireEmoji(pit.compound) }} {{ pit.compound }}
+                  <span class="tyre-key" :class="pit.compound.toLowerCase()"></span> {{ pit.compound }}
                 </span>
               </div>
             </div>
@@ -385,10 +392,6 @@ export default {
       this.selectedDriver = this.selectedDriver === code ? null : code
     },
 
-    getTireEmoji(compound) {
-      return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪', INTERMEDIATE:'🟢', WET:'🔵' }[compound] ?? '⚫'
-    },
-
     formatDate(dateStr) {
       if (!dateStr) return 'TBD'
       return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -565,7 +568,16 @@ export default {
 
 .lb-pos  { font-family: var(--font-display); font-size: 1rem; color: var(--text-secondary); text-align: center; }
 .lb-code { font-family: monospace; font-weight: 700; font-size: 0.88rem; color: var(--text-primary); }
-.lb-tire { font-size: 0.95rem; text-align: center; }
+.lb-tire { font-size: 1.1rem; text-align: center; }
+.tyre-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  padding: 0 0.15rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+}
 
 /* ── CENTER track area ── */
 .track-area {
