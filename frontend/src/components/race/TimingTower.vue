@@ -153,7 +153,7 @@ function gapText(car) {
 .t-move.up   { color: var(--status-green); }
 .t-move.down { color: var(--status-red); }
 .t-gap  { text-align: right; font-size: 0.68rem; color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.t-gap.flag { color: var(--accent); letter-spacing: 0.1em; }
+.t-gap.flag { color: var(--accent-hover); letter-spacing: 0.1em; }
 .t-tyre { display: inline-flex; align-items: center; gap: 0.3rem; justify-content: flex-end; }
 .t-age  { min-width: 1.1rem; font-size: 0.62rem; color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums; }
 
