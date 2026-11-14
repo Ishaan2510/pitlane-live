@@ -14,6 +14,7 @@ manifest.json
 {year}/{round}/race/track_status.json
 {year}/{round}/race/weather.json
 {year}/{round}/race/pit_loss.json
+{year}/{round}/race/tyre_model.json
 {year}/{round}/quali/results.json           written last
 {year}/{round}/quali/fastest/{DRIVER}.json
 {year}/{round}/sprint/...                   same files as race/ (no circuit.json)
@@ -217,6 +218,28 @@ Measured cost of a pit stop at this track. A stop is a lap with `pit_stop` in `l
     { "driver": "HUL", "lap": 12, "in_lap_s": 96.743, "out_lap_s": 78.279,
       "ref_lap_s": 80.974, "loss_s": 13.074, "condition": "green" }
   ]
+}
+```
+
+## race/tyre_model.json
+
+The tyre degradation model fitted to this race (also written for sprints): one least-squares
+fit across the field, `lap_time = driver_base + fuel * lap + compound_offset + deg * tyre_life`.
+The maths, the clean-lap rules, the confidence rule and every field are in
+`pipeline/model/MODEL.md`; how well it predicts, race by race, is in
+`pipeline/model/VALIDATION.md`. `modelled` is false, with a `reason`, for wet races and
+races with too many unknown compounds.
+
+```json
+{
+  "modelled": true, "reason": null, "wet_running": false, "dry_from_lap": 1,
+  "reference_compound": "HARD", "fuel_s_per_lap": -0.0562, "fuel_source": "fit",
+  "r2": 0.87, "rmse_s": 0.61, "laps_used": 617, "laps_excluded": { "not_green": 190 },
+  "compounds": { "HARD": { "offset_s": 0.0, "deg_s_per_lap": 0.0412, "deg_se": 0.0061,
+                           "laps": 456, "drivers": 20, "max_life_seen": 31,
+                           "residual_sd_s": 0.59, "confidence": "high", "points": [[3, 0.21]] } },
+  "drivers": { "VER": 96.412 },
+  "validation": { "lodo_mae_s": 0.54, "stint_mae_s": 7.4, "n_drivers": 19 }
 }
 ```
 

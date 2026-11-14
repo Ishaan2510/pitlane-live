@@ -34,6 +34,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))   # for `sources`, `validate`
 
+from model.tyre_model import build_tyre_model  # noqa: E402
 from validate import validate_session  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -712,7 +713,8 @@ def build_race_like(source, year, event, out, code):
         'weather':    weather_summary(weather),
         'laps':       build_replay_laps(laps, total_laps),
     })
-    write_json(out / 'laps.json', build_laps_table(laps))
+    laps_table = build_laps_table(laps)
+    write_json(out / 'laps.json', laps_table)
     write_json(out / 'track_status.json', {
         'periods':    build_track_status(source.track_status(), lap_ends, start.total_seconds(),
                                          laps['Time'].max().total_seconds()),
@@ -725,7 +727,9 @@ def build_race_like(source, year, event, out, code):
             write_json(out / 'circuit.json', build_circuit(source, event['EventName']))
         except Exception as e:
             log(f'    WARNING circuit.json skipped: {e}')
-    write_json(out / 'results.json', build_results(source.results()))     # last: marks the build complete
+    results = build_results(source.results())
+    write_json(out / 'tyre_model.json', build_tyre_model(laps_table, results))   # pipeline/model/MODEL.md
+    write_json(out / 'results.json', results)     # last: marks the build complete
     return total_laps
 
 

@@ -23,6 +23,9 @@
   --status-sc:        #ff9944;
   --status-vsc:       #ddcc55;
   --status-green:     #66dd88;
+  /* Tyre colours for thin lines and small dots, which need contrast with the page */
+  --tyre-medium-line: #ffd200;
+  --tyre-hard-line:   #ffffff;
 
   --bg-primary:       #080808;
   --bg-secondary:     #0d0d0d;
@@ -65,6 +68,8 @@
   --status-sc:        #c26a00;
   --status-vsc:       #8f7c00;
   --status-green:     #1c8a45;
+  --tyre-medium-line: #a88600;
+  --tyre-hard-line:   #5a5a5a;
 
   --bg-primary:       #f4f4f4;
   --bg-secondary:     #ebebeb;

@@ -56,7 +56,7 @@ def test_build_2025_r8_writes_every_file(fastf1, tmp_path, monkeypatch):
     expected = [tmp_path / 'manifest.json', ev / 'event.json', ev / 'circuit.json',
                 ev / 'quali' / 'results.json']
     expected += [ev / 'race' / f'{n}.json'
-                 for n in ('replay', 'laps', 'results', 'track_status', 'weather', 'pit_loss')]
+                 for n in ('replay', 'laps', 'results', 'track_status', 'weather', 'pit_loss', 'tyre_model')]
     for path in expected:
         assert path.exists(), path
     fastest = list((ev / 'quali' / 'fastest').glob('*.json'))
