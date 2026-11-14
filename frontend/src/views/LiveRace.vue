@@ -120,6 +120,11 @@
 
         <!-- LEFT: Timing tower -->
         <div class="timing-tower">
+          <div class="tyre-legend" aria-label="Tyre colours">
+            <span v-for="c in ['Soft', 'Medium', 'Hard', 'Inter', 'Wet']" :key="c">
+              <span class="tyre-key" :class="c === 'Inter' ? 'intermediate' : c.toLowerCase()"></span> {{ c }}
+            </span>
+          </div>
           <div class="tower-header" :class="{ 'no-interval': isSimulated }">
             <span class="th-pos">P</span>
             <span class="th-driver">DRIVER</span>
@@ -156,7 +161,7 @@
               {{ formatInterval(driver.interval) }}
             </span>
             <div class="tr-tyre">
-              <span class="tyre-dot" :class="(driver.compound || 'unknown').toLowerCase()"></span>
+              <span class="tyre-key" :class="(driver.compound || '').toLowerCase()" :title="driver.compound"></span>
               <span class="tyre-age">{{ driver.tire_age ?? '?' }}</span>
             </div>
           </div>
@@ -215,7 +220,7 @@
               <div class="sc-stat">
                 <span class="sc-label">Tyre</span>
                 <span class="sc-tyre-pill" :class="(selectedDriverData.compound || 'unknown').toLowerCase()">
-                  {{ tyreEmoji(selectedDriverData.compound) }} {{ selectedDriverData.compound || '?' }}
+                  <span class="tyre-key" :class="(selectedDriverData.compound || '').toLowerCase()"></span> {{ selectedDriverData.compound || '?' }}
                 </span>
               </div>
               <div class="sc-stat">
@@ -698,9 +703,6 @@ export default {
     // ── Helpers ───────────────────────────────────────────────────────────────
     teamColor(team)  { return TEAM_COLORS[team] || '#888' },
     shortTeam(team)  { return SHORT_TEAM[team]  || team?.slice(0, 3).toUpperCase() || '???' },
-    tyreEmoji(c) {
-      return { SOFT:'🔴', MEDIUM:'🟡', HARD:'⚪', INTERMEDIATE:'🟢', WET:'🔵' }[c] || '⚫'
-    },
     posClass(pos) {
       if (pos === 1) return 'p1'
       if (pos === 2) return 'p2'
@@ -1004,6 +1006,15 @@ export default {
   display: flex;
   flex-direction: column;
 }
+.tyre-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #141414;
+  font-size: 0.62rem;
+  color: #888;
+}
 .tower-header {
   display: grid;
   grid-template-columns: 32px 1fr 56px 56px 52px;
@@ -1064,13 +1075,6 @@ export default {
 .tr-gap.leader { color: #ffd700; font-weight: 800; font-size: 0.65rem; }
 .tr-interval { font-family: monospace; font-size: 0.72rem; color: #444; text-align: right; padding-right: 0.25rem; }
 .tr-tyre { display: flex; align-items: center; gap: 0.3rem; justify-content: center; }
-.tyre-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.tyre-dot.soft         { background: #cc2222; }
-.tyre-dot.medium       { background: #cccc00; }
-.tyre-dot.hard         { background: #cccccc; }
-.tyre-dot.intermediate { background: #00aa44; }
-.tyre-dot.wet          { background: #2255cc; }
-.tyre-dot.unknown      { background: #444; }
 .tyre-age { font-family: monospace; font-size: 0.68rem; color: #444; }
 
 /* ════════════════════════════════════════════════════
