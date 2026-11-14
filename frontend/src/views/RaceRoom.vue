@@ -39,7 +39,8 @@
             :to="older ? raceLink(older) : undefined"
             class="rr-btn icon"
             :class="{ disabled: !older }"
-            :aria-label="older ? `Previous race: ${older.name} ${older.year}` : 'No previous race'"
+            :aria-label="older ? `Previous race: ${older.name} ${older.year}` : undefined"
+            :aria-hidden="older ? undefined : 'true'"
             :title="older ? `${older.name} ${older.year}` : ''"
           >
             <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2 3.5 6l4 4" /></svg>
@@ -49,7 +50,8 @@
             :to="newer ? raceLink(newer) : undefined"
             class="rr-btn icon"
             :class="{ disabled: !newer }"
-            :aria-label="newer ? `Next race: ${newer.name} ${newer.year}` : 'No next race'"
+            :aria-label="newer ? `Next race: ${newer.name} ${newer.year}` : undefined"
+            :aria-hidden="newer ? undefined : 'true'"
             :title="newer ? `${newer.name} ${newer.year}` : ''"
           >
             <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2l4 4-4 4" /></svg>
@@ -168,7 +170,7 @@ function formatDate(d) {
   font-family: 'DM Mono', monospace;
   text-transform: uppercase;
 }
-.rr-label { font-size: 0.62rem; letter-spacing: 0.2em; color: var(--accent); }
+.rr-label { font-size: 0.62rem; letter-spacing: 0.2em; color: var(--accent-hover); }   /* the brighter red: small text needs the contrast */
 .rr-name {
   font-family: 'Bebas Neue', sans-serif;
   font-weight: 400;
@@ -190,7 +192,7 @@ function formatDate(d) {
 .rr-podium { display: flex; gap: 1.25rem; list-style: none; }
 .rr-podium li { display: grid; gap: 0.15rem; }
 .pod-pos  { font-size: 0.55rem; letter-spacing: 0.18em; color: var(--text-secondary); }
-.winner .pod-pos { color: var(--accent); }
+.winner .pod-pos { color: var(--accent-hover); }
 .pod-code {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.5rem;

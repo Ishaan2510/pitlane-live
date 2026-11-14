@@ -3,7 +3,7 @@
        how it was computed, the hover tooltip and the "Open in replay" action. -->
   <section class="chart-frame">
     <header class="cf-head">
-      <h3 class="cf-title">{{ title }}</h3>
+      <h2 class="cf-title">{{ title }}</h2>
       <details class="cf-note">
         <summary aria-label="How this was computed" title="How this was computed">i</summary>
         <p>{{ note }}</p>

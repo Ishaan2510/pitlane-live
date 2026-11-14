@@ -16,33 +16,33 @@
       <div class="card">
         <dt>WINNER</dt>
         <dd>{{ head.winner?.driver || '—' }}</dd>
-        <small v-if="head.winner">{{ head.winner.margin != null ? `${fmtGap(head.winner.margin)} s over ${head.winner.runnerUp}` : head.winner.team }}</small>
+        <dd class="sub" v-if="head.winner">{{ head.winner.margin != null ? `${fmtGap(head.winner.margin)} s over ${head.winner.runnerUp}` : head.winner.team }}</dd>
       </div>
       <div class="card">
         <dt>BIGGEST CLIMBER</dt>
         <dd>{{ head.climber?.driver || '—' }}</dd>
-        <small v-if="head.climber">P{{ head.climber.grid }} to P{{ head.climber.finish }}, up {{ head.climber.gained }}</small>
-        <small v-else>Nobody finished ahead of their grid slot</small>
+        <dd class="sub" v-if="head.climber">P{{ head.climber.grid }} to P{{ head.climber.finish }}, up {{ head.climber.gained }}</dd>
+        <dd class="sub" v-else>Nobody finished ahead of their grid slot</dd>
       </div>
       <div class="card">
         <dt>MOST LAPS LED</dt>
         <dd>{{ head.mostLed?.driver || '—' }}</dd>
-        <small v-if="head.mostLed">{{ head.mostLed.laps }} of {{ head.mostLed.total }} laps</small>
+        <dd class="sub" v-if="head.mostLed">{{ head.mostLed.laps }} of {{ head.mostLed.total }} laps</dd>
       </div>
       <div class="card">
         <dt>FASTEST LAP</dt>
         <dd>{{ head.fastest?.driver || '—' }}</dd>
-        <small v-if="head.fastest">{{ fmtLapTime(head.fastest.time) }} on lap {{ head.fastest.lap }}</small>
+        <dd class="sub" v-if="head.fastest">{{ fmtLapTime(head.fastest.time) }} on lap {{ head.fastest.lap }}</dd>
       </div>
       <div class="card">
         <dt>WINNER'S STOPS</dt>
         <dd>{{ head.winnerStops ?? '—' }}</dd>
-        <small v-if="head.winner">{{ winnerTyres }}</small>
+        <dd class="sub" v-if="head.winner">{{ winnerTyres }}</dd>
       </div>
       <div class="card">
         <dt>SAFETY CARS</dt>
         <dd>{{ head.safetyCars }}</dd>
-        <small>{{ head.virtualSafetyCars }} virtual · {{ head.redFlags }} red flag{{ head.redFlags === 1 ? '' : 's' }}</small>
+        <dd class="sub">{{ head.virtualSafetyCars }} virtual · {{ head.redFlags }} red flag{{ head.redFlags === 1 ? '' : 's' }}</dd>
       </div>
     </dl>
 
@@ -207,7 +207,7 @@ const winnerTyres = computed(() => (plan.value[head.value.winner?.driver] || [])
 .card { background: var(--bg-primary); padding: 0.8rem 0.9rem; min-width: 0; }
 .card dt { font-family: 'DM Mono', monospace; font-size: 0.56rem; letter-spacing: 0.16em; color: var(--text-secondary); }
 .card dd { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; line-height: 1.1; letter-spacing: 0.04em; color: var(--text-primary); }
-.card small { display: block; font-size: 0.74rem; line-height: 1.35; color: var(--text-secondary); }
+.card dd.sub { font-family: 'Work Sans', sans-serif; font-size: 0.74rem; line-height: 1.35; letter-spacing: 0; color: var(--text-secondary); }
 .card-skel { height: 96px; }
 
 /* ── Driver filter ── */
@@ -246,7 +246,7 @@ const winnerTyres = computed(() => (plan.value[head.value.winner?.driver] || [])
 @media (max-width: 720px) {
   .debrief { padding: 1rem 0.75rem 2.5rem; }
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .card dd { font-size: 1.8rem; }
+  .card dd:not(.sub) { font-size: 1.8rem; }
   .filter-hint { margin-left: 0; flex-basis: 100%; }
   .team-name { display: none; }
 }

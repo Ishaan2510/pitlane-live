@@ -189,7 +189,9 @@ function render(force = false) {
 }
 
 function frame(ts) {
-  const dt = Math.min(ts - lastFrame, 250)   // a long frame must not jump the race forward
+  // The first frame's timestamp can be just before play() was called; a long frame
+  // (tab was busy) must not jump the race forward
+  const dt = Math.min(Math.max(ts - lastFrame, 0), 250)
   lastFrame = ts
   playhead += dt / 1000 / SPEEDS[speedIndex.value]
   if (playhead >= clock.value.totalLaps) {
@@ -218,6 +220,7 @@ function pause() {
 const toggle = () => (playing.value ? pause() : play())
 
 function seek(p) {
+  if (!Number.isFinite(p)) return
   playhead = Math.min(clock.value.totalLaps, Math.max(0, p))
   render(true)
 }
@@ -291,7 +294,7 @@ const lapWeather = computed(() => {
   if (!w) return null
   const rows = w.laps?.rows
   if (!rows?.length) return w.summary || null
-  const lap = Math.min(clock.value.totalLaps, Math.floor(view.value.playhead) + 1)
+  const lap = Math.min(clock.value.totalLaps, Math.max(1, Math.floor(view.value.playhead) + 1))
   const row = rows.find(r => r[0] === lap) || rows[Math.min(rows.length, lap) - 1]
   const at = Object.fromEntries(w.laps.columns.map((name, i) => [name, row[i]]))
   return { ...w.summary, ...at }   // wind is only in the summary

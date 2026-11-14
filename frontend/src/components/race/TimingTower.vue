@@ -24,7 +24,6 @@
           type="button"
           class="row-main"
           :aria-pressed="car.driver === selected"
-          :aria-label="`P${car.position} ${car.driver}, ${gapText(car)}. Select driver`"
           @click="e => $emit(e.shiftKey ? 'pin' : 'select', car.driver)"
         >
           <span class="t-pos">{{ car.position }}</span>
@@ -118,10 +117,13 @@ function gapText(car) {
   background: var(--bg-primary);
 }
 .tower-move { transition: transform var(--dur-base) var(--ease); }
-.tower-row.selected { background: var(--bg-hover); box-shadow: none; }
+.tower-row.selected { background: var(--bg-hover); }
 .tower-row.selected .row-main { border-left-color: var(--accent); }
 .tower-row.pinned .row-pin { color: var(--accent); }
-.tower-row.out { opacity: 0.4; }
+/* Retired: greyed, but still readable */
+.tower-row.out .row-main, .tower-row.out .t-code { color: var(--text-secondary); }
+.tower-row.out .t-code { border-left-style: dashed; }
+.tower-row.out .t-tyre { visibility: hidden; }
 
 .row-main {
   flex: 1;
