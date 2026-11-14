@@ -2,21 +2,15 @@
 // parseLaps turns it, once, into typed arrays per driver, indexed by lap number
 // (index 0 is unused), so the replay clock and the debrief can read a lap in O(1).
 
-const UNKNOWN_COMPOUNDS = new Set(['', 'NAN', 'NONE', 'UNKNOWN'])
-
-// 'SOFT' ... 'WET', or null when the data does not know ('nan', 'None', 'UNKNOWN', null)
+// 'SOFT' ... 'WET', or null when the data does not know (the pipeline writes 'UNKNOWN')
 export function cleanCompound(value) {
-  const c = String(value ?? '').toUpperCase()
-  return UNKNOWN_COMPOUNDS.has(c) ? null : c
+  return !value || value === 'UNKNOWN' ? null : value
 }
 
-// Did the driver pit at the end of lap n? The flags alone are not enough: some races
-// have pit_in set on lap 1 for cars that never stopped. A stop is an in-lap followed
-// by an out-lap, or either flag together with a new stint.
+// Did the driver pit at the end of lap n? The pipeline decides (the pit_stop column,
+// mark_pit_stops in pipeline/build.py); pit_in / pit_out are the raw timing flags.
 export function isPitStop(d, n) {
-  if (n < 1 || n >= d.laps) return false
-  const flagIn = !!d.pitIn[n], flagOut = !!d.pitOut[n + 1]
-  return (flagIn && flagOut) || ((flagIn || flagOut) && d.stint[n + 1] !== d.stint[n])
+  return n >= 1 && n < d.laps && !!d.pitStop[n]
 }
 
 export function parseLaps(json) {
@@ -47,6 +41,7 @@ export function parseLaps(json) {
       stint:    new Uint8Array(n),
       pitIn:    new Uint8Array(n),
       pitOut:   new Uint8Array(n),
+      pitStop:  new Uint8Array(n),                // pitted at the end of this lap
       green:    new Uint8Array(n),                // track_status is exactly "1"
       accurate: new Uint8Array(n),
       deleted:  new Uint8Array(n),
@@ -66,6 +61,7 @@ export function parseLaps(json) {
     d.stint[i]    = r[col.stint] ?? 0
     d.pitIn[i]    = r[col.pit_in] ? 1 : 0
     d.pitOut[i]   = r[col.pit_out] ? 1 : 0
+    d.pitStop[i]  = r[col.pit_stop] ? 1 : 0
     d.status[i]   = String(r[col.track_status] ?? '')
     d.green[i]    = d.status[i] === '1' ? 1 : 0
     d.accurate[i] = r[col.is_accurate] ? 1 : 0

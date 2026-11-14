@@ -80,7 +80,68 @@ def test_track_status_mapping_and_laps():
 
     assert [p['status'] for p in periods] == ['green', 'sc', 'vsc', 'unknown']
     assert [(p['start_lap'], p['end_lap']) for p in periods] == [(1, 2), (2, 3), (3, 4), (4, 4)]
-    assert periods[0]['end_time_s'] == 150.0 and periods[-1]['end_time_s'] is None
+    assert periods[0]['end_time_s'] == 150.0 and periods[-1]['end_time_s'] == 400.0
+
+
+def test_track_status_times_count_from_lights_out():
+    # FastF1's clock starts with the timing feed; lights out here is at 1000 s
+    lap_ends = np.array([1100.0, 1200.0, 1300.0])
+    ts = pd.DataFrame({
+        'Time':    [td(0), td(400), td(420), td(950), td(1150), td(1250), td(1500)],
+        'Status':  ['1', '2', '1', '2', '4', '1', '2'],
+        'Message': ['AllClear', 'Yellow', 'AllClear', 'Yellow', 'SCDeployed', 'AllClear', 'Yellow'],
+    })
+    periods = build.build_track_status(ts, lap_ends, start_s=1000.0, end_s=1320.0)
+    # the pre-race green and yellow are gone, the yellow shown at the start begins at 0,
+    # and the yellow shown after the last car finished is gone too
+    assert [(p['status'], p['start_time_s'], p['end_time_s']) for p in periods] == [
+        ('yellow', 0.0, 150.0), ('sc', 150.0, 250.0), ('green', 250.0, 320.0)]
+    assert [(p['start_lap'], p['end_lap']) for p in periods] == [(1, 2), (2, 3), (3, 3)]
+
+
+# ── compounds and pit stops (prepare_laps) ────────────────────────────────────
+
+def test_compounds_are_canonical_and_filled_from_the_stint():
+    assert [build.canon_compound(v) for v in ('soft', 'HARD', 'nan', 'None', None, np.nan, 'TEST_UNKNOWN', 'UNKNOWN')] \
+        == ['SOFT', 'HARD', 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', 'UNKNOWN']
+    rows = [lap('AAA', 1, 90, Compound='MEDIUM'), lap('AAA', 2, 90, Compound='nan'), lap('AAA', 3, 90, Compound=None),
+            lap('AAA', 4, 90, stint=2, Compound='None'), lap('AAA', 5, 90, stint=2, Compound=np.nan),
+            lap('BBB', 1, 90, Compound='UNKNOWN'), lap('BBB', 2, 90, Compound=None)]
+    out = build.prepare_laps(pd.DataFrame(rows))
+    assert out['Compound'].tolist() == ['MEDIUM', 'MEDIUM', 'MEDIUM', 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', 'UNKNOWN']
+    # another source knows the rest
+    out = build.prepare_laps(pd.DataFrame(rows), extra_compounds={('AAA', 4): 'HARD', ('BBB', 2): 'soft', ('AAA', 1): 'WET'})
+    assert out['Compound'].tolist() == ['MEDIUM', 'MEDIUM', 'MEDIUM', 'HARD', 'HARD', 'SOFT', 'SOFT']
+    assert set(out['Compound']) <= set(build.COMPOUNDS)
+
+
+def test_pit_stop_is_an_in_lap_followed_by_an_out_lap_or_a_new_stint():
+    rows = [
+        lap('AAA', 1, 95, pit_in=True),                        # flag only (2026 Mexico City): not a stop
+        lap('AAA', 2, 90), lap('AAA', 3, 95, pit_in=True),     # in-lap + out-lap
+        lap('AAA', 4, 105, stint=2, pit_out=True),
+        lap('AAA', 5, 95, stint=2, pit_in=True),               # in-lap + new stint, out flag missing
+        lap('AAA', 6, 105, stint=3),
+        lap('AAA', 7, 90, stint=3),                            # out-lap + new stint, in flag missing
+        lap('AAA', 8, 105, stint=4, pit_out=True),
+        lap('AAA', 9, 95, stint=4, pit_in=True),               # retired in the pits: no lap after it
+        lap('BBB', 1, 95, stint=1), lap('BBB', 2, 90, stint=2),   # new stint, no flag: a data glitch
+        lap('BBB', 3, 95, stint=2, pit_in=True), lap('BBB', 5, 105, stint=3, pit_out=True),   # lap 4 missing
+    ]
+    out = build.prepare_laps(pd.DataFrame(rows))
+    stops = out[out['PitStop']]
+    assert list(zip(stops['Driver'], stops['LapNumber'])) == [('AAA', 3), ('AAA', 5), ('AAA', 7)]
+
+
+def test_lap_one_pit_entry_before_lights_out_is_dropped():
+    rows = [lap('AAA', 1, 95, pit_in=True), lap('AAA', 2, 105, stint=2, pit_out=True),
+            lap('BBB', 1, 95, pit_in=True), lap('BBB', 2, 105, stint=2, pit_out=True)]
+    df = pd.DataFrame(rows)
+    df.loc[0, 'PitInTime'] = td(3000)                          # in the pit lane before the start at 3600 s
+    df.loc[2, 'PitInTime'] = td(3690)                          # really pitted at the end of lap 1
+    out = build.prepare_laps(df, start=td(3600))
+    assert out['PitInTime'].notna().tolist() == [False, False, True, False]
+    assert out['PitStop'].tolist() == [True, False, True, False]   # AAA: still an out-lap on a new stint
 
 
 def test_sc_periods_from_race_control():
@@ -122,7 +183,9 @@ def test_laps_table_is_columnar_and_json_safe(tmp_path):
         'sector1_s': 30.123, 'sector2_s': 30.0, 'sector3_s': 30.0, 'compound': 'SOFT',
         'tyre_life': 3, 'stint': 1, 'fresh_tyre': True, 'pit_in': True, 'pit_out': False,
         'position': 2, 'track_status': '12', 'is_accurate': True, 'deleted': False,
+        'pit_stop': False,
     }
+    assert table['rows'][0][table['columns'].index('compound')] == 'UNKNOWN'   # never null or 'nan'
 
     path = tmp_path / 'race' / 'laps.json'
     build.write_json(path, table)                       # NaN would raise (allow_nan=False)
@@ -179,3 +242,57 @@ def test_describe_changes():
     assert new_races == ['2026/14']                      # R13 was only modified
     assert build.describe_changes(['M\tfrontend/public/data/manifest.json']) == (
         'data: refresh manifest', [])
+
+
+# ── Safety Car / VSC pit loss ─────────────────────────────────────────────────
+
+def neutralised_race(pit_in, pit_out, stay_in, stay_out, status=('4', '4'), pitters=('AAA', 'BBB')):
+    """Green stops on lap 10/11 for four cars (loss 20 s), then `pitters` stop on lap 20/21."""
+    rows = []
+    for d in ('AAA', 'BBB', 'CCC', 'DDD'):
+        rows += [lap(d, n, 90.0) for n in range(1, 10)]
+        rows += [lap(d, 10, 95.0, pit_in=True), lap(d, 11, 105.0, stint=2, pit_out=True)]
+        rows += [lap(d, n, 90.0, stint=2) for n in range(12, 20)]
+        if d in pitters:
+            rows += [lap(d, 20, pit_in, stint=2, status=status[0], pit_in=True),
+                     lap(d, 21, pit_out, stint=3, status=status[1], pit_out=True)]
+        else:
+            rows += [lap(d, 20, stay_in, stint=2, status=status[0]), lap(d, 21, stay_out, stint=2, status=status[1])]
+    return build.build_pit_loss(pd.DataFrame(rows))
+
+
+def test_pit_loss_sc_and_vsc_are_reported_separately():
+    sc = neutralised_race(130.0, 150.0, 125.0, 143.0, status=('14', '4'))
+    assert (sc['median_loss_s'], sc['median_loss_sc_s'], sc['median_loss_vsc_s']) == (20.0, 12.0, None)
+    assert (sc['green_stops'], sc['sc_stops'], sc['vsc_stops']) == (4, 2, 0)
+    vsc = neutralised_race(120.0, 125.0, 115.0, 116.0, status=('16', '67'))
+    assert (vsc['median_loss_sc_s'], vsc['median_loss_vsc_s'], vsc['vsc_stops']) == (None, 14.0, 2)
+    assert {s['condition'] for s in vsc['stops']} == {'green', 'vsc'}
+
+
+def test_pit_loss_sc_needs_both_laps_under_the_same_neutralisation():
+    # in-lap green, out-lap under the Safety Car: neither a green stop nor a Safety Car stop
+    out = neutralised_race(95.0, 150.0, 90.0, 140.0, status=('1', '4'))
+    assert (out['green_stops'], out['sc_stops'], out['median_loss_sc_s']) == (4, 0, None)
+    # a VSC that became a full Safety Car on the out-lap counts as neither
+    out = neutralised_race(120.0, 150.0, 115.0, 140.0, status=('6', '64'))
+    assert (out['sc_stops'], out['vsc_stops']) == (0, 0)
+
+
+def test_pit_loss_sc_is_null_when_implausible():
+    # the cars that stayed out were still catching the Safety Car: the "loss" is negative
+    assert neutralised_race(130.0, 150.0, 150.0, 150.0)['median_loss_sc_s'] is None
+    # more than a green stop costs
+    assert neutralised_race(140.0, 160.0, 125.0, 143.0)['median_loss_sc_s'] is None
+    # only one stop to go on
+    one = neutralised_race(130.0, 150.0, 125.0, 143.0, pitters=('AAA',))
+    assert (one['sc_stops'], one['median_loss_sc_s']) == (1, None)
+
+
+def test_pit_loss_leaves_repair_stops_out_of_the_green_median():
+    rows = [lap('AAA', n, 90.0) for n in range(1, 6)]
+    rows += [lap('AAA', 6, 95.0, pit_in=True), lap('AAA', 7, 737.0, stint=2, pit_out=True)]   # ten minutes in the garage
+    rows += [lap('AAA', n, 90.0, stint=2) for n in range(8, 12)]
+    out = build.build_pit_loss(pd.DataFrame(rows))
+    assert out['median_loss_s'] is None and out['green_stops'] == 0
+    assert out['stops'][0]['condition'] == 'slow'

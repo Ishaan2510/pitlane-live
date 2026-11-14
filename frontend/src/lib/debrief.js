@@ -119,12 +119,14 @@ export function lapsLed(laps, results) {
 
 /**
  * Pit stop table rows: pitStops() plus the loss against the track's median.
- * A stop made under SC or VSC is compared with the Safety Car median instead.
+ * A stop made under the Safety Car or the VSC is compared with that median instead.
  * Tyre changes during a red flag are not pit stops and are left out.
  */
 export function pitTable(stops, pitLoss) {
   return stops.filter(s => s.status !== 'red').map(s => {
-    const median = s.condition === 'sc' ? pitLoss?.median_loss_sc_s : pitLoss?.median_loss_s
+    const median = s.condition === 'sc' ? pitLoss?.median_loss_sc_s
+      : s.condition === 'vsc' ? pitLoss?.median_loss_vsc_s
+      : pitLoss?.median_loss_s
     return {
       ...s,
       vsMedian: s.loss != null && median != null ? s.loss - median : null,

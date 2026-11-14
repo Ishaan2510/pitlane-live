@@ -67,6 +67,12 @@ class FastF1Source:
     def laps(self):
         return self.session.laps
 
+    def race_start(self):
+        """Lights out in session time: when the first car started lap 1."""
+        laps = self.session.laps
+        starts = laps.loc[laps['LapNumber'] == 1, 'LapStartTime'].dropna()
+        return starts.min() if len(starts) else pd.Timedelta(0)
+
     def results(self):
         return self.session.results
 

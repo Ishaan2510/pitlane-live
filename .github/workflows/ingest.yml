@@ -89,6 +89,12 @@ jobs:
           if [ "$FORCE" = "true" ]; then args+=(--force); fi
           python pipeline/build.py "${args[@]}"
 
+      # build.py already refuses to publish a race or sprint that fails these checks;
+      # this fails the job if anything invalid is on disk anyway.
+      - name: Validation gate
+        if: ${{ !cancelled() }}
+        run: python pipeline/validate.py
+
       - name: Anything new?
         id: diff
         if: ${{ !cancelled() }}
@@ -143,6 +149,10 @@ jobs:
 
       - name: Rebuild manifest from the folders on disk
         run: python pipeline/build.py --manifest-only
+
+      # Nothing is committed when a session fails (the step fails, the rest is skipped)
+      - name: Validation gate
+        run: python pipeline/validate.py
 
       - name: Commit and push
         id: commit
