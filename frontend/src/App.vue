@@ -1,5 +1,5 @@
 <template>
-  <div class="app" :class="{ 'dock-open': sound.open }">
+  <div class="app" :class="{ 'dock-open': sound.open && sound.showDock }">
     <IntroSequence />
     <ColdStartOverlay />
     <Navbar />

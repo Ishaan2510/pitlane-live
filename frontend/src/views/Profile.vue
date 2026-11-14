@@ -73,6 +73,25 @@
         </div>
       </div>
 
+      <!-- Settings (kept in this browser) -->
+      <div class="section">
+        <div class="section-heading">SETTINGS</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-name">Show soundtrack player</div>
+            <div class="setting-desc">Off: music only. On: a see-through player window with the song and controls sits in the bottom corner.</div>
+          </div>
+          <button
+            class="setting-toggle"
+            type="button"
+            role="switch"
+            :aria-checked="sound.showDock"
+            aria-label="Show soundtrack player"
+            @click="setShowDock(!sound.showDock)"
+          >{{ sound.showDock ? 'ON' : 'OFF' }}</button>
+        </div>
+      </div>
+
       <!-- Simulation predictions -->
       <div class="section" v-if="simPredictions.length > 0">
         <div class="section-heading sim-heading" @click="showSim = !showSim">
@@ -104,9 +123,11 @@
 import { useAuthStore } from '@/stores/auth'
 import { apiUrl } from '@/services/apiBase'
 import StatePanel from '@/components/StatePanel.vue'
+import { sound, setShowDock } from '@/services/soundtrack'
 export default {
   name: 'Profile',
   components: { StatePanel },
+  setup() { return { sound, setShowDock } },
   data() {
     return { predictions: [], rank: null, loading: true, loadError: false, showSim: false }
   },
@@ -252,6 +273,31 @@ export default {
   font-weight: 700;
   margin-bottom: 1.5rem;
 }
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border-primary);
+}
+.setting-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem; }
+.setting-desc { font-size: 0.75rem; color: var(--text-secondary); }
+.setting-toggle {
+  flex-shrink: 0;
+  min-width: 64px;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid var(--border-secondary);
+  color: var(--text-secondary);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+}
+.setting-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.setting-toggle[aria-checked="true"] { background: var(--accent); border-color: var(--accent); color: var(--text-inverse); }
 .sim-heading { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; user-select: none; }
 .sim-heading:hover { color: var(--text-secondary); }
 .sim-count {

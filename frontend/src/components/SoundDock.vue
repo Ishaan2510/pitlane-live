@@ -1,7 +1,15 @@
 <template>
   <!-- v-show, not v-if: the YouTube iframe lives in here and must survive open/close.
-       Closing stops playback first, so nothing ever plays while this is hidden. -->
-  <aside v-show="sound.open" class="dock" :class="{ minimised: sound.minimised }" aria-label="Soundtrack player">
+       By default the window is invisible and only the music plays ("hidden"); the Profile
+       setting puts it on screen, translucent until hovered or focused. -->
+  <aside
+    v-show="sound.open"
+    class="dock"
+    :class="{ minimised: sound.minimised, hidden: !sound.showDock }"
+    :aria-hidden="!sound.showDock"
+    :inert="!sound.showDock"
+    aria-label="Soundtrack player"
+  >
 
     <!-- The YouTube player itself: always 200 x 200, never covered or clipped. -->
     <div ref="video" class="dock-video"></div>
@@ -70,7 +78,12 @@ const statusLabel = computed(() => ({
   padding: 12px;
   background: var(--bg-card);
   border: 1px solid var(--border-primary);
+  opacity: 0.3;   /* see-through, so it never hides what is under it */
+  transition: opacity var(--dur-base) var(--ease);
 }
+.dock:hover, .dock:focus-within { opacity: 1; }
+/* Music only: the player stays in the page (it has to, to play) but cannot be seen or clicked */
+.dock.hidden { opacity: 0; pointer-events: none; }
 
 .dock-video {
   width: 200px;

@@ -9,6 +9,7 @@ import { tracks } from '@/config/soundtrack'
 
 const OPENED_KEY  = 'pitlane-sound-opened'   // localStorage: user has opened the player before
 const OFF_KEY     = 'pitlane-sound-off'      // sessionStorage: track list that failed this session
+const SHOW_KEY    = 'pitlane-sound-show'     // localStorage: user wants the player window on screen
 const LOAD_TIMEOUT_MS = 8000
 const START_VOLUME    = 35
 const SKIP_ERRORS     = [2, 5, 100, 101, 150]   // bad id, HTML5 error, removed, embedding disabled
@@ -26,6 +27,7 @@ export const sound = reactive({
   available: tracks.length > 0 && read('sessionStorage', OFF_KEY) !== ids,
   openedBefore: read('localStorage', OPENED_KEY) === '1',
   open: false,
+  showDock: read('localStorage', SHOW_KEY) === '1',   // off by default: music only (Profile setting)
   minimised: false,
   status: 'idle',   // idle | loading | buffering | playing | paused
   muted: false,
@@ -142,6 +144,11 @@ export function close() {
     clearTimeout(loadTimer)
     sound.status = 'idle'
   }
+}
+
+export function setShowDock(show) {
+  sound.showDock = show
+  write('localStorage', SHOW_KEY, show ? '1' : '0')
 }
 
 export function toggleMute() {
