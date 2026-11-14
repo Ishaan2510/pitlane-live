@@ -27,7 +27,7 @@ export const sound = reactive({
   available: tracks.length > 0 && read('sessionStorage', OFF_KEY) !== ids,
   openedBefore: read('localStorage', OPENED_KEY) === '1',
   open: false,
-  showDock: read('localStorage', SHOW_KEY) === '1',   // off by default: music only (Profile setting)
+  showDock: read('localStorage', SHOW_KEY) !== '0',   // on by default; Profile setting can hide it
   minimised: false,
   status: 'idle',   // idle | loading | buffering | playing | paused
   muted: false,

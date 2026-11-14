@@ -1,7 +1,7 @@
 <template>
   <!-- v-show, not v-if: the YouTube iframe lives in here and must survive open/close.
-       By default the window is invisible and only the music plays ("hidden"); the Profile
-       setting puts it on screen, translucent until hovered or focused. -->
+       By default the window is on screen, translucent until hovered or focused; the
+       Profile setting can turn it off so only the music plays ("hidden"). -->
   <aside
     v-show="sound.open"
     class="dock"
