@@ -1,6 +1,8 @@
 // Static race data built by pipeline/build.py and served from the CDN under /data/.
 // File shapes: pipeline/SCHEMA.md.
 
+import { parseLaps } from '@/lib/laps'
+
 const BASE = '/data/'
 const SESSION_DIR = { R: 'race', Q: 'quali', S: 'sprint', SQ: 'sprint_quali' }
 
@@ -42,6 +44,38 @@ export function getWeather(year, round) {
   return getJson(`${year}/${round}/race/weather.json`).catch(() => null)
 }
 
+// laps.json parsed once into typed per-driver arrays (src/lib/laps.js)
+const parsedLaps = new Map()
+export function getLaps(year, round) {
+  const key = `${year}/${round}`
+  if (!parsedLaps.has(key)) {
+    const request = getJson(`${key}/race/laps.json`).then(parseLaps)
+    request.catch(() => parsedLaps.delete(key))
+    parsedLaps.set(key, request)
+  }
+  return parsedLaps.get(key)
+}
+
+// Optional extras as well: null when missing
+export function getTrackStatus(year, round) {
+  return getJson(`${year}/${round}/race/track_status.json`).catch(() => null)
+}
+
+export function getPitLoss(year, round) {
+  return getJson(`${year}/${round}/race/pit_loss.json`).catch(() => null)
+}
+
 export function getResults(year, round, session = 'R') {
   return getJson(`${year}/${round}/${SESSION_DIR[session] || session}/results.json`)
+}
+
+// Races that have a built Race session, newest first (the manifest's own order).
+export function getRaces() {
+  return getManifest().then(m => m.events.filter(e => e.sessions.includes('R')))
+}
+
+// Session coverage tags shown on race cards and in the Race Room header
+const COVERAGE = [['R', 'RACE'], ['Q', 'QUALI'], ['S', 'SPRINT']]
+export function coverageTags(event) {
+  return COVERAGE.filter(([code]) => event.sessions.includes(code)).map(([, label]) => label)
 }

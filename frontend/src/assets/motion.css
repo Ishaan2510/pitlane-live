@@ -41,8 +41,8 @@
 /* ── Buttons: one press and focus treatment site-wide ────────────
    `scale` composes with any transform a button already uses on hover. */
 :is(.hero-btn, .nav-btn-red, .nav-btn-ghost, .cta-btn, .btn-outline, .btn-submit,
-    .pred-submit, .sim-btn, .sim-nav-btn, .control-btn, .back-btn, .year-btn,
-    .filter-btn, .zoom-btn, .coming-link, .info-link, .sp-btn, .dock-btn,
+    .control-btn, .year-btn,
+    .filter-btn, .zoom-btn, .coming-link, .info-link, .sp-btn, .dock-btn, .rr-btn, .mode-btn, .dp-close, .chip,
     .theme-toggle, .sound-toggle, .menu-btn):active:not(:disabled) {
   scale: 0.98;
 }
@@ -64,8 +64,8 @@
   .reveal { animation: none; }
   .skeleton { animation: none; opacity: 0.55; }
   :is(.hero-btn, .nav-btn-red, .nav-btn-ghost, .cta-btn, .btn-outline, .btn-submit,
-      .pred-submit, .sim-btn, .sim-nav-btn, .control-btn, .back-btn, .year-btn,
-      .filter-btn, .zoom-btn, .coming-link, .info-link, .sp-btn, .dock-btn,
+      .control-btn, .year-btn,
+      .filter-btn, .zoom-btn, .coming-link, .info-link, .sp-btn, .dock-btn, .rr-btn, .mode-btn, .dp-close, .chip,
       .theme-toggle, .sound-toggle, .menu-btn):active:not(:disabled) {
     scale: none;
   }

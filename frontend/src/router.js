@@ -1,70 +1,92 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { getRaces } from '@/services/data'
+
+const SITE = 'Pitlane Live'
 
 const routes = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('@/views/Home.vue')
+    component: () => import('@/views/Home.vue')   // no meta.title: the home page is just the site name
   },
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),
-    meta: { guestOnly: true }
+    meta: { guestOnly: true, title: 'Sign in' }
   },
   {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/Register.vue'),
-    meta: { guestOnly: true }
+    meta: { guestOnly: true, title: 'Join the grid' }
   },
   {
     path: '/live',
     name: 'WatchLive',
-    component: () => import('@/views/WatchLive.vue')
+    component: () => import('@/views/WatchLive.vue'),
+    meta: { title: 'Race Weekend' }
   },
   {
+    // The old live-timing simulation: now the Race Room of the newest built race
     path: '/live/timing',
-    name: 'LiveTiming',
-    component: () => import('@/views/LiveRace.vue')
+    component: () => import('@/views/RaceLibrary.vue'),   // never rendered: the guard always redirects
+    beforeEnter: () => getRaces()
+      .then(races => (races[0] ? `/race/${races[0].year}/${races[0].round}` : '/replay'))
+      .catch(() => '/replay')
   },
   {
     path: '/replay',
     name: 'Replay',
-    component: () => import('@/views/RaceReplay.vue')
+    component: () => import('@/views/RaceLibrary.vue'),
+    meta: { title: 'Race Library' }
   },
   {
     path: '/replay/:year/:round',
-    name: 'RaceReplay',
-    component: () => import('@/views/RaceReplay.vue')
+    redirect: to => `/race/${to.params.year}/${to.params.round}`
+  },
+  {
+    path: '/race/:year(\\d+)/:round(\\d+)/:tab?',
+    name: 'RaceRoom',
+    component: () => import('@/views/RaceRoom.vue'),
+    meta: {
+      // "São Paulo Grand Prix 2026"; falls back to the bare site name if the race is unknown
+      title: to => getRaces().then(races => {
+        const race = races.find(r => r.year === +to.params.year && r.round === +to.params.round)
+        return race ? `${race.name} ${race.year}` : null
+      })
+    }
   },
   {
     path: '/standings',
     name: 'Standings',
-    component: () => import('@/views/Standings.vue')
+    component: () => import('@/views/Standings.vue'),
+    meta: { title: 'Standings' }
   },
   {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Profile' }
   },
   {
     path: '/pit-wall',
     name: 'PitWall',
-    component: () => import('@/views/PitWall.vue')
+    component: () => import('@/views/PitWall.vue'),
+    meta: { title: 'Pit Wall' }
   },
   {
     path: '/the-grid', 
     name: 'TheGrid',
-    component: () => import('@/views/TheGrid.vue')
+    component: () => import('@/views/TheGrid.vue'),
+    meta: { title: 'The Grid' }
   },
   {
     path: '/predict/:year/:round',
     name: 'PredictRace',
     component: () => import('@/views/PredictRace.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Predict the race' }
   }
 ]
 
@@ -97,6 +119,15 @@ router.beforeEach((to, from, next) => {
   }
 
   next()
+})
+
+// <title> per route: "Race Library · Pitlane Live". meta.title is a string or a
+// function of the route that returns (a promise of) one.
+router.afterEach(async to => {
+  let title = to.meta.title
+  if (typeof title === 'function') title = await Promise.resolve(title(to)).catch(() => null)
+  if (router.currentRoute.value.fullPath !== to.fullPath) return   // navigated on meanwhile
+  document.title = title ? `${title} · ${SITE}` : SITE
 })
 
 export default router

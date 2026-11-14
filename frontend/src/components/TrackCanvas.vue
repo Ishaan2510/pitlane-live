@@ -2,85 +2,74 @@
   <div class="track-container" ref="container">
     <canvas
       ref="canvas"
+      role="img"
+      aria-label="Track map with the cars at their current positions"
       @click="handleCanvasClick"
       @wheel.prevent="handleWheel"
     ></canvas>
 
     <!-- Zoom controls overlay -->
     <div class="zoom-controls">
-      <button class="zoom-btn" @click="zoomIn"  title="Zoom in">＋</button>
-      <button class="zoom-btn" @click="zoomOut" title="Zoom out">－</button>
-      <button class="zoom-btn reset" @click="resetZoom" title="Reset zoom">⊙</button>
+      <button class="zoom-btn" type="button" @click="zoomIn" aria-label="Zoom in">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2 6h8" /></svg>
+      </button>
+      <button class="zoom-btn" type="button" @click="zoomOut" aria-label="Zoom out">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6h8" /></svg>
+      </button>
+      <button class="zoom-btn" type="button" @click="resetZoom" aria-label="Reset zoom">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="3.5" /><path d="M6 1v2M6 9v2M1 6h2M9 6h2" /></svg>
+      </button>
       <span class="zoom-label">{{ Math.round(zoomLevel * 100) }}%</span>
     </div>
   </div>
 </template>
 
 <script>
-import { TEAM_COLORS } from '@/data/drivers'
+// Draws the circuit and the cars. It does not decide where the cars are: the parent
+// passes raceClock.stateAt() to setCars() every frame, and a car sits at
+// fraction * total_distance along circuit.json's outline (one point every 10 m).
 
 const MIN_ZOOM = 0.4
 const MAX_ZOOM = 4.0
 const ZOOM_STEP = 0.1
-
-const DEFAULT_ANIM_MS = 800
+const FADE_S = 120        // race seconds a stopped car takes to fade out
+const MAX_DPR = 2
 
 export default {
   name: 'TrackCanvas',
 
   props: {
-    drivers:        { type: Array,  default: () => [] },
     circuitData:    { type: Object, default: null },
     selectedDriver: { type: String, default: null },
-    lapDuration:    { type: Number, default: 1000 }
+    pinnedDriver:   { type: String, default: null },
   },
 
   emits: ['select-driver'],
+  expose: ['setCars'],
 
   data() {
     return {
-      ctx:          null,
-      // base transform (fit-to-container, no zoom)
-      baseScale:    1,
-      baseOffsetX:  0,
-      baseOffsetY:  0,
-      // zoom state
       zoomLevel:    1.0,
-      // canvas pixel size
       canvasWidth:  800,
       canvasHeight: 600,
-      // track bounds (raw coords)
-      trackMinX: 0, trackMaxX: 0,
-      trackMinY: 0, trackMaxY: 0,
-      resizeObserver: null,
-      currentIndices:   {},
-      targetIndices:    {},
-      animStartIndices: {},
-      animFrameId:      null,
-      animStartTime:    null,
-      animDuration:     DEFAULT_ANIM_MS
     }
   },
 
-  computed: {
-    // current effective scale & offsets after zoom
-    scale()   { return this.baseScale   * this.zoomLevel },
-    offsetX() {
-      // keep track centered when zooming
-      const trackCenterX = (this.trackMinX + this.trackMaxX) / 2
-      return this.canvasWidth  / 2 - trackCenterX * this.scale
-    },
-    offsetY() {
-      const trackCenterY = (this.trackMinY + this.trackMaxY) / 2
-      return this.canvasHeight / 2 - trackCenterY * this.scale
-    }
+  created() {
+    // Not reactive on purpose: these change every frame
+    this.ctx = null
+    this.cars = []
+    this.baseScale = 1
+    this.scale = 1          // baseScale * zoom, and the offsets that keep the track centred
+    this.offsetX = 0
+    this.offsetY = 0
+    this.bounds = { minX: 0, maxX: 0, minY: 0, maxY: 0 }
+    this.resizeObserver = null
   },
 
   mounted() {
     this.setupCanvas()
     this.draw()
-
-    // watch container resize
     this.resizeObserver = new ResizeObserver(() => {
       this.setupCanvas()
       this.draw()
@@ -90,353 +79,249 @@ export default {
 
   beforeUnmount() {
     this.resizeObserver?.disconnect()
-    if (this.animFrameId) cancelAnimationFrame(this.animFrameId)
   },
 
   watch: {
-    circuitData() {
-      this.computeBaseTransform()
-      this.currentIndices   = {}
-      this.targetIndices    = {}
-      this.animStartIndices = {}
-      this.draw()
-    },
-    
-    drivers: {
-      deep: true,
-      immediate: true,   // place the cars on first render, not only after the first lap change
-      handler(newDrivers) {
-        if (!this.circuitData?.points?.length) {
-          this.draw()
-          return
-        }
-
-        const newTargets = {}
-        newDrivers.forEach(d => {
-          newTargets[d.driver] = this.computeTargetIndex(d)
-        })
-
-        newDrivers.forEach(d => {
-          if (this.currentIndices[d.driver] == null) {
-            this.currentIndices[d.driver]   = newTargets[d.driver]
-            this.animStartIndices[d.driver] = newTargets[d.driver]
-          }
-        })
-
-        this.targetIndices    = newTargets
-        this.animStartIndices = { ...this.currentIndices }
-        this.animDuration     = Math.min(DEFAULT_ANIM_MS, this.lapDuration * 0.8)
-
-        if (this.animFrameId) cancelAnimationFrame(this.animFrameId)
-        this.animStartTime = null
-        this.animFrameId   = requestAnimationFrame(this.animStep)
-      }
-    },
-
-    zoomLevel:   { handler() { this.draw() } }
+    circuitData()    { this.computeBaseTransform(); this.draw() },
+    zoomLevel()      { this.draw() },
+    selectedDriver() { this.draw() },
+    pinnedDriver()   { this.draw() },
   },
 
   methods: {
+    // Called by the parent with raceClock.stateAt(t), every animation frame
+    setCars(cars) {
+      this.cars = cars || []
+      this.draw()
+    },
+
     // ── Canvas setup ──────────────────────────────────────────────────────────
     setupCanvas() {
       const container = this.$refs.container
       const canvas    = this.$refs.canvas
+      if (!container || !canvas) return
 
       this.canvasWidth  = container.clientWidth  || 800
       this.canvasHeight = container.clientHeight || 600
 
-      canvas.width  = this.canvasWidth
-      canvas.height = this.canvasHeight
+      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR)
+      canvas.width  = Math.round(this.canvasWidth * dpr)
+      canvas.height = Math.round(this.canvasHeight * dpr)
 
       this.ctx = canvas.getContext('2d')
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       this.computeBaseTransform()
     },
 
     computeBaseTransform() {
-      if (!this.circuitData?.points?.length) return
-
-      const coords = this.circuitData.points
-      const xs = coords.map(c => c.x)
-      const ys = coords.map(c => c.y)
-
-      this.trackMinX = Math.min(...xs)
-      this.trackMaxX = Math.max(...xs)
-      this.trackMinY = Math.min(...ys)
-      this.trackMaxY = Math.max(...ys)
-
-      const padding = 60
-      const scaleX  = (this.canvasWidth  - 2 * padding) / (this.trackMaxX - this.trackMinX)
-      const scaleY  = (this.canvasHeight - 2 * padding) / (this.trackMaxY - this.trackMinY)
+      const coords = this.circuitData?.points
+      if (!coords?.length) return
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+      for (const c of coords) {
+        if (c.x < minX) minX = c.x
+        if (c.x > maxX) maxX = c.x
+        if (c.y < minY) minY = c.y
+        if (c.y > maxY) maxY = c.y
+      }
+      this.bounds = { minX, maxX, minY, maxY }
+      const padding = Math.min(60, this.canvasWidth * 0.1)
+      const scaleX  = (this.canvasWidth  - 2 * padding) / (maxX - minX)
+      const scaleY  = (this.canvasHeight - 2 * padding) / (maxY - minY)
       this.baseScale = Math.min(scaleX, scaleY)
     },
 
-    animStep(timestamp) {
-      if (!this.animStartTime) this.animStartTime = timestamp
-
-      const elapsed = timestamp - this.animStartTime
-      const t       = Math.min(elapsed / this.animDuration, 1)
-
-      const eased = t < 0.5
-        ? 4 * t * t * t
-        : 1 - Math.pow(-2 * t + 2, 3) / 2
-
-      const coords = this.circuitData?.points
-      if (coords?.length) {
-        const total = coords.length
-        Object.keys(this.targetIndices).forEach(code => {
-          const from  = this.animStartIndices[code] ?? this.targetIndices[code]
-          const to    = this.targetIndices[code]
-          let delta   = to - from
-          if (delta < -(total / 2)) delta += total
-          if (delta >   total / 2)  delta -= total
-          this.currentIndices[code] = ((from + delta * eased) % total + total) % total
-        })
-      }
-
-      this.draw()
-
-      if (t < 1) {
-        this.animFrameId = requestAnimationFrame(this.animStep)
-      } else {
-        Object.keys(this.targetIndices).forEach(code => {
-          this.currentIndices[code] = this.targetIndices[code]
-        })
-        this.animFrameId = null
-        this.draw()
-      }
+    updateTransform() {
+      this.scale   = this.baseScale * this.zoomLevel
+      this.offsetX = this.canvasWidth  / 2 - (this.bounds.minX + this.bounds.maxX) / 2 * this.scale
+      this.offsetY = this.canvasHeight / 2 - (this.bounds.minY + this.bounds.maxY) / 2 * this.scale
     },
 
     // ── Draw ─────────────────────────────────────────────────────────────────
     draw() {
-      if (!this.ctx) return
+      const ctx = this.ctx
+      if (!ctx) return
+      this.updateTransform()
 
-      this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
-      this.ctx.fillStyle = '#0a0a0a'
-      this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
+      ctx.fillStyle = '#0a0a0a'
+      ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
 
-      if (this.circuitData?.points?.length) {
-        this.drawRealTrack()
-      } else {
-        this.drawGenericTrack()
+      if (this.circuitData?.points?.length) this.drawRealTrack()
+      else this.drawGenericTrack()
+
+      this.drawCars()
+    },
+
+    tracePath() {
+      const coords = this.circuitData.points
+      const sc = this.scale, ox = this.offsetX, oy = this.offsetY
+      this.ctx.beginPath()
+      for (let i = 0; i < coords.length; i++) {
+        const x = coords[i].x * sc + ox
+        const y = coords[i].y * sc + oy
+        i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y)
       }
-
-      this.drawDrivers()
     },
 
     drawRealTrack() {
+      const ctx = this.ctx
       const coords = this.circuitData.points
-      const sc     = this.scale
-      const ox     = this.offsetX
-      const oy     = this.offsetY
+      const sc = this.scale, ox = this.offsetX, oy = this.offsetY
+      const z = this.zoomLevel
 
-      // Shadow / glow under track
-      this.ctx.shadowColor = 'rgba(255,255,255,0.04)'
-      this.ctx.shadowBlur  = 12
-
-      // Track fill (dark asphalt)
-      this.ctx.strokeStyle = '#2a2a2a'
-      this.ctx.lineWidth   = Math.max(16, 28 * this.zoomLevel)
-      this.ctx.lineCap     = 'round'
-      this.ctx.lineJoin    = 'round'
-
-      this.ctx.beginPath()
-      coords.forEach((c, i) => {
-        const x = c.x * sc + ox
-        const y = c.y * sc + oy
-        i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y)
-      })
-      this.ctx.closePath()
-      this.ctx.stroke()
+      ctx.lineCap  = 'round'
+      ctx.lineJoin = 'round'
 
       // Track edge highlight
-      this.ctx.shadowBlur  = 0
-      this.ctx.strokeStyle = '#3d3d3d'
-      this.ctx.lineWidth   = Math.max(18, 30 * this.zoomLevel)
-
-      this.ctx.beginPath()
-      coords.forEach((c, i) => {
-        const x = c.x * sc + ox
-        const y = c.y * sc + oy
-        i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y)
-      })
-      this.ctx.closePath()
-      this.ctx.stroke()
+      ctx.strokeStyle = '#3d3d3d'
+      ctx.lineWidth   = Math.max(18, 30 * z)
+      this.tracePath(); ctx.closePath(); ctx.stroke()
 
       // Track surface
-      this.ctx.strokeStyle = '#1e1e1e'
-      this.ctx.lineWidth   = Math.max(14, 24 * this.zoomLevel)
+      ctx.strokeStyle = '#1e1e1e'
+      ctx.lineWidth   = Math.max(14, 24 * z)
+      this.tracePath(); ctx.closePath(); ctx.stroke()
 
-      this.ctx.beginPath()
-      coords.forEach((c, i) => {
-        const x = c.x * sc + ox
-        const y = c.y * sc + oy
-        i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y)
-      })
-      this.ctx.closePath()
-      this.ctx.stroke()
-
-      this.ctx.strokeStyle = 'rgba(255,255,255,0.045)'
-      this.ctx.lineWidth   = Math.max(1, 1.5 * this.zoomLevel)
-      this.ctx.setLineDash([8 * this.zoomLevel, 16 * this.zoomLevel])
-      this.ctx.beginPath()
-      coords.forEach((c, i) => {
-        const x = c.x * sc + ox
-        const y = c.y * sc + oy
-        i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y)
-      })
-      this.ctx.stroke()
-      this.ctx.setLineDash([])
+      // Centre line
+      ctx.strokeStyle = 'rgba(255,255,255,0.045)'
+      ctx.lineWidth   = Math.max(1, 1.5 * z)
+      ctx.setLineDash([8 * z, 16 * z])
+      this.tracePath(); ctx.stroke()
+      ctx.setLineDash([])
 
       // Start / Finish line
       if (coords.length >= 2) {
-        const s1 = coords[0]
-        const s2 = coords[1]
-        const x1 = s1.x * sc + ox
-        const y1 = s1.y * sc + oy
-        const x2 = s2.x * sc + ox
-        const y2 = s2.y * sc + oy
+        const x1 = coords[0].x * sc + ox, y1 = coords[0].y * sc + oy
+        const x2 = coords[1].x * sc + ox, y2 = coords[1].y * sc + oy
+        const dx = x2 - x1, dy = y2 - y1
+        const len = Math.hypot(dx, dy) || 1
+        const nx = -dy / len, ny = dx / len
+        const halfW = Math.max(10, 16 * z)
 
-        const dx  = x2 - x1
-        const dy  = y2 - y1
-        const len = Math.sqrt(dx * dx + dy * dy) || 1
+        ctx.strokeStyle = '#ffffff'
+        ctx.lineWidth   = Math.max(2, 3 * z)
+        ctx.lineCap     = 'butt'
+        ctx.beginPath()
+        ctx.moveTo(x1 + nx * halfW, y1 + ny * halfW)
+        ctx.lineTo(x1 - nx * halfW, y1 - ny * halfW)
+        ctx.stroke()
 
-        const nx = -dy / len
-        const ny =  dx / len
-
-        const halfW = Math.max(10, 16 * this.zoomLevel)
-
-        this.ctx.shadowBlur  = 0
-        this.ctx.strokeStyle = '#ffffff'
-        this.ctx.lineWidth   = Math.max(2, 3 * this.zoomLevel)
-        this.ctx.lineCap     = 'butt'
-        this.ctx.beginPath()
-        this.ctx.moveTo(x1 + nx * halfW, y1 + ny * halfW)
-        this.ctx.lineTo(x1 - nx * halfW, y1 - ny * halfW)
-        this.ctx.stroke()
-
-        this.ctx.strokeStyle = '#e10600'
-        this.ctx.beginPath()
-        this.ctx.moveTo(x1, y1)
-        this.ctx.lineTo(x1 - nx * halfW, y1 - ny * halfW)
-        this.ctx.stroke()
+        ctx.strokeStyle = '#e10600'
+        ctx.beginPath()
+        ctx.moveTo(x1, y1)
+        ctx.lineTo(x1 - nx * halfW, y1 - ny * halfW)
+        ctx.stroke()
       }
     },
 
     drawGenericTrack() {
-      const cx = this.canvasWidth  / 2
-      const cy = this.canvasHeight / 2
-      const rx = (this.canvasWidth  / 2 - 60) * this.zoomLevel
-      const ry = (this.canvasHeight / 2 - 60) * this.zoomLevel
-
-      this.ctx.strokeStyle = '#2a2a2a'
-      this.ctx.lineWidth   = 30 * this.zoomLevel
-      this.ctx.beginPath()
-      for (let i = 0; i <= 100; i++) {
-        const angle = (i / 100) * Math.PI * 2
-        const x = cx + Math.cos(angle) * rx
-        const y = cy + Math.sin(angle) * ry
-        i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y)
-      }
-      this.ctx.closePath()
-      this.ctx.stroke()
+      const ctx = this.ctx
+      const cx = this.canvasWidth / 2, cy = this.canvasHeight / 2
+      const rx = Math.max(20, this.canvasWidth  / 2 - 60) * this.zoomLevel
+      const ry = Math.max(20, this.canvasHeight / 2 - 60) * this.zoomLevel
+      ctx.strokeStyle = '#2a2a2a'
+      ctx.lineWidth   = 30 * this.zoomLevel
+      ctx.beginPath()
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
+      ctx.stroke()
     },
 
-    drawDrivers() {
-      if (!this.drivers?.length) return
-
-      const dotR       = Math.max(6, 7 * Math.sqrt(this.zoomLevel))
-      const selR       = dotR + 3
-      const showLabels = this.zoomLevel >= 0.65   // CHANGE: was 0.7
-
-      this.drivers.forEach(driver => {
-        const pos = this.getDriverCanvasPos(driver)   
-        if (!pos) return
-
-        const isSel  = this.selectedDriver === driver.driver
-        const isTop3 = driver.position <= 3
-        const color  = this.getTeamColor(driver.team)
-
-        if (isSel) {
-          this.ctx.shadowColor = color
-          this.ctx.shadowBlur  = 16   // CHANGE: was 14
-        }
-
-        this.ctx.beginPath()
-        this.ctx.arc(pos.x, pos.y, isSel ? selR : dotR, 0, Math.PI * 2)
-        this.ctx.fillStyle = color
-        this.ctx.fill()
-
-        if (isSel) {
-          this.ctx.strokeStyle = '#ffffff'
-          this.ctx.lineWidth   = 2.5
-          this.ctx.stroke()
-        }
-
-        this.ctx.shadowBlur = 0   // CHANGE: moved outside the if block
-
-        const showLabel = isSel || isTop3 || this.zoomLevel >= 1.5
-        if (showLabel && showLabels) {
-          const fs   = Math.max(9, 10 * Math.sqrt(this.zoomLevel))
-          const yOff = (isSel ? selR : dotR) + 5   // CHANGE: dynamic based on dot size
-
-          this.ctx.font      = `bold ${fs}px monospace`
-          this.ctx.textAlign = 'center'
-
-          this.ctx.fillStyle = 'rgba(0,0,0,0.85)'
-          this.ctx.fillText(driver.driver, pos.x + 1, pos.y - yOff + 1)
-
-          this.ctx.fillStyle = isSel ? '#ffffff' : (isTop3 ? '#ffd700' : '#cccccc')
-          this.ctx.fillText(driver.driver, pos.x, pos.y - yOff)
-        }
-      })
-
-      this.ctx.shadowBlur = 0
-    },
-
-    // REPLACE getDriverPosition with getDriverCanvasPos (new name + interpolation):
-    getDriverCanvasPos(driver) {
+    // Canvas position of a car, or null when there is nothing to draw
+    carPos(car) {
       const coords = this.circuitData?.points
-      if (coords?.length) {
-        const idx = this.currentIndices[driver.driver]
-        if (idx == null) return null
-
-        const total = coords.length
-        const i0    = Math.floor(idx) % total
-        const i1    = (i0 + 1) % total
-        const frac  = idx - Math.floor(idx)
-        const c0    = coords[i0]
-        const c1    = coords[i1]
+      if (!coords?.length) {
+        // no circuit file: the same fraction round a plain oval
+        const angle = car.fraction * Math.PI * 2 - Math.PI / 2
         return {
-          x: (c0.x + (c1.x - c0.x) * frac) * this.scale + this.offsetX,
-          y: (c0.y + (c1.y - c0.y) * frac) * this.scale + this.offsetY
+          x: this.canvasWidth  / 2 + Math.cos(angle) * Math.max(20, this.canvasWidth  / 2 - 60) * this.zoomLevel,
+          y: this.canvasHeight / 2 + Math.sin(angle) * Math.max(20, this.canvasHeight / 2 - 60) * this.zoomLevel,
+          nx: 0, ny: 0,
         }
       }
-      return this.getPositionFromOrder(driver)
-    },
-
-    // ADD new computeTargetIndex method:
-    computeTargetIndex(driver) {
-      const coords = this.circuitData?.points
-      if (!coords?.length) return 0
-      const total       = coords.length
-      const spacing     = Math.max(1, Math.floor(total * 0.025))
-      const leaderStart = Math.floor(total * 0.10)
-      const pos         = (driver.position ?? 1) - 1
-      return (leaderStart + pos * spacing) % total
-    },
-
-    // REPLACE getPositionFromOrder — remove the circuit branch (handled above now):
-    getPositionFromOrder(driver) {
-      const angle = (((driver.position ?? 1) - 1) / 20) * Math.PI * 2
-      const cx    = this.canvasWidth  / 2
-      const cy    = this.canvasHeight / 2
+      const total = coords.length
+      const idx = (car.fraction % 1) * total
+      const i0 = Math.floor(idx) % total
+      const i1 = (i0 + 1) % total
+      const f  = idx - Math.floor(idx)
+      const c0 = coords[i0], c1 = coords[i1]
+      const dx = c1.x - c0.x, dy = c1.y - c0.y
+      const len = Math.hypot(dx, dy) || 1
       return {
-        x: cx + Math.cos(angle) * (this.canvasWidth  / 2 - 80),
-        y: cy + Math.sin(angle) * (this.canvasHeight / 2 - 80)
+        x: (c0.x + dx * f) * this.scale + this.offsetX,
+        y: (c0.y + dy * f) * this.scale + this.offsetY,
+        nx: -dy / len, ny: dx / len,     // unit normal, to set pit-lane cars beside the track
       }
     },
 
-    getTeamColor(team) { return TEAM_COLORS[team] || '#aaa' },
+    carAlpha(car) {
+      if (car.retired)  return Math.max(0, 1 - car.stoppedFor / FADE_S)
+      if (car.finished) return Math.max(0.35, 1 - car.stoppedFor / FADE_S)
+      return 1
+    },
+
+    drawCars() {
+      const ctx = this.ctx
+      if (!this.cars.length) return
+
+      const z          = this.zoomLevel
+      const dotR       = Math.max(5, 7 * Math.sqrt(z))
+      const selR       = dotR + 3
+      const pitOffset  = Math.max(14, 20 * z)
+      const showLabels = z >= 0.65
+
+      // Leader last, so it is drawn on top
+      for (let i = this.cars.length - 1; i >= 0; i--) {
+        const car = this.cars[i]
+        const alpha = this.carAlpha(car)
+        if (alpha <= 0) continue
+        const pos = this.carPos(car)
+        if (!pos) continue
+
+        let { x, y } = pos
+        if (car.inPit) { x += pos.nx * pitOffset; y += pos.ny * pitOffset }
+
+        const isSel = this.selectedDriver === car.driver
+        const isPin = this.pinnedDriver === car.driver
+        const r = isSel || isPin ? selR : dotR
+
+        ctx.globalAlpha = alpha
+        ctx.beginPath()
+        ctx.arc(x, y, r, 0, Math.PI * 2)
+        if (car.inPit) {
+          // in the pit lane: a hollow ring beside the track
+          ctx.fillStyle = '#0a0a0a'
+          ctx.fill()
+          ctx.strokeStyle = car.color
+          ctx.lineWidth = 2
+          ctx.stroke()
+        } else {
+          ctx.fillStyle = car.color
+          ctx.fill()
+        }
+        if (isSel || isPin) {
+          ctx.strokeStyle = '#ffffff'
+          ctx.lineWidth   = 2
+          if (isPin && !isSel) ctx.setLineDash([3, 3])
+          ctx.beginPath()
+          ctx.arc(x, y, r + 2, 0, Math.PI * 2)
+          ctx.stroke()
+          ctx.setLineDash([])
+        }
+
+        const showLabel = isSel || isPin || car.position <= 3 || z >= 1.5
+        if (showLabel && showLabels) {
+          const fs   = Math.max(9, 10 * Math.sqrt(z))
+          const yOff = r + 6
+          const text = car.inPit ? `${car.driver} PIT` : car.driver
+          ctx.font      = `bold ${fs}px monospace`
+          ctx.textAlign = 'center'
+          ctx.fillStyle = 'rgba(0,0,0,0.85)'
+          ctx.fillText(text, x + 1, y - yOff + 1)
+          ctx.fillStyle = isSel || isPin ? '#ffffff' : car.position <= 3 ? '#ffd700' : '#cccccc'
+          ctx.fillText(text, x, y - yOff)
+        }
+      }
+      ctx.globalAlpha = 1
+    },
 
     // ── Zoom ─────────────────────────────────────────────────────────────────
     zoomIn()    { this.zoomLevel = Math.min(MAX_ZOOM, +(this.zoomLevel + ZOOM_STEP).toFixed(2)) },
@@ -448,26 +333,26 @@ export default {
       this.zoomLevel = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +(this.zoomLevel + delta).toFixed(2)))
     },
 
-    // ── Click ────────────────────────────────────────────────────────────────
+    // ── Click: select the nearest car (shift-click pins it for comparison) ──────
     handleCanvasClick(e) {
       const rect = this.$refs.canvas.getBoundingClientRect()
       const x    = e.clientX - rect.left
       const y    = e.clientY - rect.top
       const hitR = Math.max(16, 20 * Math.sqrt(this.zoomLevel))
+      const pitOffset = Math.max(14, 20 * this.zoomLevel)
 
-      for (const driver of this.drivers) {
-        const pos = this.getDriverCanvasPos(driver)
-        if (!pos) continue
-        const dist = Math.hypot(x - pos.x, y - pos.y)
-        if (dist < hitR) {
-          this.$emit('select-driver', driver.driver)
-          return
-        }
+      let best = null, bestDist = hitR
+      for (const car of this.cars) {
+        if (this.carAlpha(car) <= 0) continue
+        const pos = this.carPos(car)
+        const cx = pos.x + (car.inPit ? pos.nx * pitOffset : 0)
+        const cy = pos.y + (car.inPit ? pos.ny * pitOffset : 0)
+        const dist = Math.hypot(x - cx, y - cy)
+        if (dist < bestDist) { best = car.driver; bestDist = dist }
       }
-
-      this.$emit('select-driver', null)
-    }
-  }
+      this.$emit('select-driver', best, { pin: e.shiftKey })
+    },
+  },
 }
 </script>
 
@@ -505,30 +390,23 @@ canvas {
   background: rgba(20, 20, 20, 0.9);
   border: 1px solid #333;
   color: #bbb;
-  font-size: 1rem;
-  line-height: 1;
   cursor: pointer;
-  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), scale var(--dur-fast) var(--ease);
   padding: 0;
 }
+.zoom-btn svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
 
 .zoom-btn:hover {
-  background: rgba(40, 40, 40, 0.95);
   border-color: #666;
   color: #fff;
 }
 
-.zoom-btn.reset {
-  font-size: 0.85rem;
-}
-
 .zoom-label {
   font-size: 0.65rem;
-  color: #555;
+  color: #777;
   font-family: monospace;
   margin-top: 2px;
 }

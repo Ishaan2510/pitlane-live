@@ -99,11 +99,11 @@ export default {
   align-items: center;
   gap: 0.35rem;
   font-size: 0.65rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-weight: 500;
   letter-spacing: 0.03em;
 }
-.w-label svg { color: var(--text-muted); flex-shrink: 0; }
+.w-label svg { color: var(--text-secondary); flex-shrink: 0; }
 .w-value {
   font-family: monospace;
   font-size: 0.88rem;

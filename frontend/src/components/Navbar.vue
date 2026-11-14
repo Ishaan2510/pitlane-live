@@ -4,7 +4,13 @@
 
     <!-- Inline links on desktop; below 720 px the same block is the dropdown menu -->
     <div id="nav-menu" ref="linksEl" class="nav-links" @click="menuOpen = false">
-      <router-link v-for="link in LINKS" :key="link.to" :to="link.to" class="nav-link">{{ link.label }}</router-link>
+      <router-link
+        v-for="link in LINKS"
+        :key="link.to"
+        :to="link.to"
+        class="nav-link"
+        :class="{ 'router-link-active': link.also && route.path.startsWith(link.also) }"
+      >{{ link.label }}</router-link>
       <span class="nav-indicator" :style="indicatorStyle" aria-hidden="true"></span>
 
       <!-- Account links move in here on small screens -->
@@ -66,8 +72,8 @@ import ThemeToggle from './ThemeToggle.vue'
 import SoundToggle from './SoundToggle.vue'
 
 const LINKS = [
-  { to: '/live',      label: 'WATCH LIVE' },
-  { to: '/replay',    label: 'REPLAY' },
+  { to: '/live',      label: 'RACE WEEKEND' },
+  { to: '/replay',    label: 'REPLAY', also: '/race/' },   // Race Room pages belong to the library
   { to: '/standings', label: 'STANDINGS' },
   { to: '/the-grid',  label: 'THE GRID' },
 ]

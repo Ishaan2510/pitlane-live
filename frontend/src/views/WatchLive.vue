@@ -176,44 +176,45 @@
 
       <div class="divider"></div>
 
-      <div class="section-label">COMING UP ON PITLANE LIVE</div>
+      <div class="section-label">ON PITLANE LIVE</div>
       <div class="coming-up">
         <div class="coming-card">
           <div class="coming-icon">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M3 15h14M5 12V8M9 12V5M13 12V9" stroke="#e10600" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M3 15h14M5 12V8M9 12V5M13 12V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           </div>
           <div>
-            <div class="coming-title">Live Timing &amp; Pit Calls</div>
-            <div class="coming-desc">Timing tower, track map and pit-stop predictions. Try a simulated race any time.</div>
+            <div class="coming-title">Latest race</div>
+            <div class="coming-desc" v-if="latestRace">{{ latestRace.name }} {{ latestRace.year }}: replay the race lap by lap, then read the debrief.</div>
+            <div class="coming-desc" v-else>Replay and debrief of every race in the library.</div>
           </div>
-          <router-link to="/live/timing" class="coming-link">GO →</router-link>
+          <router-link :to="latestRace ? `/race/${latestRace.year}/${latestRace.round}` : '/replay'" class="coming-link">OPEN →</router-link>
         </div>
         <div class="coming-card">
           <div class="coming-icon">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="7" stroke="#e10600" stroke-width="1.5"/>
-              <path d="M10 6v4l2.5 2.5" stroke="#e10600" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           </div>
           <div>
-            <div class="coming-title">Race Replay</div>
-            <div class="coming-desc">Full race replay with lap-by-lap timing available within 1 hour of the chequered flag.</div>
+            <div class="coming-title">Predict the next race</div>
+            <div class="coming-desc">{{ predictText }}</div>
           </div>
-          <router-link to="/replay" class="coming-link">GO →</router-link>
+          <router-link v-if="predictOpen" :to="`/predict/${nextRace.year}/${nextRace.round}`" class="coming-link">PREDICT →</router-link>
         </div>
         <div class="coming-card">
           <div class="coming-icon">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <rect x="3" y="5" width="14" height="11" rx="1.5" stroke="#e10600" stroke-width="1.5"/>
-              <path d="M7 5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="#e10600" stroke-width="1.5"/>
-              <path d="M7 10h6M7 13h4" stroke="#e10600" stroke-width="1.5" stroke-linecap="round"/>
+              <rect x="3" y="5" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M7 5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           </div>
           <div>
-            <div class="coming-title">Full Season Calendar</div>
-            <div class="coming-desc">24 races, sprint weekends marked. Check the full 2026 schedule and results.</div>
+            <div class="coming-title">Full season calendar</div>
+            <div class="coming-desc">Every round of the season, sprint weekends marked, with results as they come in.</div>
           </div>
           <router-link to="/" class="coming-link">GO →</router-link>
         </div>
@@ -225,6 +226,8 @@
 
 <script>
 import { apiUrl } from '@/services/apiBase'
+import api from '@/services/api'
+import { getRaces } from '@/services/data'
 import StatePanel from '@/components/StatePanel.vue'
 
 export default {
@@ -238,6 +241,8 @@ export default {
       nextRace:  null,
       countdown: '—',
       ticker:    null,
+      latestRace:    null,   // newest race in the library
+      predictWindow: null,   // /race-predictions/window for nextRace
     }
   },
 
@@ -250,6 +255,20 @@ export default {
       today.setHours(0, 0, 0, 0)
       raceDate.setHours(0, 0, 0, 0)
       return Math.round((raceDate - today) / 86400000)
+    },
+
+    predictOpen() {
+      return this.predictWindow?.state === 'window_open'
+    },
+    // What is true right now about predicting the next race
+    predictText() {
+      const race = this.nextRace
+      if (!race) return 'Pick the podium and the top ten once the next race weekend is on the calendar.'
+      const w = this.predictWindow
+      if (this.predictOpen) return `Predictions for the ${race.name} are open until six hours before lights out.`
+      if (w?.state === 'pre_quali' && w.quali_end) return `Predictions for the ${race.name} open after qualifying, on ${this.formatWhen(w.quali_end)}.`
+      if (w?.state === 'locked' || w?.state === 'race_finished') return `Predictions for the ${race.name} are closed.`
+      return `Predictions for the ${race.name} open after qualifying.`
     },
 
     isRaceDay() {
@@ -266,6 +285,7 @@ export default {
   },
 
   async mounted() {
+    getRaces().then(races => { this.latestRace = races[0] || null }).catch(() => {})
     await this.loadRace()
     this.ticker = setInterval(this.tick, 1000)
   },
@@ -291,6 +311,15 @@ export default {
       } finally {
         this.loading = false
       }
+      if (this.nextRace) {
+        api.getPredictionWindow(this.nextRace.year, this.nextRace.round)
+          .then(w => { this.predictWindow = w })
+          .catch(() => {})   // the card falls back to its generic line
+      }
+    },
+
+    formatWhen(iso) {
+      return new Date(iso).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
     },
 
     tick() {
@@ -508,6 +537,7 @@ export default {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  color: var(--accent);
 }
 .coming-title { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem; }
 .coming-desc  { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }

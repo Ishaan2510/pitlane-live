@@ -4,9 +4,26 @@
    Import in main.js: import './assets/theme.css'
    ============================================================ */
 
+/* ── Fixed colours: the same in both themes ─────────────────── */
+:root {
+  /* Pirelli tyre compounds */
+  --tyre-soft:         #e10600;
+  --tyre-medium:       #ffd200;
+  --tyre-hard:         #ffffff;
+  --tyre-hard-edge:    #888888;
+  --tyre-intermediate: #00a442;
+  --tyre-wet:          #0067ff;
+}
+
 /* ── Dark theme (default) ───────────────────────────────────── */
 :root,
 [data-theme="dark"] {
+  /* Track status: red flag, Safety Car, VSC and yellow flag, green */
+  --status-red:       #ff6666;
+  --status-sc:        #ff9944;
+  --status-vsc:       #ddcc55;
+  --status-green:     #66dd88;
+
   --bg-primary:       #080808;
   --bg-secondary:     #0d0d0d;
   --bg-card:          #111111;
@@ -44,6 +61,11 @@
 
 /* ── Light theme ─────────────────────────────────────────────── */
 [data-theme="light"] {
+  --status-red:       #c80000;
+  --status-sc:        #c26a00;
+  --status-vsc:       #8f7c00;
+  --status-green:     #1c8a45;
+
   --bg-primary:       #f4f4f4;
   --bg-secondary:     #ebebeb;
   --bg-card:          #ffffff;
