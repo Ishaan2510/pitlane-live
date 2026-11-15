@@ -17,6 +17,7 @@ export function loadRace(year, round) {
     results:     read(dir + 'results.json'),
     trackStatus: read(dir + 'track_status.json'),
     pitLoss:     read(dir + 'pit_loss.json'),
+    tyreModel:   read(dir + 'tyre_model.json'),
   }
 }
 
