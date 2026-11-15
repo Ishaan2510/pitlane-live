@@ -340,15 +340,8 @@ export function checkStrategy(race, code, stints) {
   if (!isActual && !p.car.retired && new Set(stints.map(s => s.compound)).size < 2) {
     flags.push({ code: 'one_compound', level: 'error', text: 'A dry race needs two different dry compounds.' })
   }
-  // The first lap on which this strategy differs from the real one
   if (!isActual && p.lastBunching) {
-    let first = p.N + 1
-    for (let i = 0; i < Math.max(stints.length, p.stints.length); i++) {
-      const a = stints[i], b = p.stints[i]
-      if (a && b && a.compound === b.compound && a.life0 === b.life0 && a.start === b.start) {
-        if (a.end !== b.end) { first = Math.min(a.end, b.end); break }
-      } else { first = (a || b).start - (i ? 1 : 0); break }
-    }
+    const first = firstDifference(p, stints)
     if (first <= p.lastBunching) {
       const red = /5/.test(p.car.status.join(''))
       flags.push({ code: 'neutralised', level: 'warning', lap: p.lastBunching,
@@ -356,6 +349,17 @@ export function checkStrategy(race, code, stints) {
     }
   }
   return flags
+}
+
+// The first lap on which a strategy differs from the real one (laps + 1 when it never does)
+function firstDifference(p, stints) {
+  for (let i = 0; i < Math.max(stints.length, p.stints.length); i++) {
+    const a = stints[i], b = p.stints[i]
+    if (a && b && a.compound === b.compound && a.life0 === b.life0 && a.start === b.start) {
+      if (a.end !== b.end) return Math.min(a.end, b.end)
+    } else return (a || b).start - (i ? 1 : 0)
+  }
+  return p.N + 1
 }
 
 /**
@@ -693,17 +697,27 @@ export function bestStrategies(race, code, { top = 5, seed = 1, runs = SIM_RUNS,
 }
 
 /**
- * For choosing who to open the page on: each driver's best strategy by the model
- * (no Monte Carlo).  { VER: { strategy, delta, confidence } }  delta <= 0, seconds gained.
+ * For choosing who to open the page on: each driver's best strategy by the model (no
+ * Monte Carlo).  { VER: { strategy, delta, confidence, trusted } }  delta <= 0, seconds gained.
+ * `trusted` is the same for the fastest strategy whose confidence is not low: it leaves
+ * the real race only after the last Safety Car or red flag and changes only tyres the
+ * model measured well ({ strategy, delta, confidence }, or null when there is none).
  */
 export function bestGains(race, codes) {
   const out = {}
   for (const code of codes) {
     if (!race.cars[code] || race.cars[code].retired) continue
     const p = prepare(race, code), realTime = p.car.times[p.N]
-    let best = null
-    search(race, code, (stints, time) => { if (!best || time < best.time) best = { time, stints: stints.map(s => ({ ...s })) } })
-    out[code] = { strategy: formatStrategy(best.stints), delta: Math.min(0, best.time - realTime), confidence: strategyConfidence(race, code, best.stints).level }
+    let best = null, trusted = null
+    search(race, code, (stints, time, isActual) => {
+      if (!best || time < best.time) best = { time, stints: stints.map(s => ({ ...s })) }
+      // confidence is only worked out for a candidate that would be the new fastest trusted one
+      const first = firstDifference(p, stints)           // laps + 1: the real strategy again
+      if (!isActual && first <= p.N && (!trusted || time < trusted.time) && first > p.lastBunching
+          && strategyConfidence(race, code, stints).level !== 'low') trusted = { time, stints: stints.map(s => ({ ...s })) }
+    })
+    const describe = b => ({ strategy: formatStrategy(b.stints), delta: Math.min(0, b.time - realTime), confidence: strategyConfidence(race, code, b.stints).level })
+    out[code] = { ...describe(best), trusted: trusted ? describe(trusted) : null }
   }
   return out
 }

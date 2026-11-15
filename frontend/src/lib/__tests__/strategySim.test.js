@@ -346,6 +346,35 @@ describe('optimiser', () => {
     for (const g of Object.values(gains)) expect(g.delta).toBeLessThanOrEqual(0)
   })
 
+  it('bestGains also gives the fastest call the model can stand behind', () => {
+    // Safety Car on laps 30 to 32: DDD's second stop (lap 33) is after it, AAA's only stop (lap 20) is before
+    const { sim } = synthetic(FIELD, { sc: [30, 31, 32] })
+    const gains = bestGains(sim, ['AAA', 'DDD'])
+    // AAA can only be trusted with calls that keep the lap 20 stop and change something after lap 32
+    if (gains.AAA.trusted) expect(parseStrategy(gains.AAA.trusted.strategy).stops[0]).toBe(20)
+    expect(gains.AAA.trusted?.strategy).not.toBe('M-20-H')                // never the real strategy itself
+    const g = gains.DDD
+    expect(g.trusted).not.toBeNull()
+    expect(g.trusted.confidence).not.toBe('low')
+    expect(g.trusted.delta).toBeGreaterThanOrEqual(g.delta - 1e-9)       // never better than the unrestricted best
+    const parsed = parseStrategy(g.trusted.strategy)
+    expect(parsed.stops[0]).toBe(15)                                     // the stop before the Safety Car stays put
+    expect(checkStrategy(sim, 'DDD', makeStints(sim, 'DDD', parsed.compounds, parsed.stops))).toEqual([])
+    // 2026 Mexico City: red flag and Safety Cars to lap 62 of 71. The raw gains are absurd
+    // (a car with five stops "wins"); nothing trusted is worth opening the page on
+    const mexico = simRace(2026, 19).sim
+    const top = mexico.order.slice(0, 10)
+    const real = bestGains(mexico, top)
+    expect(top.some(c => real[c].delta < -40 && real[c].confidence === 'low')).toBe(true)
+    expect(top.filter(c => real[c].trusted && real[c].trusted.delta < -0.5)).toEqual([])
+    // 2024 Monza: mediums are low confidence there, but dropping Piastri's second stop only changes hard-tyre laps
+    const monza = simRace(2024, 16).sim
+    const pia = bestGains(monza, ['PIA']).PIA
+    expect(pia.confidence).toBe('low')
+    expect(pia.trusted.confidence).not.toBe('low')
+    expect(pia.trusted.delta).toBeLessThan(-5)
+  })
+
   it('can be limited to one-stop or two-stop strategies', () => {
     const { sim } = synthetic(FIELD)
     const one = bestStrategies(sim, 'DDD', { stops: 1, top: 3, runs: 0 })
