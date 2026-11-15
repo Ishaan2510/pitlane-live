@@ -286,13 +286,17 @@ async function load() {
       driver.value = wanted
       call.value = fromQuery(route.query.s) || toCall(actual.value)
     } else {
-      // the driver the model finds the most time for among the top ten (a result it trusts, if there is one)
+      // The driver the model finds the most time for among the top ten, counting only
+      // calls it can stand behind (bestGains `trusted`: after the last Safety Car or red
+      // flag, on tyres it measured well). If no such call is worth two seconds, open
+      // on the winner's race as it happened rather than on a result the page has to mute.
       const top = drivers.value.slice(0, 10).map(d => d.driver)
       const gains = (await ask('gains', { codes: top })).result
-      const ranked = top.filter(c => gains[c]).sort((a, b) => gains[a].delta - gains[b].delta)
-      driver.value = ranked.find(c => gains[c].confidence !== 'low' && gains[c].delta < -0.5) || ranked[0] || drivers.value[0].driver
-      const best = parseStrategy(gains[driver.value]?.strategy)
-      call.value = best ? best : toCall(actual.value)
+      const pick = top.filter(c => gains[c]?.trusted && gains[c].trusted.delta < -2)
+        .sort((a, b) => gains[a].trusted.delta - gains[b].trusted.delta)[0]
+      driver.value = pick || top[0] || drivers.value[0].driver
+      const best = pick && parseStrategy(gains[pick].trusted.strategy)
+      call.value = best || toCall(actual.value)
     }
     loadPresets()
   } catch (e) {
