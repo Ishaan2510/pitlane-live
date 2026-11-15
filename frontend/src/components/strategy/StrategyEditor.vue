@@ -68,7 +68,7 @@
     </div>
 
     <div class="ed-foot">
-      <button type="button" class="ed-btn" :disabled="!canAdd" aria-label="Add a pit stop" @click="addStop">
+      <button type="button" class="ed-btn" :disabled="!canAdd" title="Add a pit stop in the middle of the longest stint" @click="addStop">
         <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1v8M1 5h8" /></svg> ADD STOP
       </button>
       <span class="ed-hint">Drag a marker to move a stop, or focus it and use the arrow keys (shift for 5 laps). Click a stint to change its tyre. Drag a marker off the bar, or press Delete, to remove the stop.</span>
@@ -166,7 +166,7 @@ function addStop() {
 const bar = ref(null)
 const drag = ref(null)       // { index, off }
 function startDrag(e, i) {
-  e.currentTarget.setPointerCapture(e.pointerId)
+  try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* a pointer the browser no longer tracks: the drag still works over the marker */ }
   drag.value = { index: i, off: false }
 }
 function onDrag(e) {

@@ -329,7 +329,11 @@ export function buildRaceClock({ laps, replay, results = null, pitLoss = null })
       for (let n = 1; n <= d.done; n++) if (d.data.position[n] > 0) lapEnds.push({ t: d.times[n], d, n, p: d.data.position[n] })
     }
     lapEnds.sort((a, b) => a.t - b.t)
+    // nothing to place until the first car has stopped
+    let firstStop = Infinity
+    for (const d of drivers) if (d.retired) firstStop = Math.min(firstStop, d.times[d.done] + (d.partial?.dur || 0))
     for (const e of lapEnds) {
+      if (e.t < firstStop) continue
       let aheadRunning = 0
       const stopped = []
       for (const car of carsAt(e.t)) {

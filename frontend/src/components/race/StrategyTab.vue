@@ -49,7 +49,7 @@
       <button type="button" class="preset-btn" :disabled="!presets?.two" :title="presetTitle(presets?.two, 'two-stop')" @click="use(presets.two)">TWO STOP</button>
       <button type="button" class="preset-btn accent" :disabled="!presets?.fastest?.length" :title="presetTitle(presets?.fastest?.[0], 'model')" @click="use(presets.fastest[0])">MODEL'S FASTEST</button>
       <button type="button" class="preset-btn" :disabled="result?.isActual" @click="reset">RESET</button>
-      <span v-if="presets" class="presets-note">{{ presets.searched.toLocaleString('en-GB') }} strategies searched in {{ Math.round(presets.ms) }} ms</span>
+      <span v-if="presets" class="presets-note">{{ presets.searched.toLocaleString('en-GB') }} strategies searched in {{ Math.round(presets.searchMs) }} ms</span>
     </div>
 
     <!-- 4. The verdict -->
@@ -222,7 +222,7 @@ const call   = ref({ compounds: [], stops: [] })
 const seed   = ref(1)
 
 const result  = shallowRef(null)   // simulate()
-const presets = shallowRef(null)   // { fastest, one, two, searched, ms }
+const presets = shallowRef(null)   // { fastest, one, two, searched, searchMs, ms }
 const pending = ref(false)
 
 const shared = { totalLaps: 0, bands: [], highlight: ref(null), toggleHighlight: () => {}, replayLink: lap => ({ path: `/race/${props.year}/${props.round}`, query: { lap } }) }
