@@ -133,6 +133,7 @@ const shared = {
   highlight,
   toggleHighlight: code => { highlight.value = highlight.value === code ? null : code },
   replayLink: (lap, driver) => ({ path: `/race/${props.year}/${props.round}`, query: { lap, ...(driver ? { driver } : {}) } }),
+  strategyLink: driver => ({ path: `/race/${props.year}/${props.round}/strategy`, query: { d: driver } }),
 }
 provide(DEBRIEF, shared)
 

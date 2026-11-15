@@ -1,7 +1,7 @@
 <template>
   <ChartFrame
     title="Strategy overview"
-    caption="Each driver's race as tyre stints, in finishing order. A break between two blocks is a pit stop."
+    caption="Each driver's race as tyre stints, in finishing order. A break between two blocks is a pit stop. WHAT IF? opens the Strategy tab on that driver."
     note="Stints come from the stint column of laps.json; the colour is the compound fitted. Tyre age at a stop is the tyre_life of the last lap of the stint, so it counts laps a used set had already done. Shaded columns are Safety Car, VSC and red-flag laps."
     :chart="chart"
     :empty="rows.length ? '' : 'No drivers selected.'"
@@ -31,6 +31,18 @@
             @pointermove="e => chart.showTip(e, stintTip(row, s))"
             @click="chart.pick(row.driver, s.isLast ? null : s.endLap)"
           />
+          <text
+            v-if="chart.debrief.strategyLink"
+            class="what-if"
+            role="link"
+            tabindex="0"
+            :x="chart.innerW.value + 8"
+            :y="i * ROW + ROW / 2"
+            dominant-baseline="central"
+            :aria-label="`What if ${row.driver} had run a different strategy? Open the Strategy tab`"
+            @click="router.push(chart.debrief.strategyLink(row.driver))"
+            @keydown.enter="router.push(chart.debrief.strategyLink(row.driver))"
+          >WHAT IF?</text>
         </g>
 
         <g :transform="`translate(0,${chart.innerH.value})`">
@@ -45,6 +57,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useChart } from '@/composables/useChart'
 import { tyreClass, tyreName, TYRE_LEGEND } from '@/lib/format'
 import ChartFrame from './ChartFrame.vue'
@@ -55,8 +68,9 @@ const props = defineProps({
   laps:    { type: Object, required: true },   // parseLaps()
 })
 
+const router = useRouter()
 const ROW = 18
-const M = { top: 4, right: 8, bottom: 20, left: 40 }
+const M = { top: 4, right: 62, bottom: 20, left: 40 }   // right: room for the "WHAT IF?" action
 
 const rows = computed(() => props.drivers.map(d => {
   const stints = props.plan[d.driver] || []
@@ -77,4 +91,6 @@ function stintTip(row, s) {
 
 <style scoped>
 .stint { cursor: pointer; }
+.what-if { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; fill: var(--text-secondary); cursor: pointer; }
+.what-if:hover, .what-if:focus-visible { fill: var(--accent); outline: none; text-decoration: underline; }
 </style>

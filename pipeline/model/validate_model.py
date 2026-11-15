@@ -112,11 +112,12 @@ NOTES = {
 }
 
 
-def sessions():
+def sessions(data=None):
     """Every race and sprint on disk that has a tyre_model.json, oldest first."""
+    data = Path(data or DATA)
     out = []
-    for path in DATA.glob('*/*/*/tyre_model.json'):
-        year, rnd, folder = path.relative_to(DATA).parts[:3]
+    for path in data.glob('*/*/*/tyre_model.json'):
+        year, rnd, folder = path.relative_to(data).parts[:3]
         event = json.loads((path.parents[1] / 'event.json').read_text(encoding='utf-8'))
         out.append({'year': int(year), 'round': int(rnd), 'session': folder, 'name': event['name'],
                     'model': json.loads(path.read_text(encoding='utf-8'))})
@@ -243,19 +244,29 @@ def report(items):
 
 def summary(items=None):
     """The headline numbers as a dict (the frontend's "How this works" page quotes them)."""
-    items = items or sessions()
+    items = sessions() if items is None else items
     races = [s for s in items if s['session'] == 'race']
     modelled = [s for s in races if s['model']['modelled']]
+
+    def med(values, digits):
+        values = [v for v in values if v is not None]
+        return round(float(np.median(values)), digits) if values else None
+
     def values(key):
-        return [s['model']['validation'][key] for s in modelled if s['model']['validation'][key] is not None]
+        return [s['model']['validation'][key] for s in modelled]
+
+    compounds = [c for s in modelled for c in s['model']['compounds'].values()]
     return {
         'races': len(races), 'modelled': len(modelled),
-        'median_lodo_mae_s': round(float(np.median(values('lodo_mae_s'))), 2),
-        'median_stint_mae_s': round(float(np.median(values('stint_mae_s'))), 1),
-        'median_race_time_bias_s': round(float(np.median(values('race_time_bias_s'))), 1),
-        'median_r2': round(float(np.median([s['model']['r2'] for s in modelled])), 2),
-        'median_rmse_s': round(float(np.median([s['model']['rmse_s'] for s in modelled])), 2),
+        'simulated': sum(not s['model']['wet_running'] for s in modelled),     # the Strategy tab refuses wet races
+        'median_lodo_mae_s': med(values('lodo_mae_s'), 2),
+        'median_stint_mae_s': med(values('stint_mae_s'), 1),
+        'median_race_time_bias_s': med(values('race_time_bias_s'), 1),
+        'median_r2': med([s['model']['r2'] for s in modelled], 2),
+        'median_rmse_s': med([s['model']['rmse_s'] for s in modelled], 2),
         'fuel_prior_races': sum(s['model']['fuel_source'] == 'prior' for s in modelled),
+        'compound_fits': len(compounds),
+        'confidence': {level: sum(c['confidence'] == level for c in compounds) for level in ('high', 'medium', 'low')},
     }
 
 

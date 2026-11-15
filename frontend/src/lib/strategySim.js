@@ -667,11 +667,14 @@ function search(race, code, visit) {
  * Returns the top `top` by median simulated time, each with its range:
  *   { strategy, stints, isActual, time: { delta, p10, p50, p90 }, finish, confidence }
  * The real strategy is always a candidate, so the best is never slower than what happened.
+ * `stops` (1 or 2) limits the search to strategies with that many stops (the real one
+ * is then not a candidate, and the list can be empty).
  */
-export function bestStrategies(race, code, { top = 5, seed = 1, runs = SIM_RUNS } = {}) {
+export function bestStrategies(race, code, { top = 5, seed = 1, runs = SIM_RUNS, stops = null } = {}) {
   const best = []
   let searched = 0
   search(race, code, (stints, time, isActual) => {
+    if (stops != null && (isActual || stints.length - 1 !== stops)) return   // only strategies with this many stops
     searched++
     if (best.length === top && time >= best[top - 1].time) return
     const entry = { time, isActual, stints: stints.map(s => ({ ...s })) }

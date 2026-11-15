@@ -51,7 +51,9 @@ Differences you can see in the data:
 ## manifest.json
 
 Rebuilt from the folders on disk after every run. Events are sorted newest first.
-`sessions` lists what is actually built, in the order Q, SQ, S, R.
+`sessions` lists what is actually built, in the order Q, SQ, S, R. `tyre_model` is the
+tyre model's validation summary across every race on disk (medians of the per-race
+numbers in `tyre_model.json`); the "How this works" page quotes it.
 
 ```json
 {
@@ -62,7 +64,11 @@ Rebuilt from the folders on disk after every run. Events are sorted newest first
       "location": "Monaco", "date": "2025-05-25", "format": "conventional",
       "sessions": ["Q", "R"], "source": { "Q": "openf1", "R": "fastf1" },
       "built_at": "2026-11-13T10:50:11Z" }
-  ]
+  ],
+  "tyre_model": { "races": 68, "modelled": 65, "simulated": 59, "median_lodo_mae_s": 0.53,
+                  "median_stint_mae_s": 6.5, "median_race_time_bias_s": -0.6, "median_r2": 0.78,
+                  "median_rmse_s": 0.56, "fuel_prior_races": 9, "compound_fits": 167,
+                  "confidence": { "high": 94, "medium": 10, "low": 63 } }
 }
 ```
 

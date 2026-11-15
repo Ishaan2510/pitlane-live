@@ -13,6 +13,9 @@
   --tyre-hard-edge:    #888888;
   --tyre-intermediate: #00a442;
   --tyre-wet:          #0067ff;
+  /* Text printed on a tyre colour (the tyre colours do not change with the theme) */
+  --tyre-ink:          #0a0a0a;
+  --tyre-ink-on-soft:  #ffffff;
 }
 
 /* ── Dark theme (default) ───────────────────────────────────── */

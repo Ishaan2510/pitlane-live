@@ -24,11 +24,13 @@
         </g>
 
         <g :clip-path="`url(#${clipId})`">
+          <!-- drawn under the lines, in the chart's own scales (bands, markers) -->
+          <slot name="underlay" :x="chart.x.value" :y="y" :inner-w="chart.innerW.value" :inner-h="chart.innerH.value" />
           <path
             v-for="l in lines"
             :key="l.driver"
             class="line fade"
-            :class="{ dim: chart.dimmed(l.driver), on: chart.isOn(l.driver), second: l.second }"
+            :class="[l.cls, { dim: chart.dimmed(l.driver), on: chart.isOn(l.driver), second: l.second }]"
             :d="l.d"
             :style="{ stroke: l.color }"
           />
@@ -36,7 +38,7 @@
         </g>
 
         <!-- Driver codes at both ends -->
-        <template v-for="l in lines" :key="'lb' + l.driver">
+        <template v-for="l in (endLabels ? lines : [])" :key="'lb' + l.driver">
           <text v-if="startLabels && l.startY != null" class="driver-label fade" :class="{ dim: chart.dimmed(l.driver) }" x="-6" :y="l.startY" text-anchor="end" dominant-baseline="central" @click.stop="chart.pick(l.driver)">{{ l.driver }}</text>
           <text v-if="l.endY != null" class="driver-label fade" :class="{ dim: chart.dimmed(l.driver) }" :x="l.endX + 6" :y="l.endY" dominant-baseline="central" @click.stop="chart.pick(l.driver)">{{ l.driver }}</text>
         </template>
@@ -70,7 +72,11 @@ const props = defineProps({
   format:    { type: Function, required: true },   // value -> text for the tooltip
   height:    { type: Number, default: 420 },
   startLabels: { type: Boolean, default: true },   // driver codes at the left end too (off when the y axis is labelled there)
+  endLabels:   { type: Boolean, default: true },   // driver codes at the line ends at all
+  pickable:    { type: Boolean, default: true },   // a click highlights the driver and offers "open in replay"
 })
+// A `drivers` entry may also carry `cls` (extra classes for its line: 'faint', 'strong',
+// 'dashed') and `label` (the name shown in the tooltip instead of the driver code).
 
 const M = { top: 8, right: 34, bottom: 20, left: 34 }
 const chart = useChart({ margin: M, height: () => props.height })
@@ -94,7 +100,7 @@ const lines = computed(() => {
     const known = pts.filter(p => p[1] != null)
     const first = known[0], last = known[known.length - 1]
     return {
-      driver: d.driver, color: d.color, second: d.second, values,
+      driver: d.driver, color: d.color, second: d.second, cls: d.cls, label: d.label || d.driver, values,
       d: path(pts) || '',
       startY: first && first[0] === 0 ? clampY(first[1]) : null,
       endY: last && inDomain(last[1]) ? y.value(last[1]) : null,   // no label for a line that left the chart
@@ -120,7 +126,7 @@ function nearest(e) {
     const v = l.values[lap]
     if (v == null) continue
     const dist = Math.abs(y.value(v) - py)
-    if (!best || dist < best.dist) best = { dist, driver: l.driver, color: l.color, lap, value: v }
+    if (!best || dist < best.dist) best = { dist, driver: l.driver, label: l.label, color: l.color, lap, value: v }
   }
   return best && best.dist < 24 ? best : null
 }
@@ -128,10 +134,10 @@ function onMove(e) {
   const n = nearest(e)
   if (!n) { hover.value = null; chart.hideTip(); return }
   hover.value = { cx: chart.x.value(n.lap), cy: y.value(n.value), color: n.color }
-  chart.showTip(e, [`${n.driver} · ${n.lap === 0 ? 'START' : 'LAP ' + n.lap}`, props.format(n.value, n)])
+  chart.showTip(e, [`${n.label} · ${n.lap === 0 ? 'START' : 'LAP ' + n.lap}`, props.format(n.value, n)])
 }
 function onClick(e) {
-  const n = nearest(e)
+  const n = props.pickable && nearest(e)
   if (n) chart.pick(n.driver, Math.max(1, n.lap))
 }
 </script>
@@ -140,6 +146,9 @@ function onClick(e) {
 .line { fill: none; stroke-width: 1.5; stroke-linejoin: round; }
 .line.second { stroke-dasharray: 5 3; }
 .line.on { stroke-width: 3; }
+.line.faint { stroke-width: 1; opacity: 0.28; }
+.line.strong { stroke-width: 2.5; }
+.line.dashed { stroke-dasharray: 4 3; }
 .hover-dot { stroke: var(--bg-primary); stroke-width: 1.5; pointer-events: none; }
 svg { cursor: crosshair; }
 </style>

@@ -346,6 +346,16 @@ describe('optimiser', () => {
     for (const g of Object.values(gains)) expect(g.delta).toBeLessThanOrEqual(0)
   })
 
+  it('can be limited to one-stop or two-stop strategies', () => {
+    const { sim } = synthetic(FIELD)
+    const one = bestStrategies(sim, 'DDD', { stops: 1, top: 3, runs: 0 })
+    const two = bestStrategies(sim, 'DDD', { stops: 2, top: 3, runs: 0 })
+    expect(one.length).toBe(3)
+    expect(one.every(b => b.stints.length === 2 && !b.isActual)).toBe(true)
+    expect(two.every(b => b.stints.length === 3)).toBe(true)
+    expect(one[0].time.delta).toBeLessThan(two[0].time.delta)       // 20 s of pit loss buys little on these tyres
+  })
+
   it('searches a 78 lap race quickly', () => {
     const { sim } = simRace(2025, 8)                       // Monaco, 78 laps
     const code = sim.order[0]

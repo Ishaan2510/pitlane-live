@@ -657,10 +657,14 @@ def rebuild_manifest(out_dir=None):
             'built_at': ev['built_at'],
         })
     events.sort(key=lambda e: (e['year'], e['round']), reverse=True)
+    from model.validate_model import sessions as model_sessions, summary as model_summary
+    tyre_model = model_summary(model_sessions(out_dir))   # headline validation numbers across all races
     prev = read_json(out_dir / 'manifest.json') or {}
-    if prev.get('events') == events and prev.get('schema_version') == SCHEMA_VERSION:
+    if (prev.get('events') == events and prev.get('schema_version') == SCHEMA_VERSION
+            and prev.get('tyre_model') == tyre_model):
         return prev                              # nothing changed: keep generated_at, no git diff
-    manifest = {'generated_at': now_iso(), 'schema_version': SCHEMA_VERSION, 'events': events}
+    manifest = {'generated_at': now_iso(), 'schema_version': SCHEMA_VERSION, 'events': events,
+                'tyre_model': tyre_model}
     write_json(out_dir / 'manifest.json', manifest)
     return manifest
 
