@@ -59,6 +59,12 @@ const routes = [
     }
   },
   {
+    path: '/about/strategy-model',
+    name: 'StrategyModel',
+    component: () => import('@/views/StrategyModel.vue'),
+    meta: { title: 'How the Strategy tab works' }
+  },
+  {
     path: '/standings',
     name: 'Standings',
     component: () => import('@/views/Standings.vue'),

@@ -12,16 +12,13 @@ const SEVERITY = { red: 4, sc: 3, vsc: 2, yellow: 1 }
 /**
  * Track-status bands by lap: [{ type: 'red'|'sc'|'vsc'|'yellow', startLap, endLap }].
  * Safety Car and VSC come from sc_periods; red and yellow flags from the lap fields of
- * periods. The period times are not used: in OpenF1-built races they are unreliable
- * (see the pipeline note in the task report). The one thing read from them is the sign:
- * a period that starts before session time zero is a pre-race message, not part of lap 1.
+ * periods (which start at lights out: the pipeline drops what happened before).
  */
 export function statusBands(trackStatus, totalLaps) {
   const raw = []
   for (const p of trackStatus?.sc_periods || []) raw.push({ type: p.type, startLap: p.start_lap, endLap: p.end_lap })
   for (const p of trackStatus?.periods || []) {
     if (p.status !== 'red' && p.status !== 'yellow') continue
-    if (p.start_time_s < 0) continue
     raw.push({ type: p.status, startLap: p.start_lap, endLap: p.end_lap })
   }
   const bands = []

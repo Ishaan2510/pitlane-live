@@ -77,6 +77,7 @@
       <PositionChart :drivers="visible" :series="positions" :count="drivers.length" />
       <GapChart v-model:reference="reference" :drivers="visible" :all-drivers="drivers" :clock="clock" />
       <PaceChart :drivers="visible" :pace="pace" :wet="wet" />
+      <DegradationChart class="wide" :model="tyreModel" :weather="weather" />
       <PitTable class="wide" :drivers="visible" :table="table" :pit-loss="pitLoss" />
     </div>
   </div>
@@ -84,7 +85,7 @@
 
 <script setup>
 import { computed, onMounted, provide, ref, shallowRef } from 'vue'
-import { getReplay, getLaps, getTrackStatus, getPitLoss } from '@/services/data'
+import { getReplay, getLaps, getTrackStatus, getPitLoss, getTyreModel, getWeather } from '@/services/data'
 import { buildRaceClock } from '@/lib/raceClock'
 import { statusBands, pitStops } from '@/lib/raceEvents'
 import { driverList, strategy, positionSeries, racePace, hadWetRunning, pitTable, headlines } from '@/lib/debrief'
@@ -96,6 +97,7 @@ import PositionChart from '@/components/charts/PositionChart.vue'
 import GapChart from '@/components/charts/GapChart.vue'
 import PaceChart from '@/components/charts/PaceChart.vue'
 import PitTable from '@/components/charts/PitTable.vue'
+import DegradationChart from '@/components/charts/DegradationChart.vue'
 
 const props = defineProps({
   year:    { type: Number, required: true },
@@ -118,6 +120,8 @@ const pace      = shallowRef([])
 const table     = shallowRef([])
 const head      = shallowRef({})
 const wet       = ref(false)
+const tyreModel = shallowRef(null)
+const weather   = shallowRef(null)
 
 // Shared by every chart
 const highlight = ref(null)
@@ -129,6 +133,7 @@ const shared = {
   highlight,
   toggleHighlight: code => { highlight.value = highlight.value === code ? null : code },
   replayLink: (lap, driver) => ({ path: `/race/${props.year}/${props.round}`, query: { lap, ...(driver ? { driver } : {}) } }),
+  strategyLink: driver => ({ path: `/race/${props.year}/${props.round}/strategy`, query: { d: driver } }),
 }
 provide(DEBRIEF, shared)
 
@@ -136,11 +141,13 @@ async function load() {
   loading.value = true
   error.value = false
   try {
-    const [replay, lapData, trackStatus, loss] = await Promise.all([
+    const [replay, lapData, trackStatus, loss, model, weatherData] = await Promise.all([
       getReplay(props.year, props.round),
       getLaps(props.year, props.round),
       getTrackStatus(props.year, props.round),
       getPitLoss(props.year, props.round),
+      getTyreModel(props.year, props.round),
+      getWeather(props.year, props.round),
     ])
     const c = buildRaceClock({ laps: lapData, replay, results: props.results, pitLoss: loss })
     const bands = statusBands(trackStatus, c.totalLaps)
@@ -160,6 +167,8 @@ async function load() {
     table.value     = pitTable(stops, loss)
     head.value      = headlines({ laps: lapData, results: props.results, bands, stops })
     wet.value       = hadWetRunning(lapData)
+    tyreModel.value = model
+    weather.value   = weatherData
     shown.value     = new Set(list.map(d => d.driver))
   } catch (e) {
     console.error(e)

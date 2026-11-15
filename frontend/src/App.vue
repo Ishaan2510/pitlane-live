@@ -34,6 +34,9 @@ export default {
 
 <style scoped>
 .app { min-height: 100vh; }
+/* The page fills the screen before its route has loaded, so the footer starts below the
+   fold instead of painting first and jumping down (it was the largest paint and a layout shift). */
+.app > main { min-height: 100vh; }
 main { padding-top: 56px; }
 .site-footer {
   padding: 0.5rem 1rem;

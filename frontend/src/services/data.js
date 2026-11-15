@@ -65,6 +65,11 @@ export function getPitLoss(year, round) {
   return getJson(`${year}/${round}/race/pit_loss.json`).catch(() => null)
 }
 
+// The tyre degradation model (pipeline/model/MODEL.md); null when it has not been built
+export function getTyreModel(year, round) {
+  return getJson(`${year}/${round}/race/tyre_model.json`).catch(() => null)
+}
+
 export function getResults(year, round, session = 'R') {
   return getJson(`${year}/${round}/${SESSION_DIR[session] || session}/results.json`)
 }

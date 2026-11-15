@@ -48,6 +48,9 @@ class Source(Protocol):
     def event(self) -> pd.Series:
         """Index: circuit (short name), total_laps (laps actually run; race and sprint only)."""
 
+    def race_start(self) -> pd.Timedelta:
+        """Lights out, on the same clock as the `Time` columns (races and sprints)."""
+
     def drivers(self) -> pd.DataFrame: ...
     def laps(self) -> pd.DataFrame: ...
     def stints(self) -> pd.DataFrame: ...

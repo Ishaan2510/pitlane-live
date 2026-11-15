@@ -40,6 +40,7 @@ TIMEOUT = 45
 MAX_TRIES = 6
 READY_RATIO = 0.9                        # share of the finishers' laps that must be present
 POSITION_TOLERANCE_S = 1.0               # position messages can trail the timing line slightly
+MAX_SECTOR_YELLOW_S = 180                # a sector yellow with no CLEAR message ends after this long
 
 
 # ── HTTP client ───────────────────────────────────────────────────────────────
@@ -140,10 +141,29 @@ def driver_frame(drivers):
     return pd.DataFrame(rows, columns=DRIVER_COLUMNS)
 
 
-def pit_in_laps(laps, pit):
+def race_start(laps):
+    """Lights out: the moment the first car started lap 1 (None when no lap 1 has a start)."""
+    starts = [lap['date_start'] for lap in laps if lap.get('lap_number') == 1 and lap.get('date_start')]
+    return pd.Timestamp(min(starts)) if starts else None
+
+
+def drop_laps_after_the_flag(laps, results):
+    """OpenF1 sometimes lists the lap back to the pits after the chequered flag (no time,
+    one more than the laps the driver is classified with). It is not a race lap."""
+    classified = {r['driver_number']: r.get('number_of_laps') for r in results
+                  if not (r.get('dnf') or r.get('dns') or r.get('dsq')) and isinstance(r.get('position'), int)}
+    return [lap for lap in laps
+            if not (lap.get('lap_duration') is None and classified.get(lap['driver_number'])
+                    and lap['lap_number'] > classified[lap['driver_number']])]
+
+
+def pit_in_laps(laps, pit, start=None):
     """{(driver_number, lap)} of every in-lap: the pit endpoint names it, and an out-lap
-    implies the lap before it (covers stops the pit endpoint missed)."""
-    found = {(p['driver_number'], p['lap_number']) for p in pit if p.get('lap_number')}
+    implies the lap before it (covers stops the pit endpoint missed).
+    `start` is lights out: pit lane passages before it (the laps to the grid, which OpenF1
+    files under lap 1) are not part of the race."""
+    found = {(p['driver_number'], p['lap_number']) for p in pit if p.get('lap_number')
+             and (start is None or not p.get('date') or pd.Timestamp(p['date']) >= start)}
     found |= {(lap['driver_number'], lap['lap_number'] - 1) for lap in laps
               if lap.get('is_pit_out_lap') and lap['lap_number'] > 1}
     return found
@@ -157,11 +177,19 @@ def stint_frame(stints, codes, in_laps=frozenset()):
     still belongs to the old tyres and the new stint starts on the out-lap.
     """
     rows = []
-    for s in sorted(stints, key=lambda s: (s['driver_number'], s['stint_number'])):
+    ordered = sorted(stints, key=lambda s: (s['driver_number'], s['stint_number']))
+    for i, s in enumerate(ordered):
         number, start = s['driver_number'], s.get('lap_start')
         if number not in codes or start is None:
             continue
         first = not rows or rows[-1]['Driver'] != codes[number]
+        nxt = ordered[i + 1] if i + 1 < len(ordered) else None
+        if (first and start == 1 and nxt and nxt['driver_number'] == number and nxt.get('lap_start') == 2
+                and (number, 1) not in in_laps):
+            # OpenF1 sometimes lists the tyres used on the way to the grid as a one-lap
+            # stint. Without a stop at the end of lap 1 the next set was on from the start.
+            nxt['lap_start'] = 1
+            continue
         if not first and (number, start) in in_laps:
             start += 1
         if not first:
@@ -225,12 +253,34 @@ def track_status_frame(race_control, t0):
     the session is started again ('SESSION STARTED'), whatever is cleared in between.
     Message wording changed over the years ('VIRTUAL SAFETY CAR DEPLOYED' / 'VSC DEPLOYED',
     a RED track flag / 'RED FLAG - RACE SUSPENDED'), so both forms are recognised.
+    Messages dated before t0 are dropped (OpenF1 files everything before lights out under
+    lap 1, sometimes including messages from the day before). A sector yellow that never
+    gets its CLEAR message ends after MAX_SECTOR_YELLOW_S, and the chequered flag clears
+    whatever is left.
     """
     names = {'1': 'AllClear', '2': 'Yellow', '4': 'SCDeployed', '5': 'Red',
              '6': 'VSCDeployed', '7': 'VSCEnding'}
-    yellow, neutral, red = set(), None, False
+    yellow, neutral, red = {}, None, False            # yellow: sector -> when it was shown
     rows = [{'Time': pd.Timedelta(0), 'Status': '1', 'Message': 'AllClear'}]
+    limit = pd.Timedelta(seconds=MAX_SECTOR_YELLOW_S)
+
+    def emit(when):
+        code = '5' if red else neutral or ('2' if yellow else '1')
+        if code != rows[-1]['Status']:
+            rows.append({'Time': when - t0, 'Status': code, 'Message': names[code]})
+
+    def expire(now):
+        """End sector yellows that were never cleared (now=None: all that are left)."""
+        for sector, shown in sorted(yellow.items(), key=lambda kv: kv[1]):
+            if now is None or shown + limit <= now:
+                del yellow[sector]
+                emit(shown + limit)
+
     for m in sorted(race_control, key=lambda m: m['date']):
+        when = pd.Timestamp(m['date'])
+        if when < t0:
+            continue                                  # before the start: not part of the session
+        expire(when)
         text = (m.get('message') or '').upper()
         flag, scope = m.get('flag'), m.get('scope')
         virtual = 'VIRTUAL' in text or 'VSC' in text
@@ -239,7 +289,7 @@ def track_status_frame(race_control, t0):
         elif text == 'SESSION STARTED':
             if not red:
                 continue                              # the race start, not a restart
-            yellow, neutral, red = set(), None, False
+            yellow, neutral, red = {}, None, False
         elif m.get('category') == 'SafetyCar':
             if virtual and 'DEPLOYED' in text:
                 neutral = '6'
@@ -248,16 +298,15 @@ def track_status_frame(race_control, t0):
             elif 'DEPLOYED' in text:
                 neutral = '4'
         elif scope == 'Sector' and flag in ('YELLOW', 'DOUBLE YELLOW'):
-            yellow.add(m.get('sector'))
+            yellow[m.get('sector')] = when
         elif scope == 'Sector' and flag == 'CLEAR':
-            yellow.discard(m.get('sector'))
-        elif scope == 'Track' and flag in ('CLEAR', 'GREEN'):
-            yellow, neutral = set(), None
+            yellow.pop(m.get('sector'), None)
+        elif scope == 'Track' and flag in ('CLEAR', 'GREEN', 'CHEQUERED'):
+            yellow, neutral = {}, None
         else:
             continue
-        code = '5' if red else neutral or ('2' if yellow else '1')
-        if code != rows[-1]['Status']:
-            rows.append({'Time': pd.Timestamp(m['date']) - t0, 'Status': code, 'Message': names[code]})
+        emit(when)
+    expire(None)
     return pd.DataFrame(rows, columns=TRACK_STATUS_COLUMNS)
 
 
@@ -307,8 +356,29 @@ def positions_at_lap_end(position, timed_laps, codes):
         i = int(np.searchsorted(times, end.value + tolerance, side='right')) - 1
         if i >= 0:
             rows.append({'Driver': codes[lap.driver_number], 'LapNumber': lap.lap_number,
-                         'Position': places[i]})
-    return pd.DataFrame(rows, columns=POSITION_COLUMNS)
+                         'Position': places[i], '_end': end.value})
+    return pd.DataFrame(resolve_positions(rows), columns=POSITION_COLUMNS)
+
+
+def resolve_positions(rows):
+    """
+    The position feed is not synchronised with the timing line: when a car dives into the
+    pits, or a time penalty is applied at the flag, the car behind is promoted before it
+    reaches the line itself, so both show the same position at "their" lap end. On a lap
+    with such a tie the cars are ordered by (feed position, time at the line) and each takes
+    the next free place, so the car that crossed first keeps the position. Laps without a
+    tie are left exactly as the feed has them.
+    """
+    by_lap = {}
+    for r in rows:
+        by_lap.setdefault(r['LapNumber'], []).append(r)
+    for lap_rows in by_lap.values():
+        if len({r['Position'] for r in lap_rows}) == len(lap_rows):
+            continue
+        taken = 0
+        for r in sorted(lap_rows, key=lambda r: (r['Position'], r['_end'])):
+            r['Position'] = taken = max(r['Position'], taken + 1)
+    return rows
 
 
 def lap_frame(timed_laps, drivers, stints, in_laps, positions, track_status, deleted, t0):
@@ -536,10 +606,12 @@ class OpenF1Source:
             self.log(f'  {self.tag}: OpenF1 does not list this session yet - skipped')
             return False
         self.meta, key = meta, meta['session_key']
-        self.t0 = pd.Timestamp(meta['date_start'])
         raw = {name: self.client.get(name, session_key=key)
                for name in ('drivers', 'laps', 'session_result', 'stints', 'pit',
                             'race_control', 'position', 'weather')}
+        # Time zero: lights out for a race or sprint, the scheduled start otherwise
+        lights_out = race_start(raw['laps']) if self.code in ('R', 'S') else None
+        self.t0 = lights_out or pd.Timestamp(meta['date_start'])
         self._drivers = driver_frame(raw['drivers'])
         self.codes = dict(zip(self._drivers['DriverNumber'].astype(int), self._drivers['Driver']))
 
@@ -553,9 +625,11 @@ class OpenF1Source:
             self.log(f'  {self.tag}: OpenF1 data is incomplete ({why}) - skipped, next run retries')
             return False
 
+        if self.code in ('R', 'S'):
+            raw['laps'] = drop_laps_after_the_flag(raw['laps'], results)
         self._raw = raw
         self._timed = lap_times(raw['laps'])
-        in_laps = pit_in_laps(raw['laps'], raw['pit'])
+        in_laps = pit_in_laps(raw['laps'], raw['pit'], lights_out)
         self._stints = stint_frame(raw['stints'], self.codes, in_laps)
         self._track_status = track_status_frame(raw['race_control'], self.t0)
         self._positions = positions_at_lap_end(raw['position'], self._timed, self.codes)
@@ -598,6 +672,9 @@ class OpenF1Source:
     def event(self):
         total = int(self._laps['LapNumber'].max()) if len(self._laps) else 0
         return pd.Series({'circuit': self.meta.get('circuit_short_name'), 'total_laps': total})
+
+    def race_start(self):
+        return pd.Timedelta(0)                 # t0 is lights out already
 
     def drivers(self):
         return self._drivers
@@ -682,3 +759,27 @@ class OpenF1Source:
         from fastf1 import mvapi
         info = mvapi.get_circuit_info(year=self.year, circuit_key=self.meta['circuit_key'])
         return info.corners, info.rotation
+
+
+def stint_compounds(year, round_num, code, start_utc, client=None, log=print):
+    """{(driver, lap): compound} from OpenF1's stints, for filling compounds another source
+    does not have. {} when OpenF1 does not have the session."""
+    src = OpenF1Source(year, round_num, code, start_utc, log=log, client=client)
+    try:
+        meta = src._session_meta(code)
+        if not meta:
+            return {}
+        raw = {name: src.client.get(name, session_key=meta['session_key'])
+               for name in ('drivers', 'laps', 'stints', 'pit')}
+    except Exception as e:
+        log(f'    OpenF1 stints unavailable ({type(e).__name__}: {e})')
+        return {}
+    drivers = driver_frame(raw['drivers'])
+    codes = dict(zip(drivers['DriverNumber'].astype(int), drivers['Driver']))
+    frame = stint_frame(raw['stints'], codes, pit_in_laps(raw['laps'], raw['pit'], race_start(raw['laps'])))
+    last = max((lap['lap_number'] for lap in raw['laps']), default=0)
+    out = {}
+    for s in frame.itertuples():
+        for n in range(int(s.LapStart), int(s.LapEnd if pd.notna(s.LapEnd) else last) + 1):
+            out[(s.Driver, n)] = s.Compound
+    return out

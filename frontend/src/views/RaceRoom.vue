@@ -97,6 +97,7 @@ import StatePanel from '@/components/StatePanel.vue'
 const TABS = [
   { id: 'replay',  label: 'Replay',  component: defineAsyncComponent(() => import('@/components/race/ReplayTab.vue')) },
   { id: 'debrief', label: 'Debrief', component: defineAsyncComponent(() => import('@/components/race/DebriefTab.vue')) },
+  { id: 'strategy', label: 'Strategy', component: defineAsyncComponent(() => import('@/components/race/StrategyTab.vue')) },
 ]
 
 const route = useRoute()

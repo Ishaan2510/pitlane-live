@@ -1,11 +1,27 @@
+"""
+Create and seed a LOCAL development database. This drops every table first, so it only
+runs against sqlite:
+
+    DATABASE_URL=sqlite:///local.db python backend/init_db.py
+"""
+import sys
+from datetime import date, timedelta
+
+from werkzeug.security import generate_password_hash
+
 from app import create_app
 from app.models import db, User, Race, Driver
-from datetime import date, timedelta
+
+SAMPLE_PASSWORD = 'pitlane-local'      # every sample user; local development only
+
 
 def init_database():
     app = create_app()
-    
+
     with app.app_context():
+        if db.engine.dialect.name != 'sqlite':
+            sys.exit(f'init_db.py drops all tables and only runs on sqlite; DATABASE_URL points at '
+                     f'{db.engine.dialect.name}. Use DATABASE_URL=sqlite:///local.db')
         # Drop all tables and recreate
         print("Dropping all tables...")
         db.drop_all()
@@ -15,7 +31,7 @@ def init_database():
         
         print("Seeding data...")
         
-        # Create sample users
+        # Create sample users (password_hash is NOT NULL)
         users = [
             User(username='StrategyKing', email='king@example.com', total_score=4520, accuracy_rate=87.3),
             User(username='F1Prophet', email='prophet@example.com', total_score=4385, accuracy_rate=84.1),
@@ -23,6 +39,9 @@ def init_database():
             User(username='TireWhisperer', email='whisper@example.com', total_score=3995, accuracy_rate=79.8),
             User(username='RaceStrategist', email='strategist@example.com', total_score=3870, accuracy_rate=78.2),
         ]
+        password_hash = generate_password_hash(SAMPLE_PASSWORD)
+        for user in users:
+            user.password_hash = password_hash
         db.session.add_all(users)
         
         # Create sample races
@@ -69,7 +88,7 @@ def init_database():
         db.session.add_all(drivers)
         db.session.commit()
         
-        print("✅ Database initialized successfully!")
+        print("Database initialized successfully.")
         print(f"   - {len(users)} users created")
         print(f"   - {len(races)} races created")
         print(f"   - {len(drivers)} drivers created")

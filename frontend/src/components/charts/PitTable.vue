@@ -2,7 +2,7 @@
   <ChartFrame
     title="Pit stops"
     caption="Every stop of the race: what it cost against a normal stop at this track, and whether the driver came out ahead or behind."
-    note="Time lost is in-lap plus out-lap minus two normal laps, from pit_loss.json; it is only measured for stops with clean laps either side. Against median compares a green-flag stop with the green-flag median and a Safety Car or VSC stop with the Safety Car median. Positions are the lap before the stop and the lap after it. Tyre changes made during a red flag are not counted as stops."
+    note="Time lost is in-lap plus out-lap minus two normal laps, from pit_loss.json; it is only measured for stops with clean laps either side. Against median compares a green-flag stop with the green-flag median, and a stop with both laps under the Safety Car (or both under the VSC) with that median, which is measured against the cars that stayed out. Positions are the lap before the stop and the lap after it. Tyre changes made during a red flag are not counted as stops."
     :empty="rows.length ? '' : 'No pit stops for the selected drivers.'"
   >
     <template #controls>
@@ -13,9 +13,14 @@
           <dd v-else class="none">Not measured <small>{{ noMedianWhy }}</small></dd>
         </div>
         <div>
-          <dt>UNDER SAFETY CAR / VSC</dt>
+          <dt>UNDER SAFETY CAR</dt>
           <dd v-if="pitLoss?.median_loss_sc_s != null">{{ pitLoss.median_loss_sc_s.toFixed(1) }} s <small>{{ pitLoss.sc_stops }} stops</small></dd>
-          <dd v-else class="none">Not measured <small>fewer than two such stops</small></dd>
+          <dd v-else class="none">Not measured <small>{{ pitLoss?.sc_stops >= 2 ? 'no clean comparison with cars that stayed out' : 'fewer than two such stops' }}</small></dd>
+        </div>
+        <div>
+          <dt>UNDER VSC</dt>
+          <dd v-if="pitLoss?.median_loss_vsc_s != null">{{ pitLoss.median_loss_vsc_s.toFixed(1) }} s <small>{{ pitLoss.vsc_stops }} stops</small></dd>
+          <dd v-else class="none">Not measured <small>{{ pitLoss?.vsc_stops >= 2 ? 'no clean comparison with cars that stayed out' : 'fewer than two such stops' }}</small></dd>
         </div>
       </dl>
     </template>

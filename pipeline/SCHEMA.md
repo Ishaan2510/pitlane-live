@@ -14,6 +14,7 @@ manifest.json
 {year}/{round}/race/track_status.json
 {year}/{round}/race/weather.json
 {year}/{round}/race/pit_loss.json
+{year}/{round}/race/tyre_model.json
 {year}/{round}/quali/results.json           written last
 {year}/{round}/quali/fastest/{DRIVER}.json
 {year}/{round}/sprint/...                   same files as race/ (no circuit.json)
@@ -36,12 +37,13 @@ Differences you can see in the data:
 
 | | fastf1 | openf1 |
 |---|---|---|
-| Session time zero (`*_time_s` in `track_status.json`) | start of the timing feed, about an hour before lights out | the scheduled session start, so earlier messages are negative |
-| Track status | F1's own status stream | rebuilt from race control messages (sector yellows, SC, VSC, red, "TRACK CLEAR") |
+| Session time zero (`*_time_s` in `track_status.json`) | lights out (FastF1's own clock starts with the timing feed; the pipeline shifts it) | lights out: the first lap 1 start. Messages before it are dropped |
+| Track status | F1's own status stream | rebuilt from race control messages (sector yellows, SC, VSC, red, "TRACK CLEAR"); a sector yellow that never gets its CLEAR message ends after 180 s |
 | Lap 1 | usually no lap or sector times | lap and sector times present |
 | `time_s` of lapped cars in `results.json` | gap at the flag | `null` (OpenF1 only says "+1 LAP") |
 | In-lap of a car that retires in the pits | `pit_in` is true | `pit_in` is false (no pit record) |
-| `position` in `laps.json` | computed by FastF1 | F1's position feed at the end of the lap; differs on about 1% of laps, mostly lapped cars |
+| `position` in `laps.json` | computed by FastF1 | F1's position feed at the end of the lap; differs on about 1% of laps, mostly lapped cars. When the feed gives two cars the same place (a car diving into the pits, a penalty applied at the flag) the one that crossed the line first keeps it |
+| Compounds FastF1 lost (2025 Miami, 2025 Belgium) | filled from OpenF1's stints when it has them | as given |
 | `is_accurate` | FastF1's definition | timed lap with all sectors, not an in/out lap, no SC/VSC/red, not lap 1 |
 | Telemetry (`circuit.json`, `quali/fastest`) | about 4 Hz car data merged with position data | about 3.7 Hz car data; distance is speed integrated over time, so it can drift a few metres per lap |
 | Circuit corners | FastF1 `circuit_info` | same corner list (MultiViewer), `distance` taken from the nearest outline point |
@@ -49,7 +51,9 @@ Differences you can see in the data:
 ## manifest.json
 
 Rebuilt from the folders on disk after every run. Events are sorted newest first.
-`sessions` lists what is actually built, in the order Q, SQ, S, R.
+`sessions` lists what is actually built, in the order Q, SQ, S, R. `tyre_model` is the
+tyre model's validation summary across every race on disk (medians of the per-race
+numbers in `tyre_model.json`); the "How this works" page quotes it.
 
 ```json
 {
@@ -60,7 +64,11 @@ Rebuilt from the folders on disk after every run. Events are sorted newest first
       "location": "Monaco", "date": "2025-05-25", "format": "conventional",
       "sessions": ["Q", "R"], "source": { "Q": "openf1", "R": "fastf1" },
       "built_at": "2026-11-13T10:50:11Z" }
-  ]
+  ],
+  "tyre_model": { "races": 68, "modelled": 65, "simulated": 59, "median_lodo_mae_s": 0.53,
+                  "median_stint_mae_s": 6.5, "median_race_time_bias_s": -0.6, "median_r2": 0.78,
+                  "median_rmse_s": 0.56, "fuel_prior_races": 9, "compound_fits": 167,
+                  "confidence": { "high": 94, "medium": 10, "low": 63 } }
 }
 ```
 
@@ -113,14 +121,25 @@ Input for the strategy simulator and the degradation model. Columnar: one row pe
 per lap, sorted by lap then position. `track_status` is FastF1's string of every status
 code seen during the lap (`"1"` = green all lap, `"124"` = green, yellow and SC).
 
+- `compound` is always one of `SOFT`, `MEDIUM`, `HARD`, `INTERMEDIATE`, `WET`, `UNKNOWN`
+  (never null). A lap the source has no compound for takes the compound of the other laps
+  of its stint; `UNKNOWN` is what could not be recovered.
+- `pit_in` / `pit_out` are the timing flags: the car entered the pit lane at the end of
+  this lap / left it at the start of this lap. A lap 1 `pit_in` only counts if the car went
+  through the pit lane after lights out.
+- `pit_stop` is the one definition of a pit stop, for both sources (`mark_pit_stops` in
+  `build.py`): true on the lap the driver pitted at the end of. It needs an in-lap
+  followed by an out-lap or by a new stint (or an out-lap on a new stint when the in-lap
+  flag is missing). A car that retires in the pits has `pit_in` but not `pit_stop`.
+
 ```json
 {
   "columns": ["driver", "team", "lap", "lap_time_s", "sector1_s", "sector2_s", "sector3_s",
               "compound", "tyre_life", "stint", "fresh_tyre", "pit_in", "pit_out",
-              "position", "track_status", "is_accurate", "deleted"],
+              "position", "track_status", "is_accurate", "deleted", "pit_stop"],
   "rows": [
     ["SAI", "Williams", 2, 111.609, 38.745, 46.984, 25.88, "HARD", 2, 1, true,
-     false, false, 11, "16", false, false]
+     false, false, 11, "16", false, false, false]
   ]
 }
 ```
@@ -146,15 +165,17 @@ winner and the gap to the winner for other cars on the lead lap (`null` otherwis
 
 `periods` come from `session.track_status`; each runs until the next status change.
 `status` is one of `green`, `yellow`, `sc`, `vsc`, `vsc_ending`, `red` (`unknown` for a
-code FastF1 does not document). Laps are the lap the leader was on; times are session
-time, which starts well before lights out. `sc_periods` come from the race control
-messages (`type` is `sc` or `vsc`); a Safety Car still out at the flag ends on the last lap.
+code FastF1 does not document). Laps are the lap the leader was on. Times are seconds
+from lights out: whatever was shown before the start is dropped, the status at lights out
+starts at 0, and the last period ends when the last car finishes, so every period has
+`0 <= start_time_s <= end_time_s`. `sc_periods` come from the race control messages
+(`type` is `sc` or `vsc`); a Safety Car still out at the flag ends on the last lap.
 
 ```json
 {
   "periods": [
     { "status": "green", "message": "AllClear", "start_lap": 1, "end_lap": 2,
-      "start_time_s": 3438.05, "end_time_s": 3462.459 }
+      "start_time_s": 0.0, "end_time_s": 124.409 }
   ],
   "sc_periods": [ { "type": "vsc", "start_lap": 2, "end_lap": 4 } ]
 }
@@ -177,26 +198,69 @@ finished each lap.
 
 ## race/pit_loss.json
 
-Measured cost of a pit stop at this track.
+Measured cost of a pit stop at this track. A stop is a lap with `pit_stop` in `laps.json`.
 
 - **Green stops** (`track_status` is exactly `"1"` on both the in-lap and the out-lap):
   `loss_s = in_lap + out_lap - 2 * ref_lap`, where `ref_lap` is the driver's median green,
   non-pit lap of the stint that ended with the stop (whole race if that stint has fewer
-  than 3 such laps). `median_loss_s` is the median over these stops.
-- **SC stops** (either lap saw SC, VSC or VSC ending, and no red flag): a green lap is the
-  wrong yardstick, so `ref_lap` is half the median `(lap N + lap N+1)` of the cars that
-  stayed out on those two laps. `median_loss_sc_s` is `null` with fewer than 2 such stops.
-- Left out: lap 1 stops, stops under yellow only or red flag, stops with a missing lap time.
+  than 3 such laps). `median_loss_s` is the median over these stops. A green stop that
+  cost more than 60 s was a repair or a penalty: it is listed as `slow` and left out.
+- **Safety Car stops** (`sc`: both the in-lap and the out-lap saw the Safety Car) and
+  **VSC stops** (`vsc`: both laps saw the VSC and neither saw the Safety Car), reported
+  separately: a green lap is the wrong yardstick, so `ref_lap` is half the median
+  `(lap N + lap N+1)` of the cars that stayed out on those two laps under the same
+  conditions. The loss is how much further behind those cars the stop left the driver.
+  `median_loss_sc_s` / `median_loss_vsc_s` are `null` with fewer than 2 such stops, and
+  also when the median is negative or above the green loss (the cars that stayed out were
+  still closing up to the Safety Car, so the comparison says nothing about a stop).
+- Left out: lap 1 stops, stops where only one of the two laps was neutralised, stops
+  under yellow only or a red flag, stops with a missing lap time.
 
 ```json
 {
-  "median_loss_s": 18.968, "median_loss_sc_s": null, "green_stops": 36, "sc_stops": 0,
+  "median_loss_s": 18.968, "median_loss_sc_s": null, "median_loss_vsc_s": null,
+  "green_stops": 36, "sc_stops": 0, "vsc_stops": 0,
   "stops": [
     { "driver": "HUL", "lap": 12, "in_lap_s": 96.743, "out_lap_s": 78.279,
       "ref_lap_s": 80.974, "loss_s": 13.074, "condition": "green" }
   ]
 }
 ```
+
+## race/tyre_model.json
+
+The tyre degradation model fitted to this race (also written for sprints): one least-squares
+fit across the field, `lap_time = driver_base + fuel * lap + compound_offset + deg * tyre_life`.
+The maths, the clean-lap rules, the confidence rule and every field are in
+`pipeline/model/MODEL.md`; how well it predicts, race by race, is in
+`pipeline/model/VALIDATION.md`. `modelled` is false, with a `reason`, for wet races and
+races with too many unknown compounds.
+
+```json
+{
+  "modelled": true, "reason": null, "wet_running": false, "dry_from_lap": 1,
+  "reference_compound": "HARD", "fuel_s_per_lap": -0.0562, "fuel_source": "fit",
+  "r2": 0.87, "rmse_s": 0.61, "laps_used": 617, "laps_excluded": { "not_green": 190 },
+  "compounds": { "HARD": { "offset_s": 0.0, "deg_s_per_lap": 0.0412, "deg_se": 0.0061,
+                           "laps": 456, "drivers": 20, "max_life_seen": 31,
+                           "residual_sd_s": 0.59, "confidence": "high", "points": [[3, 0.21]] } },
+  "drivers": { "VER": 96.412 },
+  "validation": { "lodo_mae_s": 0.54, "stint_mae_s": 7.4, "n_drivers": 19 }
+}
+```
+
+## Validation gate
+
+`pipeline/validate.py` checks every race and sprint folder. `build.py` builds a session
+into a temporary folder, runs the gate and only then moves the files into place, so a
+session that fails is not published (what was there before stays). It prints one line
+with the reason. A session fails when a track status period has `end < start` (or a
+missing or negative time), a compound is outside the canonical set, the green pit loss is
+outside 10 to 45 s, a Safety Car or VSC loss is not between 0 and the green loss, two
+drivers share a position at the end of a lap (or a position is outside 1..cars), or the
+highest lap in `laps.json` is not the winner's lap count in `results.json`.
+
+    python pipeline/validate.py            # every session on disk; exit code 1 on a failure
 
 ## circuit.json
 

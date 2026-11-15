@@ -13,7 +13,7 @@ from sources import openf1_source as o
 from sources.base import LAP_COLUMNS
 
 FIXTURES = Path(__file__).parent / 'fixtures' / 'openf1'
-T0 = pd.Timestamp('2025-05-25T13:00:00+00:00')          # scheduled session start
+T0 = pd.Timestamp('2025-05-25T13:03:09.194+00:00')      # lights out: the first lap 1 start
 
 
 @pytest.fixture(scope='module')
@@ -26,7 +26,8 @@ def frames(raw):
     drivers = o.driver_frame(raw['drivers'])
     codes = dict(zip(drivers['DriverNumber'].astype(int), drivers['Driver']))
     timed = o.lap_times(raw['laps'])
-    in_laps = o.pit_in_laps(raw['laps'], raw['pit'])
+    assert o.race_start(raw['laps']) == T0
+    in_laps = o.pit_in_laps(raw['laps'], raw['pit'], T0)
     stints = o.stint_frame(raw['stints'], codes, in_laps)
     status = o.track_status_frame(raw['race_control'], T0)
     positions = o.positions_at_lap_end(raw['position'], timed, codes)
@@ -54,8 +55,8 @@ def test_lap_times_and_end_of_lap(frames):
     nor2 = lap(frames, 'NOR', 2)
     assert nor2['LapTime'].total_seconds() == 104.634
     assert nor2['Sector1Time'].total_seconds() == 34.072
-    # end of lap 2 = start of lap 3, measured from the session start
-    assert abs(nor2['Time'].total_seconds() - (6 * 60 + 17.67)) < 0.2
+    # end of lap 2 = start of lap 3 (13:06:17.67), measured from lights out
+    assert abs(nor2['Time'].total_seconds() - (3 * 60 + 8.476)) < 0.2
     assert (nor2['SpeedI1'], nor2['SpeedST']) == (97, 252)
 
 
@@ -129,12 +130,14 @@ def test_position_ignores_samples_after_the_lap(raw, frames):
 
 def test_track_status_rebuilt_from_race_control(frames):
     status = frames['status']
-    assert status['Status'].tolist() == ['1', '2', '1', '2', '1', '6', '7', '1', '2', '1']
-    assert status['Message'].tolist()[5:8] == ['VSCDeployed', 'VSCEnding', 'AllClear']
+    # the yellows shown before lights out are not part of the race
+    assert status['Status'].tolist() == ['1', '2', '1', '6', '7', '1', '2', '1']
+    assert status['Message'].tolist()[3:6] == ['VSCDeployed', 'VSCEnding', 'AllClear']
     vsc = status[status['Status'] == '6'].iloc[0]
-    assert vsc['Time'] == pd.Timedelta(minutes=4, seconds=43)   # 13:04:43, session started 13:00
+    assert vsc['Time'] == pd.Timestamp('2025-05-25T13:04:43+00:00') - T0   # seconds from lights out
+    assert (status['Time'] >= pd.Timedelta(0)).all() and status['Time'].is_monotonic_increasing
     # Sector 13 went yellow on lap 8 and sector 16 came and went: still one yellow period
-    assert (status['Status'] == '2').sum() == 3
+    assert (status['Status'] == '2').sum() == 2
 
 
 def test_track_status_per_lap(frames):
@@ -149,8 +152,10 @@ def test_sc_periods_and_named_periods_through_the_builders(raw, frames):
     messages = o.race_control_frame(raw['race_control'], T0)
     assert build.build_sc_periods(messages, last_lap=78) == [{'type': 'vsc', 'start_lap': 2, 'end_lap': 4}]
     periods = build.build_track_status(frames['status'], build.leader_lap_ends(frames['laps']))
-    assert [(p['status'], p['start_lap'], p['end_lap']) for p in periods][4:8] == [
+    assert [(p['status'], p['start_lap'], p['end_lap']) for p in periods][2:6] == [
         ('green', 1, 2), ('vsc', 2, 4), ('vsc_ending', 4, 4), ('green', 4, 8)]
+    assert periods[0]['start_time_s'] == 0
+    assert all(0 <= p['start_time_s'] <= p['end_time_s'] for p in periods)
 
 
 def test_safety_car_and_red_flag_mapping():
@@ -182,6 +187,91 @@ def test_safety_car_and_red_flag_mapping():
     # the race start itself is not a restart
     start = [message('03:00', 'SessionStatus', 'SESSION STARTED')]
     assert o.track_status_frame(start, pd.Timestamp('2025-01-01T13:00:00+00:00'))['Status'].tolist() == ['1']
+
+
+def rc(time, text, flag=None, scope=None, sector=None, category='Flag'):
+    return {'date': f'2026-11-01T{time}+00:00', 'category': category, 'message': text,
+            'flag': flag, 'scope': scope, 'sector': sector, 'lap_number': 1}
+
+
+def test_messages_before_lights_out_are_dropped():
+    # 2026 Mexico City: OpenF1 files a yellow from the day before under the race
+    lights_out = pd.Timestamp('2026-11-01T20:03:25+00:00')
+    race_control = [
+        {**rc('17:42:52', 'YELLOW IN TRACK SECTOR 2', 'YELLOW', 'Sector', 2), 'date': '2026-10-31T17:42:52+00:00'},
+        rc('19:20:00', 'GREEN LIGHT - PIT EXIT OPEN', 'GREEN', 'Track'),
+        rc('19:55:00', 'YELLOW IN TRACK SECTOR 9', 'YELLOW', 'Sector', 9),       # never cleared, before the start
+        rc('20:07:43', 'YELLOW IN TRACK SECTOR 4', 'YELLOW', 'Sector', 4),
+        rc('20:07:48', 'CLEAR IN TRACK SECTOR 4', 'CLEAR', 'Sector', 4),
+    ]
+    status = o.track_status_frame(race_control, lights_out)
+    assert status['Status'].tolist() == ['1', '2', '1']
+    assert status['Time'].dt.total_seconds().tolist() == [0, 258, 263]
+
+
+def test_sector_yellow_without_a_clear_message_is_closed():
+    # 2026 Sao Paulo lap 63: sectors 14 and 15 go double yellow, only 14 is ever cleared
+    t0 = pd.Timestamp('2026-11-01T17:00:00+00:00')
+    race_control = [
+        rc('18:26:44', 'DOUBLE YELLOW IN TRACK SECTOR 15', 'DOUBLE YELLOW', 'Sector', 15),
+        rc('18:26:44', 'DOUBLE YELLOW IN TRACK SECTOR 14', 'DOUBLE YELLOW', 'Sector', 14),
+        rc('18:26:51', 'CLEAR IN TRACK SECTOR 14', 'CLEAR', 'Sector', 14),
+        rc('18:38:46', 'CHEQUERED FLAG', 'CHEQUERED', 'Track'),
+    ]
+    status = o.track_status_frame(race_control, t0)
+    assert status['Status'].tolist() == ['1', '2', '1']
+    yellow, green = status['Time'].dt.total_seconds().tolist()[1:]
+    assert green - yellow == o.MAX_SECTOR_YELLOW_S          # not the 12 minutes to the flag
+    # a clear that does arrive still ends it at once, and a late yellow ends at the flag
+    late = [rc('18:38:00', 'YELLOW IN TRACK SECTOR 1', 'YELLOW', 'Sector', 1),
+            rc('18:38:46', 'CHEQUERED FLAG', 'CHEQUERED', 'Track')]
+    assert o.track_status_frame(late, t0)['Time'].dt.total_seconds().tolist() == [0, 5880, 5926]
+
+
+def test_pit_entries_before_lights_out_are_not_in_laps():
+    # 2026 Mexico City: the pit endpoint has lap 1 rows from the laps to the grid
+    lights_out = pd.Timestamp('2026-11-01T20:03:25+00:00')
+    pit = [{'driver_number': 10, 'lap_number': 1, 'date': '2026-11-01T19:08:59+00:00'},
+           {'driver_number': 14, 'lap_number': 3, 'date': '2026-11-01T20:08:12+00:00'},
+           {'driver_number': 30, 'lap_number': 1, 'date': '2026-11-01T20:05:00+00:00'}]   # a real lap 1 stop
+    assert o.pit_in_laps([], pit, lights_out) == {(14, 3), (30, 1)}
+    assert o.pit_in_laps([], pit) == {(10, 1), (14, 3), (30, 1)}
+
+
+def test_lap_after_the_flag_is_dropped():
+    # 2026 Belgium: the winner has an untimed lap 45 in a 44 lap race
+    laps = [{'driver_number': 12, 'lap_number': 44, 'lap_duration': 105.0},
+            {'driver_number': 12, 'lap_number': 45, 'lap_duration': None},
+            {'driver_number': 30, 'lap_number': 26, 'lap_duration': None}]      # retired on lap 26: kept
+    results = [{'driver_number': 12, 'position': 1, 'number_of_laps': 44},
+               {'driver_number': 30, 'position': None, 'number_of_laps': 25, 'dnf': True}]
+    kept = o.drop_laps_after_the_flag(laps, results)
+    assert [(l['driver_number'], l['lap_number']) for l in kept] == [(12, 44), (30, 26)]
+
+
+def test_grid_lap_stint_is_merged_into_the_first_race_stint():
+    # 2026 Mexico City, LAW: "stint 1" is lap 1 on mediums, stint 2 starts on lap 2 on softs,
+    # with no stop in between. The softs were on from the start.
+    stints = [{'driver_number': 30, 'stint_number': 1, 'lap_start': 1, 'lap_end': 1, 'compound': 'MEDIUM', 'tyre_age_at_start': 0},
+              {'driver_number': 30, 'stint_number': 2, 'lap_start': 2, 'lap_end': 42, 'compound': 'SOFT', 'tyre_age_at_start': 3},
+              {'driver_number': 14, 'stint_number': 1, 'lap_start': 1, 'lap_end': 1, 'compound': 'SOFT', 'tyre_age_at_start': 0},
+              {'driver_number': 14, 'stint_number': 2, 'lap_start': 1, 'lap_end': 30, 'compound': 'HARD', 'tyre_age_at_start': 0}]
+    frame = o.stint_frame(stints, {30: 'LAW', 14: 'ALO'}, in_laps={(14, 1)})
+    law = frame[frame['Driver'] == 'LAW']
+    assert law[['Compound', 'LapStart', 'TyreAgeAtStart']].values.tolist() == [['SOFT', 1, 3]]
+    assert len(frame[frame['Driver'] == 'ALO']) == 2          # a real stop on lap 1 keeps both stints
+
+
+def test_tied_positions_go_to_the_car_that_crossed_the_line_first():
+    # 2026 Japan lap 13: LAW pits; COL is promoted to P12 before reaching the line, so the
+    # feed shows both in P12 at their own lap end, and everyone behind one place too high.
+    rows = [{'Driver': d, 'LapNumber': 13, 'Position': p, '_end': e} for d, p, e in
+            [('HAD', 11, 5.1), ('LAW', 12, 6.3), ('COL', 12, 7.2), ('BOR', 13, 7.9), ('BEA', 14, 9.8)]]
+    rows += [{'Driver': d, 'LapNumber': 14, 'Position': p, '_end': e} for d, p, e in
+             [('HAD', 11, 95.0), ('COL', 12, 96.0), ('BEA', 14, 99.0)]]          # a gap, no tie: untouched
+    got = {(r['Driver'], r['LapNumber']): r['Position'] for r in o.resolve_positions(rows)}
+    assert [got[(d, 13)] for d in ('HAD', 'LAW', 'COL', 'BOR', 'BEA')] == [11, 12, 13, 14, 15]
+    assert [got[(d, 14)] for d in ('HAD', 'COL', 'BEA')] == [11, 12, 14]
 
 
 # ── deleted laps ──────────────────────────────────────────────────────────────

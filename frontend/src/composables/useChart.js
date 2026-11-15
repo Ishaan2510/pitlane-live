@@ -2,7 +2,8 @@
 // axis, Safety Car shading, the hover tooltip, and the driver highlight that every
 // chart shares. The Debrief tab provides the shared state under DEBRIEF:
 //   { totalLaps, bands, highlight (ref), toggleHighlight(code), isVisible(code),
-//     replayLink(lap, driver) }
+//     replayLink(lap, driver), strategyLink(driver) (optional: the "What if?" action) }
+// The Strategy tab provides the same object for its own charts.
 
 import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
 import { scaleLinear } from 'd3-scale'

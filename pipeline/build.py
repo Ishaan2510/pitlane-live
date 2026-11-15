@@ -23,6 +23,7 @@ $OPENF1_CACHE (default .openf1-cache/). FastF1 never downloads in auto mode or i
 import argparse
 import json
 import os
+import shutil
 import sys
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -31,7 +32,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))   # for `sources`
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # for `sources`, `validate`
+
+from model.tyre_model import build_tyre_model  # noqa: E402
+from validate import validate_session  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / 'frontend' / 'public' / 'data'
@@ -55,8 +59,11 @@ TRACK_STATUS = {
 LAPS_COLUMNS = [
     'driver', 'team', 'lap', 'lap_time_s', 'sector1_s', 'sector2_s', 'sector3_s',
     'compound', 'tyre_life', 'stint', 'fresh_tyre', 'pit_in', 'pit_out', 'position',
-    'track_status', 'is_accurate', 'deleted',
+    'track_status', 'is_accurate', 'deleted', 'pit_stop',
 ]
+
+# The only compound names the output files use
+COMPOUNDS = ('SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET', 'UNKNOWN')
 
 
 def log(msg):
@@ -137,6 +144,62 @@ def lap_at(t, lap_ends):
     return min(int(np.searchsorted(lap_ends, t)) + 1, len(lap_ends))
 
 
+# ── lap preparation (both sources) ────────────────────────────────────────────
+
+def canon_compound(value):
+    """One of COMPOUNDS. Anything else ('nan', 'None', None, 'TEST_UNKNOWN') is 'UNKNOWN'."""
+    name = '' if value is None or (not isinstance(value, str) and pd.isna(value)) else str(value).upper()
+    return name if name in COMPOUNDS else 'UNKNOWN'
+
+
+def mark_pit_stops(laps):
+    """
+    THE definition of a pit stop, for both sources: True on the lap a driver pitted at the
+    end of. That is an in-lap followed by an out-lap or by a new stint, or an out-lap on a
+    new stint whose in-lap flag is missing. An in-lap with no lap after it is a retirement
+    in the pits, and a new stint with neither flag is a data glitch: neither is a stop.
+    """
+    laps = laps.sort_values(['Driver', 'LapNumber'])
+    by_driver = laps.groupby('Driver', sort=False)
+    follows = by_driver['LapNumber'].shift(-1) == laps['LapNumber'] + 1
+    next_out = follows & by_driver['PitOutTime'].shift(-1).notna()
+    next_stint = by_driver['Stint'].shift(-1)
+    new_stint = follows & next_stint.notna() & laps['Stint'].notna() & (next_stint != laps['Stint'])
+    is_in = laps['PitInTime'].notna()
+    return ((is_in & (next_out | new_stint)) | (next_out & new_stint)).reindex(laps.index)
+
+
+def prepare_laps(laps, start=None, extra_compounds=None):
+    """
+    The source's lap frame, cleaned the same way for both sources:
+    - a lap 1 pit entry from before lights out (`start`, a Timedelta) is dropped: the car
+      was on its way to the grid, it did not go through the pit lane in the race;
+    - compounds are one of COMPOUNDS; an unknown one is taken from `extra_compounds`
+      ({(driver, lap): compound}) when given, then from the other laps of the same stint;
+    - PitStop is added (see mark_pit_stops).
+    """
+    laps = pd.DataFrame(laps).copy()
+    if start is not None:
+        early = (laps['LapNumber'] == 1) & laps['PitInTime'].notna() & (laps['PitInTime'] < start)
+        laps.loc[early, 'PitInTime'] = pd.NaT
+    if 'Compound' not in laps.columns:
+        laps['Compound'] = None
+    compound = laps['Compound'].map(canon_compound)
+    if extra_compounds:
+        extra = pd.Series([canon_compound(extra_compounds.get((d, int(n)))) if pd.notna(n) else 'UNKNOWN'
+                           for d, n in zip(laps['Driver'], laps['LapNumber'])], index=laps.index)
+        compound = compound.where(compound != 'UNKNOWN', extra)
+    known = compound.where(compound != 'UNKNOWN')
+    in_stint = laps['Stint'].notna()
+    if in_stint.any():
+        stint_compound = known[in_stint].groupby([laps['Driver'][in_stint], laps['Stint'][in_stint]]) \
+                                        .transform(lambda c: c.mode().iloc[0] if c.notna().any() else None)
+        known = known.where(known.notna(), stint_compound)
+    laps['Compound'] = known.fillna('UNKNOWN')
+    laps['PitStop'] = mark_pit_stops(laps)
+    return laps
+
+
 # ── replay.json ───────────────────────────────────────────────────────────────
 
 SPEED_COLS = ['SpeedI1', 'SpeedI2', 'SpeedFL', 'SpeedST']
@@ -159,7 +222,7 @@ def build_replay_laps(laps, total_laps):
                 'team':      lap['Team'],
                 'position':  as_int(lap['Position']),
                 'lap_time':  secs(lap['LapTime']),
-                'compound':  lap['Compound'] if pd.notna(lap['Compound']) else 'UNKNOWN',
+                'compound':  canon_compound(lap['Compound']),
                 'tire_life': as_int(lap['TyreLife']) or 0,
                 'pit_out':   pd.notna(lap.get('PitOutTime')),
                 'pit_in':    pd.notna(lap.get('PitInTime')),
@@ -182,6 +245,8 @@ def build_replay_laps(laps, total_laps):
 def build_laps_table(laps):
     """One row per driver per lap, columnar: {"columns": [...], "rows": [[...], ...]}."""
     rows = []
+    if 'PitStop' not in laps.columns:
+        laps = laps.assign(PitStop=mark_pit_stops(laps))
     for lap in laps.sort_values(['LapNumber', 'Position']).to_dict('records'):
         if pd.isna(lap['LapNumber']):
             continue
@@ -193,7 +258,7 @@ def build_laps_table(laps):
             secs(lap.get('Sector1Time')),
             secs(lap.get('Sector2Time')),
             secs(lap.get('Sector3Time')),
-            as_str(lap.get('Compound')),
+            canon_compound(lap.get('Compound')),
             as_int(lap.get('TyreLife')),
             as_int(lap.get('Stint')),
             as_bool(lap.get('FreshTyre')),
@@ -203,6 +268,7 @@ def build_laps_table(laps):
             as_str(lap.get('TrackStatus')),
             as_bool(lap.get('IsAccurate')),
             as_bool(lap.get('Deleted')),
+            as_bool(lap.get('PitStop')),
         ])
     return {'columns': LAPS_COLUMNS, 'rows': rows}
 
@@ -234,19 +300,33 @@ def build_results(results, quali=False):
 
 # ── track_status.json ─────────────────────────────────────────────────────────
 
-def build_track_status(track_status, lap_ends):
-    """Consecutive track status periods; each runs until the next status change."""
+def build_track_status(track_status, lap_ends, start_s=0.0, end_s=None):
+    """
+    Consecutive track status periods; each runs until the next status change.
+    `start_s` is lights out and `end_s` the moment the last car finished, both in the
+    source's session time. The output times are seconds from lights out: what happened
+    before the start is dropped (the status at lights out starts at 0), and the last
+    period ends when the race does. So every period has 0 <= start <= end.
+    """
     times = [t.total_seconds() for t in track_status['Time']]
+    if end_s is None:
+        end_s = max([*times, *lap_ends, start_s])
     periods = []
     for i, (t, status, message) in enumerate(zip(times, track_status['Status'], track_status['Message'])):
-        end = times[i + 1] if i + 1 < len(times) else None
+        end = min(times[i + 1], end_s) if i + 1 < len(times) else end_s
+        if end <= start_s and i + 1 < len(times):
+            continue                                  # over before lights out
+        if t > end_s and periods:
+            continue                                  # after the last car finished
+        t = min(max(t, start_s), end_s)
+        end = max(end, t)
         periods.append({
             'status':       TRACK_STATUS.get(str(status), 'unknown'),
             'message':      as_str(message),
             'start_lap':    lap_at(t, lap_ends),
-            'end_lap':      lap_at(end, lap_ends) if end is not None else max(len(lap_ends), 1),
-            'start_time_s': round(t, 3),
-            'end_time_s':   round(end, 3) if end is not None else None,
+            'end_lap':      lap_at(end, lap_ends),
+            'start_time_s': round(t - start_s, 3),
+            'end_time_s':   round(end - start_s, 3),
         })
     return periods
 
@@ -313,29 +393,52 @@ def build_weather(weather, lap_ends):
 # ── pit_loss.json ─────────────────────────────────────────────────────────────
 
 MIN_STINT_GREEN_LAPS = 3
+MAX_NORMAL_STOP_S = 60        # a green stop that cost more was a repair or a penalty, not a tyre stop
+
+
+def stop_condition(in_status, out_status):
+    """'green', 'sc', 'vsc' or None from the track status strings of the in-lap and out-lap.
+    SC and VSC only count when BOTH laps saw it (and no red flag): a stop that starts under
+    green and ends under the Safety Car is neither a green stop nor a Safety Car stop."""
+    both = in_status + out_status
+    if '5' in both:
+        return None
+    if in_status == '1' and out_status == '1':
+        return 'green'
+    if '4' in in_status and '4' in out_status:
+        return 'sc'
+    if '4' not in both and any(c in in_status for c in '67') and any(c in out_status for c in '67'):
+        return 'vsc'
+    return None
 
 
 def build_pit_loss(laps):
     """
-    Measured cost of a pit stop: (in-lap + out-lap) - 2 x the driver's median green lap
-    of the stint that ended with the stop. "Green" = TrackStatus is exactly '1' for the
-    whole lap. Stops where either lap saw SC/VSC are reported separately, measured against
-    the cars that stayed out on the same two laps; anything else (yellow only, red flag)
-    is left out.
+    Measured cost of a pit stop (a stop is whatever mark_pit_stops says).
+    Green: (in-lap + out-lap) - 2 x the driver's median green lap of the stint that ended
+    with the stop. "Green" = TrackStatus is exactly '1' for the whole lap.
+    Safety Car and VSC, separately: (in-lap + out-lap) minus the same two laps of the cars
+    that stayed out under the same conditions, i.e. how much further behind them the stop
+    left the car. Only stops with both laps under the SC (or both under the VSC) count.
+    A median needs 2 stops and must be positive and no more than the green loss; otherwise
+    it is null (too few cars to compare with, or the field was still bunching up).
     """
     laps = laps.dropna(subset=['LapNumber']).copy()
+    if 'PitStop' not in laps.columns:
+        laps['PitStop'] = mark_pit_stops(laps)
     laps['_s'] = laps['LapTime'].dt.total_seconds()
     laps['_status'] = laps['TrackStatus'].fillna('').astype(str)
-    clean = laps[(laps['_status'] == '1') & laps['PitInTime'].isna()
-                 & laps['PitOutTime'].isna() & laps['_s'].notna()]
+    on_track = laps['PitInTime'].isna() & laps['PitOutTime'].isna() & laps['_s'].notna()
+    clean = laps[(laps['_status'] == '1') & on_track]
 
-    # lap N -> (lap N + lap N+1) time of every driver who pitted on neither lap
-    on_track = laps[laps['PitInTime'].isna() & laps['PitOutTime'].isna() & laps['_s'].notna()]
-    t = on_track.set_index(['Driver', 'LapNumber'])['_s']
-    nxt = t.copy()
-    nxt.index = nxt.index.set_levels(nxt.index.levels[1] - 1, level=1)
-    pair_sums = (t + nxt).dropna()
-    stayed_out = {int(n): g for n, g in pair_sums.groupby(level=1)}
+    # Cars that stayed out: (driver, lap N) -> (lap N + lap N+1 time, condition of the pair)
+    by_key = {(l['Driver'], int(l['LapNumber'])): l for l in laps[on_track].to_dict('records')}
+    stayed_out = {}
+    for (driver, n), first in by_key.items():
+        second = by_key.get((driver, n + 1))
+        if second is not None:
+            cond = stop_condition(first['_status'], second['_status'])
+            stayed_out.setdefault((n, cond), []).append(first['_s'] + second['_s'])
 
     stops = []
     for driver, dl in laps.groupby('Driver'):
@@ -343,16 +446,12 @@ def build_pit_loss(laps):
         driver_clean = clean[clean['Driver'] == driver]
         for n, in_lap in sorted(by_lap.items()):
             out_lap = by_lap.get(n + 1)
-            if pd.isna(in_lap['PitInTime']) or out_lap is None or pd.isna(out_lap['PitOutTime']):
+            if not in_lap['PitStop'] or out_lap is None:
                 continue
             if n == 1 or pd.isna(in_lap['_s']) or pd.isna(out_lap['_s']):
                 continue                             # lap 1 = standing start + damage stops
-            statuses = in_lap['_status'] + out_lap['_status']
-            if in_lap['_status'] == '1' and out_lap['_status'] == '1':
-                condition = 'green'
-            elif any(c in statuses for c in '467') and '5' not in statuses:
-                condition = 'sc'
-            else:
+            condition = stop_condition(in_lap['_status'], out_lap['_status'])
+            if condition is None:
                 continue
             if condition == 'green':
                 ref = driver_clean[driver_clean['Stint'] == in_lap['Stint']]['_s']
@@ -362,31 +461,41 @@ def build_pit_loss(laps):
                     continue
                 ref_s = float(ref.median())
             else:
-                # Under SC/VSC a green lap is the wrong yardstick: compare with the cars
-                # that stayed out on the same two laps.
-                pairs = stayed_out.get(n)
-                if pairs is None or pairs.empty:
+                pairs = stayed_out.get((n, condition))
+                if not pairs:
                     continue
-                ref_s = float(pairs.median()) / 2
+                ref_s = float(np.median(pairs)) / 2
+            loss = in_lap['_s'] + out_lap['_s'] - 2 * ref_s
+            if condition == 'green' and loss > MAX_NORMAL_STOP_S:
+                condition = 'slow'
             stops.append({
                 'driver':     driver,
                 'lap':        n,
                 'in_lap_s':   round(in_lap['_s'], 3),
                 'out_lap_s':  round(out_lap['_s'], 3),
                 'ref_lap_s':  round(ref_s, 3),
-                'loss_s':     round(in_lap['_s'] + out_lap['_s'] - 2 * ref_s, 3),
+                'loss_s':     round(loss, 3),
                 'condition':  condition,
             })
 
     stops.sort(key=lambda s: (s['lap'], s['driver']))
-    green = [s['loss_s'] for s in stops if s['condition'] == 'green']
-    sc = [s['loss_s'] for s in stops if s['condition'] == 'sc']
+    losses = {c: [s['loss_s'] for s in stops if s['condition'] == c] for c in ('green', 'sc', 'vsc')}
+    green = round(float(np.median(losses['green'])), 3) if losses['green'] else None
+
+    def neutralised(values):
+        if len(values) < 2:
+            return None
+        median = round(float(np.median(values)), 3)
+        return median if median > 0 and (green is None or median <= green) else None
+
     return {
-        'median_loss_s':    round(float(np.median(green)), 3) if green else None,
-        'median_loss_sc_s': round(float(np.median(sc)), 3) if len(sc) >= 2 else None,
-        'green_stops':      len(green),
-        'sc_stops':         len(sc),
-        'stops':            stops,
+        'median_loss_s':     green,
+        'median_loss_sc_s':  neutralised(losses['sc']),
+        'median_loss_vsc_s': neutralised(losses['vsc']),
+        'green_stops':       len(losses['green']),
+        'sc_stops':          len(losses['sc']),
+        'vsc_stops':         len(losses['vsc']),
+        'stops':             stops,
     }
 
 
@@ -548,10 +657,14 @@ def rebuild_manifest(out_dir=None):
             'built_at': ev['built_at'],
         })
     events.sort(key=lambda e: (e['year'], e['round']), reverse=True)
+    from model.validate_model import sessions as model_sessions, summary as model_summary
+    tyre_model = model_summary(model_sessions(out_dir))   # headline validation numbers across all races
     prev = read_json(out_dir / 'manifest.json') or {}
-    if prev.get('events') == events and prev.get('schema_version') == SCHEMA_VERSION:
+    if (prev.get('events') == events and prev.get('schema_version') == SCHEMA_VERSION
+            and prev.get('tyre_model') == tyre_model):
         return prev                              # nothing changed: keep generated_at, no git diff
-    manifest = {'generated_at': now_iso(), 'schema_version': SCHEMA_VERSION, 'events': events}
+    manifest = {'generated_at': now_iso(), 'schema_version': SCHEMA_VERSION, 'events': events,
+                'tyre_model': tyre_model}
     write_json(out_dir / 'manifest.json', manifest)
     return manifest
 
@@ -577,11 +690,21 @@ def make_source(kind, choice, year, event, code):
     return OpenF1Source(year, round_num, code, event_sessions(event)[code], log=log)
 
 
-def build_race_like(source, year, event, event_dir, folder, is_race):
-    laps = source.laps()
+def build_race_like(source, year, event, out, code):
+    """Write every file of a race or sprint into the folder `out` (circuit.json included)."""
+    start = source.race_start()
+    laps = prepare_laps(source.laps(), start)
+    if (laps['Compound'] == 'UNKNOWN').any() and source.name != 'openf1':
+        # FastF1 lost the tyre data of some cars: OpenF1's stints may still have it
+        from sources.openf1_source import stint_compounds
+        extra = stint_compounds(year, int(event['RoundNumber']), code, event_sessions(event)[code], log=log)
+        if extra:
+            laps = prepare_laps(source.laps(), start, extra)
+    unknown = int((laps['Compound'] == 'UNKNOWN').sum())
+    if unknown:
+        log(f'    {unknown} lap(s) with an unknown compound')
     total_laps = int(source.event()['total_laps'])
     lap_ends = leader_lap_ends(laps)
-    out = event_dir / folder
     weather = source.weather()
 
     write_json(out / 'replay.json', {
@@ -594,30 +717,43 @@ def build_race_like(source, year, event, event_dir, folder, is_race):
         'weather':    weather_summary(weather),
         'laps':       build_replay_laps(laps, total_laps),
     })
-    write_json(out / 'laps.json', build_laps_table(laps))
+    laps_table = build_laps_table(laps)
+    write_json(out / 'laps.json', laps_table)
     write_json(out / 'track_status.json', {
-        'periods':    build_track_status(source.track_status(), lap_ends),
+        'periods':    build_track_status(source.track_status(), lap_ends, start.total_seconds(),
+                                         laps['Time'].max().total_seconds()),
         'sc_periods': build_sc_periods(source.race_control(), total_laps),
     })
     write_json(out / 'weather.json', build_weather(weather, lap_ends))
     write_json(out / 'pit_loss.json', build_pit_loss(laps))
-    if is_race:
+    if code == 'R':
         try:
-            write_json(event_dir / 'circuit.json', build_circuit(source, event['EventName']))
+            write_json(out / 'circuit.json', build_circuit(source, event['EventName']))
         except Exception as e:
             log(f'    WARNING circuit.json skipped: {e}')
-    write_json(out / 'results.json', build_results(source.results()))     # last: marks the build complete
+    results = build_results(source.results())
+    write_json(out / 'tyre_model.json', build_tyre_model(laps_table, results))   # pipeline/model/MODEL.md
+    write_json(out / 'results.json', results)     # last: marks the build complete
     return total_laps
 
 
-def build_quali_like(source, event_dir, folder):
-    out = event_dir / folder
+def build_quali_like(source, out):
     for driver, data in build_quali_fastest(source).items():
         path = out / 'fastest' / f'{driver}.json'
         write_json(path, data)
         if path.stat().st_size > 60_000:
             log(f'    WARNING {path.name} is {path.stat().st_size // 1024} KB (budget 60 KB)')
     write_json(out / 'results.json', build_results(source.results(), quali=True))
+
+
+def publish(tmp, final, event_dir):
+    """Move a finished build into place. results.json goes last: it marks a complete build."""
+    files = sorted((f for f in tmp.rglob('*') if f.is_file()), key=lambda f: f.name == 'results.json')
+    for f in files:
+        target = event_dir / f.name if f.name == 'circuit.json' else final / f.relative_to(tmp)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(f, target)
+    shutil.rmtree(tmp, ignore_errors=True)
 
 
 def build_event(year, event, codes, force=False, source='auto'):
@@ -637,11 +773,22 @@ def build_event(year, event, codes, force=False, source='auto'):
                 continue
             folder = SESSIONS[code][1]
             total_laps = None
+            # Built next to its final place, checked, and only then moved in: a session
+            # that fails validation never replaces what is published.
+            tmp = event_dir / f'.{folder}.building'
+            shutil.rmtree(tmp, ignore_errors=True)
             if code in ('R', 'S'):
-                laps_run = build_race_like(src, year, event, event_dir, folder, is_race=code == 'R')
+                laps_run = build_race_like(src, year, event, tmp, code)
                 total_laps = laps_run if code == 'R' else None
+                problems = validate_session(tmp)
+                if problems:
+                    shutil.rmtree(tmp, ignore_errors=True)
+                    failed.append(code)
+                    log(f'  {year} R{round_num} {code}: INVALID, not published: {"; ".join(problems)}')
+                    continue
             else:
-                build_quali_like(src, event_dir, folder)
+                build_quali_like(src, tmp)
+            publish(tmp, event_dir / folder, event_dir)
             write_event(event_dir, year, event, total_laps=total_laps,
                         circuit=src.event()['circuit'], source={code: src.name})
             built.append(code)

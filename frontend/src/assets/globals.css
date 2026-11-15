@@ -70,6 +70,35 @@ body {
 .tyre-fill.intermediate { background: var(--tyre-intermediate); fill: var(--tyre-intermediate); }
 .tyre-fill.wet          { background: var(--tyre-wet); fill: var(--tyre-wet); }
 
+/* Compound colours for chart lines and points (hard and medium are darkened on the light theme) */
+.tyre-line              { stroke: var(--text-muted); }
+.tyre-line.soft         { stroke: var(--tyre-soft); }
+.tyre-line.medium       { stroke: var(--tyre-medium-line); }
+.tyre-line.hard         { stroke: var(--tyre-hard-line); }
+.tyre-line.intermediate { stroke: var(--tyre-intermediate); }
+.tyre-line.wet          { stroke: var(--tyre-wet); }
+.tyre-dot               { fill: var(--text-muted); }
+.tyre-dot.soft          { fill: var(--tyre-soft); }
+.tyre-dot.medium        { fill: var(--tyre-medium-line); }
+.tyre-dot.hard          { fill: var(--tyre-hard-line); }
+.tyre-dot.intermediate  { fill: var(--tyre-intermediate); }
+.tyre-dot.wet           { fill: var(--tyre-wet); }
+
+/* Confidence tag of a model result: <span class="conf-tag high">high</span> */
+.conf-tag {
+  border: 1px solid currentColor;
+  padding: 0.05rem 0.35rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.conf-tag.high   { color: var(--status-green); }
+.conf-tag.medium { color: var(--status-vsc); }
+.conf-tag.low    { color: var(--status-red); }
+
 /* Tyre colour key, shown wherever compounds are colour-coded */
 .tyre-legend {
   display: flex;
