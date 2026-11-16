@@ -103,6 +103,9 @@ const router = createRouter({
   // 'instant' because globals.css sets smooth scrolling on <html>.
   // Resolved after the 200 ms page fade-out, so the old page does not jump first.
   scrollBehavior(to, from, savedPosition) {
+    // Same page, new query (the Strategy tab writes its scenario to the URL as you edit,
+    // the replay its lap): stay where the reader is.
+    if (to.path === from.path && !savedPosition) return false
     const position = { ...(savedPosition || { top: 0 }), behavior: 'instant' }
     return new Promise(resolve => setTimeout(() => resolve(position), 200))
   }
