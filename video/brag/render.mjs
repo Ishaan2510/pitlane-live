@@ -1,9 +1,10 @@
 // Renders composition.html frame by frame in headless Chrome (listening on port 9555),
 // then muxes the frames with the soundtrack.
 //
-//   node video/brag/render.mjs <landscape|vertical> <out.mp4> [--stills 1.5,4,7.2] [--seconds 20]
+//   node video/brag/render.mjs <landscape|vertical> <out.mp4> [--stills 1.5,4,7.2] [--seconds 20] [--from 510]
 //
 // --stills: only write PNG stills at those times (to check layout), no video.
+// --from: keep the frames already rendered before this frame number and redo the rest.
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { dirname, resolve } from 'node:path'
@@ -52,10 +53,12 @@ if (stills) {
   }
 } else {
   const dir = resolve(dirname(out), 'work', 'frames-' + format)
-  rmSync(dir, { recursive: true, force: true }); mkdirSync(dir, { recursive: true })
+  const first = parseInt(opt('from') || '0', 10)
+  if (!first) rmSync(dir, { recursive: true, force: true })
+  mkdirSync(dir, { recursive: true })
   const total = Math.round(SECONDS * FPS)
   const started = Date.now()
-  for (let k = 0; k < total; k++) {
+  for (let k = first; k < total; k++) {
     writeFileSync(`${dir}/f${String(k).padStart(5, '0')}.png`, Buffer.from(await frameAt(k / FPS), 'base64'))
     if (k % 60 === 0) console.log(`frame ${k}/${total} (${((Date.now() - started) / 1000).toFixed(0)} s)`)
   }

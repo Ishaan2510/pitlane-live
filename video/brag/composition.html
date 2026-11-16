@@ -63,8 +63,7 @@
   <div class="scene" id="s6">
     <div class="glow" style="opacity:.6"></div>
     <div class="wordmark" id="wm6" style="position:absolute;left:0;right:0;text-align:center">PITLANE<i>.</i></div>
-    <div class="question mono" id="url6"></div>
-    <div class="question mono dim" id="meta6"></div>
+    <div class="question" id="line6"></div>
   </div>
   <div class="black" id="black" style="opacity:0"></div>
   <div class="flash" id="flash" style="opacity:0"></div>
@@ -115,11 +114,9 @@ tag2.style.top = (V ? 960 : 600) + 'px'
 tag2.style.fontSize = (V ? 54 : 50) + 'px'
 tag2.innerHTML = V ? '<span>Every F1 race.</span><br><span>Replayed, debriefed,</span><br><span>rewritten.</span>'
                    : '<span>Every F1 race.</span> <span>Replayed, debriefed, rewritten.</span>'
-$('wm6').style.top = (V ? 640 : 230) + 'px'
-const url6 = $('url6'); url6.textContent = 'pitlane-live-f1.vercel.app'
-url6.style.top = (V ? 940 : 580) + 'px'; url6.style.fontSize = (V ? 40 : 44) + 'px'; url6.style.color = '#f5f5f5'
-const meta6 = $('meta6'); meta6.textContent = 'Free · No login · 68 races'
-meta6.style.top = (V ? 1030 : 660) + 'px'; meta6.style.fontSize = (V ? 30 : 30) + 'px'
+$('wm6').style.top = (V ? 700 : 290) + 'px'
+const line6 = $('line6'); line6.innerHTML = V ? 'Ask your own what-if.<br>Share the link.' : 'Ask your own what-if. Share the link.'
+line6.style.top = (V ? 1010 : 640) + 'px'; line6.style.fontSize = (V ? 52 : 52) + 'px'; line6.style.color = '#bdbdbd'
 
 // ── footage scenes ──
 function footageScene(el, { num, title, caption }) {
@@ -217,9 +214,8 @@ window.setTime = function (t) {
     const u = t - 17
     const s = 1.18 - 0.18 * back(u / 0.5)
     $('wm6').style.transform = `scale(${s})`; $('wm6').style.opacity = clamp(u / 0.08)
-    const a = ease((u - 0.3) / 0.4), b = ease((u - 0.5) / 0.4)
-    url6.style.opacity = a; url6.style.transform = `translateY(${(1 - a) * 16}px)`
-    meta6.style.opacity = b
+    const a = ease((u - 0.3) / 0.4)
+    line6.style.opacity = a; line6.style.transform = `translateY(${(1 - a) * 16}px)`
   }
 
   // flashes on the two big hits, dips through black between busy scenes

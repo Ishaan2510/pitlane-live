@@ -163,11 +163,9 @@ export const OutroScene: React.FC<FormatProps> = ({ format }) => {
       <div style={{ fontFamily: bebas, fontSize: v ? 240 : 290, letterSpacing: "0.08em", lineHeight: 1, color: C.text, scale: s }}>
         PITLANE<span style={{ color: C.red }}>.</span>
       </div>
-      <div style={{ fontFamily: mono, fontSize: v ? 40 : 44, letterSpacing: "0.12em", color: C.text, marginTop: 30, opacity: rise(frame, 8, 22) }}>pitlane-live-f1.vercel.app</div>
-      <div style={{ fontFamily: sans, fontSize: v ? 44 : 40, color: C.muted, marginTop: 34, opacity: rise(frame, 18, 32), maxWidth: v ? 860 : 1300, lineHeight: 1.35 }}>
-        Ask your own what-if. Share the link.
+      <div style={{ fontFamily: sans, fontSize: v ? 52 : 52, color: C.muted, marginTop: 40, opacity: rise(frame, 10, 24), translate: `0 ${(1 - rise(frame, 10, 24)) * 14}px`, maxWidth: v ? 900 : 1400, lineHeight: 1.35 }}>
+        Ask your own what-if.{v ? <br /> : " "}Share the link.
       </div>
-      <div style={{ fontFamily: mono, fontSize: v ? 28 : 26, letterSpacing: "0.24em", color: C.muted, marginTop: 30, opacity: rise(frame, 28, 42) }}>FREE · NO LOGIN · EVERY RACE SINCE 2024</div>
       <AbsoluteFill style={{ background: "#fff", opacity: interpolate(frame, [0, 8], [0.7, 0], { extrapolateRight: "clamp" }) }} />
     </AbsoluteFill>
   );
