@@ -1,6 +1,6 @@
 # /brag plan: Pitlane Live
 
-**What it is:** a free website that replays every F1 race since 2024 from real timing data,
+**What it is:** a website that replays every F1 race since 2024 from real timing data,
 explains it, and lets you rewrite a driver's pit strategy to see where they would have finished.
 **For:** F1 fans who argue about strategy calls on Sunday night.
 **Sets it apart:** it doesn't just replay the race, it answers "what if", with an honest range.
@@ -35,7 +35,7 @@ or usernames appear.
 | 3 | 6.0-10.0 | 12-20 | Highlight 1 | "01 REPLAY ANY RACE" + Monaco 2025 replay playing (real footage), slow push-in |
 | 4 | 10.0-14.0 | 20-28 | Highlight 2 | "02 MOVE THE PIT STOP" + Piastri's second stop dragged off the bar (real footage) |
 | 5 | 14.0-17.0 | 28-34 | Highlight 3 | "03 SEE THE ODDS" + zoom on the verdict: "PIA FINISHES P1, NOT P2", "P1 to P2 in 80% of 500 simulations" |
-| 6 | 17.0-20.0 | 34-40 | Outro | Wordmark, "pitlane-live-f1.vercel.app", "Free · No login · 68 races" |
+| 6 | 17.0-20.0 | 34-40 | Outro | **PITLANE.** wordmark, "Ask your own what-if. Share the link." (the address goes in the post text, not the video) |
 
 Vertical (1080x1920): same timeline; footage is the phone layout of the site; every line meant
 to be read sits between y 250 and 1536, away from the right 140 px in the lower half.
