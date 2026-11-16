@@ -1,0 +1,1 @@
+What if they'd pitted a lap later? Pitlane Live replays every F1 race since 2024 from real timing data, and now lets you drag a pit stop and see where the driver would have finished, with the odds from 500 simulations. Free, no login: pitlane-live-f1.vercel.app

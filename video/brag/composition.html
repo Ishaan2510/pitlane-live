@@ -1,0 +1,237 @@
+<!doctype html>
+<!-- The /brag teaser. Every frame is a pure function of time: setTime(seconds).
+     ?format=landscape|vertical. Footage frames are read from ../footage/raw/. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../frontend/src/assets/theme.css">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&display=block" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: var(--W); height: var(--H); overflow: hidden; background: #080808; }
+  body { font-family: 'Work Sans', sans-serif; color: #f5f5f5; }
+  .stage { position: absolute; inset: 0; overflow: hidden; background: #080808; }
+  .scene { position: absolute; inset: 0; display: none; }
+  .bebas { font-family: 'Bebas Neue', sans-serif; font-weight: 400; letter-spacing: 0.03em; line-height: 0.92; }
+  .mono { font-family: 'DM Mono', monospace; letter-spacing: 0.18em; text-transform: uppercase; }
+  .red { color: #e10600; }
+  .dim { color: #888; }
+
+  /* start lights */
+  .gantry { position: absolute; left: 50%; display: flex; gap: var(--gap); translate: -50% 0; }
+  .pod { width: var(--pod); padding: calc(var(--pod) * 0.12); background: #141414; border: 2px solid #232323; display: grid; gap: calc(var(--pod) * 0.12); }
+  .lamp { width: 100%; aspect-ratio: 1; border-radius: 50%; background: #1d0505; border: 2px solid #2a0a0a; }
+  .lamp.on { background: radial-gradient(circle at 40% 38%, #ff7a6b 0%, #ff1a0d 35%, #b00400 75%); border-color: #ff2a1a; box-shadow: 0 0 calc(var(--pod) * 0.5) rgba(255, 30, 10, 0.75); }
+  .glow { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 30%, rgba(225, 6, 0, 0.22), transparent 60%); }
+
+  .question { position: absolute; left: 0; right: 0; text-align: center; padding: 0 6%; }
+  .question span { display: inline-block; }
+
+  .wordmark { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.08em; line-height: 1; }
+  .wordmark i { font-style: normal; color: #e10600; }
+
+  /* footage card */
+  .card { position: absolute; overflow: hidden; border: 1px solid #2a2a2a; background: #080808; }
+  .card img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+  .label { position: absolute; display: flex; align-items: baseline; gap: 0.6em; }
+  .label .num { font-family: 'DM Mono', monospace; color: #e10600; letter-spacing: 0.1em; }
+  .caption { position: absolute; color: #bdbdbd; }
+  .rule { position: absolute; height: 3px; background: #e10600; }
+  .flash { position: absolute; inset: 0; background: #fff; pointer-events: none; }
+  .black { position: absolute; inset: 0; background: #080808; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <!-- 1 hook -->
+  <div class="scene" id="s1">
+    <div class="glow" id="glow"></div>
+    <div class="gantry" id="gantry"></div>
+    <div class="question bebas" id="q"></div>
+  </div>
+  <!-- 2 reveal -->
+  <div class="scene" id="s2">
+    <div class="glow" style="opacity:.45"></div>
+    <div class="wordmark" id="wm2" style="position:absolute;left:0;right:0;text-align:center">PITLANE<i>.</i></div>
+    <div class="question" id="tag2"></div>
+  </div>
+  <!-- 3, 4, 5 footage scenes -->
+  <div class="scene" id="s3"></div>
+  <div class="scene" id="s4"></div>
+  <div class="scene" id="s5"></div>
+  <!-- 6 outro -->
+  <div class="scene" id="s6">
+    <div class="glow" style="opacity:.6"></div>
+    <div class="wordmark" id="wm6" style="position:absolute;left:0;right:0;text-align:center">PITLANE<i>.</i></div>
+    <div class="question mono" id="url6"></div>
+    <div class="question mono dim" id="meta6"></div>
+  </div>
+  <div class="black" id="black" style="opacity:0"></div>
+  <div class="flash" id="flash" style="opacity:0"></div>
+</div>
+<script>
+const FORMAT = new URLSearchParams(location.search).get('format') || 'landscape'
+const V = FORMAT === 'vertical'
+const W = V ? 1080 : 1920, H = V ? 1920 : 1080
+document.documentElement.style.setProperty('--W', W + 'px')
+document.documentElement.style.setProperty('--H', H + 'px')
+const FPS = 30, BEAT = 0.5
+const $ = id => document.getElementById(id)
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+const ease = t => 1 - Math.pow(1 - clamp(t), 3)                 // ease-out cubic
+const easeIO = t => { t = clamp(t); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2 }
+const back = t => { t = clamp(t); const c = 1.6; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2) }
+
+// ── footage: a clip is a folder of 30 fps frames; frame(clip, seconds) picks one ──
+const RAW = '../footage/raw/'
+const clipFrame = (clip, s) => `${RAW}${clip}-${FORMAT}/f${String(clamp(Math.round(s * FPS), 0, 99999)).padStart(5, '0')}.jpg`
+
+// ── scene 1: lights ──
+const POD = V ? 150 : 128
+document.documentElement.style.setProperty('--pod', POD + 'px')
+document.documentElement.style.setProperty('--gap', (V ? 22 : 30) + 'px')
+const gantry = $('gantry')
+gantry.style.top = (V ? 470 : 150) + 'px'
+const lamps = []
+for (let i = 0; i < 5; i++) {
+  const pod = document.createElement('div'); pod.className = 'pod'
+  const pair = []
+  for (let k = 0; k < 2; k++) { const l = document.createElement('div'); l.className = 'lamp'; pod.appendChild(l); pair.push(l) }
+  lamps.push(pair); gantry.appendChild(pod)
+}
+const QWORDS = ["WHAT", "IF", "THEY'D", "PITTED", "A", "LAP", "LATER?"]
+const q = $('q')
+q.style.top = (V ? 1000 : 640) + 'px'
+q.style.fontSize = (V ? 128 : 132) + 'px'
+q.innerHTML = QWORDS.map(w => `<span>${w}</span>`).join(' ')
+if (V) q.innerHTML = QWORDS.slice(0, 2).map(w => `<span>${w}</span>`).join(' ') + '<br>' + QWORDS.slice(2, 4).map(w => `<span>${w}</span>`).join(' ') + '<br>' + QWORDS.slice(4).map(w => `<span>${w}</span>`).join(' ')
+const qSpans = [...q.querySelectorAll('span')]
+
+// ── scene 2 and 6: wordmark ──
+for (const id of ['wm2', 'wm6']) { $(id).style.fontSize = (V ? 250 : 300) + 'px' }
+$('wm2').style.top = (V ? 650 : 250) + 'px'
+const tag2 = $('tag2')
+tag2.style.top = (V ? 960 : 600) + 'px'
+tag2.style.fontSize = (V ? 54 : 50) + 'px'
+tag2.innerHTML = V ? '<span>Every F1 race.</span><br><span>Replayed, debriefed,</span><br><span>rewritten.</span>'
+                   : '<span>Every F1 race.</span> <span>Replayed, debriefed, rewritten.</span>'
+$('wm6').style.top = (V ? 640 : 230) + 'px'
+const url6 = $('url6'); url6.textContent = 'pitlane-live-f1.vercel.app'
+url6.style.top = (V ? 940 : 580) + 'px'; url6.style.fontSize = (V ? 40 : 44) + 'px'; url6.style.color = '#f5f5f5'
+const meta6 = $('meta6'); meta6.textContent = 'Free · No login · 68 races'
+meta6.style.top = (V ? 1030 : 660) + 'px'; meta6.style.fontSize = (V ? 30 : 30) + 'px'
+
+// ── footage scenes ──
+function footageScene(el, { num, title, caption }) {
+  const card = document.createElement('div'); card.className = 'card'
+  const img = document.createElement('img'); card.appendChild(img)
+  const label = document.createElement('div'); label.className = 'label bebas'
+  label.innerHTML = `<span class="num" style="font-size:${V ? 34 : 30}px">${num}</span><span>${title}</span>`
+  label.style.fontSize = (V ? 110 : 96) + 'px'
+  const rule = document.createElement('div'); rule.className = 'rule'
+  const cap = document.createElement('div'); cap.className = 'caption'; cap.textContent = caption
+  cap.style.fontSize = (V ? 40 : 34) + 'px'
+  if (V) {
+    Object.assign(label.style, { left: '70px', top: '270px', right: '70px', flexWrap: 'wrap' })
+    Object.assign(rule.style, { left: '70px', top: '400px', width: '140px' })
+    Object.assign(card.style, { left: '60px', top: '440px', width: '960px', height: '940px' })
+    Object.assign(cap.style, { left: '70px', top: '1405px', right: '160px' })
+  } else {
+    Object.assign(label.style, { left: '96px', top: '70px' })
+    Object.assign(rule.style, { left: '96px', top: '170px', width: '120px' })
+    Object.assign(card.style, { left: '96px', top: '210px', width: '1728px', height: '740px' })
+    Object.assign(cap.style, { left: '96px', top: '975px' })
+  }
+  el.append(card, label, rule, cap)
+  return { card, img, label, rule, cap }
+}
+const f3 = footageScene($('s3'), { num: '01', title: 'REPLAY ANY RACE', caption: 'Monaco 2025, every car, every lap, from real timing data.' })
+const f4 = footageScene($('s4'), { num: '02', title: 'MOVE THE PIT STOP', caption: 'Monza 2024: drag Piastri’s second stop off the bar.' })
+const f5 = footageScene($('s5'), { num: '03', title: 'SEE THE ODDS', caption: '500 simulations. An honest range, not a guess.' })
+
+// Image crop helpers: show a sub-rectangle of a footage frame inside its card.
+// focus: [x, y] in frame pixels to keep centred; zoom: 1 = whole frame fits the card width.
+const FRAME_W = 1920 * (V ? 1080 / 1920 : 1), FRAME_H = V ? 1920 : 1080
+function frameInCard(f, src, zoom, fx, fy) {
+  f.img.src = src
+  const cw = parseFloat(f.card.style.width), ch = parseFloat(f.card.style.height)
+  const fw = V ? 1080 : 1920, fh = V ? 1920 : 1080
+  const s = Math.max(cw / fw, ch / fh) * zoom
+  const w = fw * s, h = fh * s
+  const left = clamp(cw / 2 - fx * s, cw - w, 0), top = clamp(ch / 2 - fy * s, ch - h, 0)
+  Object.assign(f.img.style, { width: w + 'px', height: h + 'px', left: left + 'px', top: top + 'px', objectFit: 'fill' })
+}
+
+function enter(f, t, delay = 0) {          // label, rule and caption arrive staggered
+  const a = ease((t - delay) / 0.35), b = ease((t - delay - 0.12) / 0.35), c = ease((t - delay - 0.3) / 0.4)
+  f.label.style.opacity = a; f.label.style.transform = `translateY(${(1 - a) * 30}px)`
+  f.rule.style.width = (V ? 140 : 120) * b + 'px'
+  f.cap.style.opacity = c; f.cap.style.transform = `translateY(${(1 - c) * 16}px)`
+  const k = ease((t - delay) / 0.5)
+  f.card.style.opacity = k
+  f.card.style.transform = `translateY(${(1 - k) * 40}px)`
+}
+
+// ── the timeline ──
+const SCENES = [['s1', 0, 3], ['s2', 3, 6], ['s3', 6, 10], ['s4', 10, 14], ['s5', 14, 17], ['s6', 17, 20.1]]
+window.setTime = function (t) {
+  for (const [id, a, b] of SCENES) $(id).style.display = t >= a && t < b ? 'block' : 'none'
+
+  // 1: lights on beats 0..4, words in from 0.3 s
+  if (t < 3) {
+    lamps.forEach((pair, i) => pair.forEach(l => l.classList.toggle('on', t >= i * BEAT)))
+    $('glow').style.opacity = clamp(t / 2.2)
+    qSpans.forEach((s, i) => { const k = ease((t - 0.3 - i * 0.08) / 0.3); s.style.opacity = k; s.style.transform = `translateY(${(1 - k) * 24}px)` })
+    gantry.style.transform = `scale(${1 + t * 0.012})`
+  }
+  // 2: lights out at 3.0: flash, then the wordmark slams in
+  if (t >= 3 && t < 6) {
+    const u = t - 3
+    const s = 1.25 - 0.25 * back(u / 0.45)
+    $('wm2').style.transform = `scale(${s})`; $('wm2').style.opacity = clamp(u / 0.08)
+    const k = ease((u - 0.35) / 0.4)
+    tag2.style.opacity = k; tag2.style.transform = `translateY(${(1 - k) * 20}px)`
+  }
+  // 3: replay footage, clip seconds 1.6 -> 5.6, slow push-in
+  if (t >= 6 && t < 10) {
+    const u = t - 6
+    enter(f3, u)
+    const zoom = 1 + 0.06 * easeIO(u / 4)
+    frameInCard(f3, clipFrame('replay', 1.8 + u * 1.0), zoom * (V ? 1.15 : 1.25), V ? 500 : 900, V ? 760 : 520)
+  }
+  // 4: the drag, clip seconds 1.2 -> 4.8 (drag 1.9-3.3 s, the verdict flips at ~3.6 s)
+  if (t >= 10 && t < 14) {
+    const u = t - 10
+    enter(f4, u)
+    frameInCard(f4, clipFrame('strategy', 1.2 + u * 0.9), V ? 1.0 : 1.54, V ? 540 : 960, V ? 560 : 330)
+  }
+  // 5: zoom on the verdict (end of the strategy clip, settled)
+  if (t >= 14 && t < 17) {
+    const u = t - 14
+    enter(f5, u)
+    const zoom = (V ? 1.0 : 1.5) + 0.06 * easeIO(u / 3)
+    frameInCard(f5, clipFrame('strategy', 7.0 + u * 0.4), zoom, V ? 540 : 960, V ? 470 : 400)
+  }
+  // 6: outro
+  if (t >= 17) {
+    const u = t - 17
+    const s = 1.18 - 0.18 * back(u / 0.5)
+    $('wm6').style.transform = `scale(${s})`; $('wm6').style.opacity = clamp(u / 0.08)
+    const a = ease((u - 0.3) / 0.4), b = ease((u - 0.5) / 0.4)
+    url6.style.opacity = a; url6.style.transform = `translateY(${(1 - a) * 16}px)`
+    meta6.style.opacity = b
+  }
+
+  // flashes on the two big hits, dips through black between busy scenes
+  const flashAt = [3, 17]
+  $('flash').style.opacity = Math.max(0, ...flashAt.map(f => t >= f ? 0.85 * Math.exp(-(t - f) * 9) : 0))
+  const dips = [6, 10, 14]
+  $('black').style.opacity = Math.max(0, ...dips.map(d => { const x = Math.abs(t - d); return x < 0.12 ? 1 - x / 0.12 : 0 }))
+
+  // wait for every image on screen to be decoded before the frame is captured
+  return Promise.all([...document.images].filter(i => i.closest('.scene').style.display === 'block' && i.src).map(i => i.decode().catch(() => {})))
+}
+window.ready = document.fonts.ready.then(() => document.fonts.load('100px "Bebas Neue"')).then(() => document.fonts.load('30px "DM Mono"')).then(() => document.fonts.load('30px "Work Sans"'))
+</script>
+</body>
+</html>
