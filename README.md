@@ -39,7 +39,7 @@
 
 ## What is Pitlane Live?
 
-Pitlane Live is a free website for Formula 1 fans. Every race from the start of 2024 to
+Pitlane Live is a website for Formula 1 fans. Every race from the start of 2024 to
 the latest Grand Prix is on it (68 races so far, plus the sprint races), built from
 real timing data. For every race you can:
 
@@ -53,8 +53,6 @@ real timing data. For every race you can:
 
 You also get the season calendar with a countdown to the next session, standings, a page
 for every driver, F1 news, and a prediction game you can play with an account.
-
-No login is needed for any of the race pages.
 
 ---
 
